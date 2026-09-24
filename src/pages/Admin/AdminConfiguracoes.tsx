@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Save, Settings, UploadCloud, Download, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 import { getLegacySnapshot, hasLegacyData } from '../../lib/legacySnapshot';
-import { normalizeWhatsApp } from '../../lib/whatsapp';
 
 export const AdminConfiguracoes: React.FC = () => {
   const { siteConfig, updateSiteConfig, loadingPublicData, currentUser } = useApp();
@@ -20,7 +19,7 @@ export const AdminConfiguracoes: React.FC = () => {
   }, [loadingPublicData, siteConfig]);
 
   const handleSave = () => {
-    const normalizedForm = { ...form, whatsapp: normalizeWhatsApp(form.whatsapp) };
+    const normalizedForm = { ...form, whatsapp: form.whatsapp.replace(/\D/g, '') };
     setForm(normalizedForm);
     updateSiteConfig(normalizedForm);
     setSaved(true);
