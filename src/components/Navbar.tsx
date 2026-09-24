@@ -21,7 +21,7 @@ export const Navbar: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout, siteConfig } = useApp();
+  const { currentUser, logout } = useApp();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
