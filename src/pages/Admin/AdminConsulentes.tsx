@@ -37,7 +37,7 @@ export const AdminConsulentes: React.FC = () => {
     setSelectedRole('atendimento');
   };
 
-  const confirmPromote = (userId: string, userName: string) => {
+  const confirmPromote = (userId: string) => {
     updateUser(userId, { role: selectedRole });
     setPromotingId(null);
     setConfirmedId(userId);
@@ -125,7 +125,7 @@ export const AdminConsulentes: React.FC = () => {
                           ))}
                         </select>
                         <button
-                          onClick={() => confirmPromote(user.id, user.name)}
+                          onClick={() => confirmPromote(user.id)}
                           className="p-1.5 text-green-400 border border-green-500/30 rounded"
                           title="Confirmar cargo"
                         >
