@@ -71,10 +71,12 @@ export const AdminConfiguracoes: React.FC = () => {
         <div className="space-y-4">
           <InputField label="Título Principal" field="heroTitle" />
           <InputField label="Subtítulo" field="heroSubtitle" />
-          <InputField label="URL da Imagem de Fundo (Hero)" field="heroImage" placeholder="https://... ou /images/hero-bg.jpg" />
-          {form.heroImage && (
-            <img src={form.heroImage} alt="Preview Hero" className="w-full h-32 object-cover rounded border border-[rgba(201,168,76,0.2)]" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          )}
+          <ImageUploadField
+            label="Imagem de Fundo (Hero)"
+            value={form.heroImage}
+            onChange={value => setForm({ ...form, heroImage: value })}
+            helper="JPG, PNG ou WebP • até 5 MB"
+          />
         </div>
       </div>
 
@@ -84,10 +86,12 @@ export const AdminConfiguracoes: React.FC = () => {
         <div className="space-y-4">
           <TextareaField label="Texto Principal (Sobre Nós)" field="aboutText" rows={4} />
           <TextareaField label="História do Terreiro" field="aboutHistory" rows={6} />
-          <InputField label="URL da Imagem (Sobre)" field="aboutImage" placeholder="https://... ou /images/about-bg.jpg" />
-          {form.aboutImage && (
-            <img src={form.aboutImage} alt="Preview Sobre" className="w-full h-32 object-cover rounded border border-[rgba(201,168,76,0.2)]" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          )}
+          <ImageUploadField
+            label="Imagem da seção Sobre"
+            value={form.aboutImage}
+            onChange={value => setForm({ ...form, aboutImage: value })}
+            helper="JPG, PNG ou WebP • até 5 MB"
+          />
         </div>
       </div>
 
@@ -117,6 +121,92 @@ export const AdminConfiguracoes: React.FC = () => {
       </div>
 
       {currentUser?.role === 'super_admin' && <MigracaoDados />}
+    </div>
+  );
+};
+
+
+const ImageUploadField: React.FC<{
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  helper?: string;
+}> = ({ label, value, onChange, helper }) => {
+  const [error, setError] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (file?: File) => {
+    if (!file) return;
+    setError('');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Formato inválido. Escolha uma imagem JPG, PNG ou WebP.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('A imagem é muito grande. O limite é de 5 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') onChange(reader.result);
+    };
+    reader.onerror = () => setError('Não foi possível ler a imagem. Tente novamente.');
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div>
+      <label className="form-label">{label}</label>
+      <div className="space-y-3">
+        <div
+          className="border border-dashed border-[rgba(201,168,76,0.25)] rounded p-4 bg-[rgba(201,168,76,0.03)] hover:border-[rgba(201,168,76,0.5)] transition-colors cursor-pointer"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault();
+            handleFile(e.dataTransfer.files[0]);
+          }}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={e => handleFile(e.target.files?.[0])}
+          />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
+            <div className="w-10 h-10 rounded-full bg-[rgba(201,168,76,0.1)] flex items-center justify-center text-[#c9a84c]">
+              <UploadCloud size={20} />
+            </div>
+            <div>
+              <p className="font-inter text-sm text-[#f5f0e8]">Clique para selecionar uma imagem</p>
+              <p className="font-inter text-xs text-[rgba(245,240,232,0.4)]">ou arraste e solte aqui • {helper}</p>
+            </div>
+          </div>
+        </div>
+
+        {value && (
+          <div className="relative overflow-hidden rounded border border-[rgba(201,168,76,0.2)] bg-black/20">
+            <img src={value} alt={label} className="w-full h-40 object-cover" />
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                if (inputRef.current) inputRef.current.value = '';
+              }}
+              className="absolute top-2 right-2 px-2 py-1 rounded bg-black/70 text-white text-xs hover:bg-black/90"
+            >
+              Remover
+            </button>
+          </div>
+        )}
+
+        {error && <p className="font-inter text-xs text-red-400">{error}</p>}
+      </div>
     </div>
   );
 };
