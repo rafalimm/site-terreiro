@@ -5,6 +5,7 @@ import { useApp } from '../store/AppContext';
 export const WhatsAppButton: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
   const { siteConfig } = useApp();
+  // WhatsApp usa o número configurado no painel administrativo.
 
 
   const quickMessages = [
