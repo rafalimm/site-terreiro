@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
-interface WhatsAppButtonProps {
-  message?: string;
-}
-
-export const WhatsAppButton: React.FC<WhatsAppButtonProps> = () => {
+export const WhatsAppButton: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
+  const { siteConfig } = useApp();
 
 
   const quickMessages = [
