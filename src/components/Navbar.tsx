@@ -21,7 +21,7 @@ export const Navbar: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout } = useApp();
+  const { currentUser, logout, siteConfig } = useApp();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -37,6 +37,11 @@ export const Navbar: React.FC = () => {
     logout();
     navigate('/');
     setUserMenuOpen(false);
+  };
+
+  const openWhatsApp = () => {
+    const message = 'Olá! Vim pelo site do Centro de Umbanda Zé do Laço e gostaria de obter mais informações.';
+    window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -90,12 +95,12 @@ export const Navbar: React.FC = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <Link
-              to="/contato"
+            <button
+              onClick={openWhatsApp}
               className="hidden md:inline-flex btn-wine text-xs py-2 px-4"
             >
               Fale Conosco
-            </Link>
+            </button>
 
             {currentUser ? (
               <div className="relative">
@@ -173,9 +178,9 @@ export const Navbar: React.FC = () => {
                 </Link>
               ))}
               <div className="pt-4 flex flex-col gap-2">
-                <Link to="/contato" className="btn-wine text-center justify-center">
+                <button onClick={openWhatsApp} className="btn-wine text-center justify-center">
                   Fale Conosco
-                </Link>
+                </button>
                 {!currentUser && (
                   <Link to="/entrar" className="btn-outline-gold text-center justify-center">
                     Entrar
