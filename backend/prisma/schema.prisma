@@ -1,0 +1,157 @@
+// Schema do banco de dados - PostgreSQL
+// Os modelos abaixo espelham exatamente os tipos que já existiam em
+// src/store/AppContext.tsx no front-end, para que a migração seja direta.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  super_admin
+  admin
+  agenda
+  content
+  atendimento
+  consulente
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String // sempre armazenada com hash (bcrypt), nunca em texto puro
+  role      Role     @default(consulente)
+  whatsapp  String?
+  active    Boolean  @default(true)
+  createdAt String // mantido como string ISO para bater com o front-end existente
+
+  @@map("users")
+}
+
+model GiraEvent {
+  id                 String   @id @default(cuid())
+  title              String
+  date               String
+  time               String
+  type               String
+  description        String   @db.Text
+  orientation        String   @db.Text
+  isPublic           Boolean  @default(true)
+  requiresScheduling Boolean  @default(false)
+  observations       String   @db.Text
+  createdBy          String
+  createdAt          String
+
+  @@map("events")
+}
+
+model FAQItem {
+  id       String  @id @default(cuid())
+  question String
+  answer   String  @db.Text
+  order    Int     @default(0)
+  active   Boolean @default(true)
+
+  @@map("faq_items")
+}
+
+model NewsItem {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  image       String?  @db.Text
+  category    String
+  author      String
+  publishedAt String
+  active      Boolean  @default(true)
+
+  @@map("news_items")
+}
+
+model GalleryItem {
+  id          String   @id @default(cuid())
+  url         String   @db.Text
+  title       String
+  description String   @db.Text
+  category    String
+  isMain      Boolean  @default(false)
+  createdAt   String
+
+  @@map("gallery_items")
+}
+
+model ServiceInfo {
+  id                 String  @id @default(cuid())
+  type               String // 'cards' | 'buzios'
+  title              String
+  description        String  @db.Text
+  howItWorks         String  @db.Text
+  duration           String
+  orientation        String  @db.Text
+  requiresScheduling Boolean @default(false)
+
+  @@map("services")
+}
+
+model Entity {
+  id              String  @id @default(cuid())
+  name            String
+  line            String
+  description     String  @db.Text
+  image           String? @db.Text
+  history         String  @db.Text
+  characteristics String  @db.Text
+  additionalInfo  String  @db.Text
+  active          Boolean @default(true)
+
+  @@map("entities")
+}
+
+model ActivityLog {
+  id        String @id @default(cuid())
+  userId    String
+  userName  String
+  action    String
+  entity    String
+  details   String @db.Text
+  timestamp String
+
+  @@map("activity_logs")
+}
+
+// Linha única de configurações gerais do site (sempre id = 1)
+model SiteConfig {
+  id           Int    @id @default(1)
+  heroTitle    String
+  heroSubtitle String @db.Text
+  aboutText    String @db.Text
+  aboutHistory String @db.Text
+  whatsapp     String
+  instagram    String
+  address      String
+  mapUrl       String @db.Text
+  email        String
+  workingHours String @db.Text
+  heroImage    String @db.Text
+  aboutImage   String @db.Text
+
+  @@map("site_config")
+}
+
+model ContactMessage {
+  id         String  @id @default(cuid())
+  name       String
+  whatsapp   String
+  email      String
+  subject    String
+  message    String  @db.Text
+  receivedAt String
+  read       Boolean @default(false)
+
+  @@map("contact_messages")
+}
