@@ -37,7 +37,7 @@ export const Home: React.FC = () => {
   const { siteConfig, events, newsItems } = useApp();
 
   const openWhatsApp = (msg: string) => {
-    window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/5511940087119?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const upcomingEvents = events
