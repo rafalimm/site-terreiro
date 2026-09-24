@@ -4,6 +4,7 @@ import { MapPin, Phone, Star, Heart } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
 export const Footer: React.FC = () => {
+  // WhatsApp usa o número configurado no painel administrativo.
   const { siteConfig } = useApp();
 
   const openWhatsApp = (msg: string) => {
