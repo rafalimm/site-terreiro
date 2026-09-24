@@ -1,13 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Star, Heart } from 'lucide-react';
-import { useApp } from '../store/AppContext';
 
-const WHATSAPP_FALLBACK = '5511940087119';
+const WHATSAPP_PHONE = '5511940087119';
 
 export const Footer: React.FC = () => {
-  const { siteConfig } = useApp();
-  const phone = (siteConfig?.whatsapp || WHATSAPP_FALLBACK).replace(/\D/g, '');
 
   const openWhatsApp = (msg: string) => {
     window.open(
