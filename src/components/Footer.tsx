@@ -7,7 +7,8 @@ export const Footer: React.FC = () => {
   const { siteConfig } = useApp();
 
   const openWhatsApp = (msg: string) => {
-    window.open(`https://wa.me/5511940087119?text=${encodeURIComponent(msg)}`, '_blank');
+    const phone = (siteConfig.whatsapp || '5511940087119').replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
