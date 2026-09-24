@@ -21,7 +21,7 @@ export const Navbar: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout } = useApp();
+  const { currentUser, logout, siteConfig } = useApp();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -41,7 +41,8 @@ export const Navbar: React.FC = () => {
 
   const openWhatsApp = () => {
     const message = 'Olá! Vim pelo site do Centro de Umbanda Zé do Laço e gostaria de obter mais informações.';
-    window.open(`https://wa.me/5511940087119?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    const phone = (siteConfig.whatsapp || '5511940087119').replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
