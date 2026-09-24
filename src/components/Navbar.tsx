@@ -41,7 +41,7 @@ export const Navbar: React.FC = () => {
 
   const openWhatsApp = () => {
     const message = 'Olá! Vim pelo site do Centro de Umbanda Zé do Laço e gostaria de obter mais informações.';
-    window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://wa.me/5511940087119?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
