@@ -8,7 +8,7 @@ interface WhatsAppButtonProps {
 
 export const WhatsAppButton: React.FC<WhatsAppButtonProps> = () => {
   const [expanded, setExpanded] = useState(false);
-  const { siteConfig } = useApp();
+
 
   const quickMessages = [
     { label: 'Informações Gerais', msg: 'Olá! Vim pelo site do Centro de Umbanda Zé do Laço e gostaria de obter mais informações.' },
