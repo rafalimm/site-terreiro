@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Save, Settings, UploadCloud, Download, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 import { getLegacySnapshot, hasLegacyData } from '../../lib/legacySnapshot';
+import { normalizeWhatsApp } from '../../lib/whatsapp';
 
 export const AdminConfiguracoes: React.FC = () => {
   const { siteConfig, updateSiteConfig, loadingPublicData, currentUser } = useApp();
@@ -19,7 +20,9 @@ export const AdminConfiguracoes: React.FC = () => {
   }, [loadingPublicData, siteConfig]);
 
   const handleSave = () => {
-    updateSiteConfig(form);
+    const normalizedForm = { ...form, whatsapp: normalizeWhatsApp(form.whatsapp) };
+    setForm(normalizedForm);
+    updateSiteConfig(normalizedForm);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -100,7 +103,10 @@ export const AdminConfiguracoes: React.FC = () => {
         <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-4">📞 Informações de Contato</h3>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <InputField label="WhatsApp (somente números)" field="whatsapp" placeholder="5511940087119" />
+            <div className="space-y-2">
+              <InputField label="WhatsApp usado por todos os botões do site" field="whatsapp" placeholder="5511940087119" />
+              <p className="font-inter text-xs text-[rgba(245,240,232,0.45)]">Informe o número com DDD e código do país. Ao salvar, este número será sincronizado automaticamente com Fale Conosco, Agendar, Falar no WhatsApp e demais botões de atendimento.</p>
+            </div>
             <InputField label="Instagram (sem @)" field="instagram" />
           </div>
           <InputField label="Endereço Completo" field="address" />
