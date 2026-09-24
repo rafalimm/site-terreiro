@@ -14,6 +14,7 @@ router.get('/', async (_req, res) => {
 router.patch('/', async (req, res) => {
   const data = { ...req.body };
   delete data.id;
+  if (typeof data.whatsapp === 'string') data.whatsapp = data.whatsapp.replace(/\D/g, '');
   const config = await prisma.siteConfig.upsert({
     where: { id: 1 },
     update: data,
