@@ -144,12 +144,6 @@ export const Login: React.FC = () => {
                 )}
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
-
-              <div className="text-center mt-4">
-                <p className="font-inter text-[rgba(245,240,232,0.3)] text-xs">
-                  Administrador: admin@zedolaco.com.br
-                </p>
-              </div>
             </form>
           )}
 
