@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-
-const WHATSAPP_PHONE = '5511940087119';
+import { useApp } from '../store/AppContext';
 
 export const WhatsAppButton: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
-  const phone = WHATSAPP_PHONE;
+  const { siteConfig } = useApp();
+  const phone = (siteConfig.whatsapp || '5511940087119').replace(/\D/g, '');
 
   const quickMessages = [
     { label: 'Informações Gerais', msg: 'Olá! Vim pelo site do Centro de Umbanda Zé do Laço e gostaria de obter mais informações.' },
