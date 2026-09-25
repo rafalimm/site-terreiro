@@ -1,14 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useApp } from '../store/AppContext';
 import { MapPin, Phone, Star, Heart } from 'lucide-react';
 
-const WHATSAPP_PHONE = '5511940087119';
-
 export const Footer: React.FC = () => {
+  const { siteConfig } = useApp();
+  const phone = (siteConfig.whatsapp || '5511940087119').replace(/\D/g, '');
 
   const openWhatsApp = (msg: string) => {
     window.open(
-      `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`,
+      `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
       '_blank',
       'noopener,noreferrer'
     );
@@ -78,7 +79,7 @@ export const Footer: React.FC = () => {
               </div>
               <button onClick={() => openWhatsApp('Olá! Vim pelo site do Centro de Umbanda Zé do Laço e gostaria de obter mais informações.')} className="flex items-center gap-3 text-[rgba(245,240,232,0.55)] hover:text-[#c9a84c] transition-colors text-sm font-inter">
                 <Phone size={16} className="text-[#c9a84c] flex-shrink-0" />
-                (11) 94008-7119
+                {siteConfig.whatsapp ? siteConfig.whatsapp.replace(/^(55)(\d{2})(\d{5})(\d{4})$/, '+$1 ($2) $3-$4') : '(11) 94008-7119'}
               </button>
               <a href="https://www.instagram.com/centrodeumbandazedolaco/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[rgba(245,240,232,0.55)] hover:text-[#c9a84c] transition-colors text-sm font-inter">
                 <span className="text-[#c9a84c] text-base">📸</span>
