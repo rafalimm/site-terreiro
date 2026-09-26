@@ -9,6 +9,7 @@ const roleLabels: Record<UserRole, string> = {
   agenda: 'Resp. Agenda',
   content: 'Resp. Conteúdo',
   atendimento: 'Atendimento',
+  filho: 'Filho',
   consulente: 'Consulente',
 };
 
@@ -18,6 +19,7 @@ const roleColors: Record<UserRole, string> = {
   agenda: 'text-blue-400 border-blue-400/40 bg-blue-400/10',
   content: 'text-purple-400 border-purple-400/40 bg-purple-400/10',
   atendimento: 'text-green-400 border-green-400/40 bg-green-400/10',
+  filho: 'text-amber-300 border-amber-300/40 bg-amber-300/10',
   consulente: 'text-[rgba(245,240,232,0.5)] border-[rgba(245,240,232,0.2)] bg-[rgba(255,255,255,0.05)]',
 };
 
