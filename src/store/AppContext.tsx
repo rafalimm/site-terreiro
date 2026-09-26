@@ -174,7 +174,7 @@ interface AppContextType {
   updateUser: (id: string, data: Partial<User>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
 
-  addEvent: (event: Omit<GiraEvent, 'id' | 'createdAt'>) => Promise<void>;
+  addEvent: (event: Omit<GiraEvent, 'id' | 'createdAt'>) => Promise<boolean>;
   updateEvent: (id: string, data: Partial<GiraEvent>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
 
@@ -374,11 +374,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // ---- Agenda / Giras ----
-  const addEvent = async (eventData: Omit<GiraEvent, 'id' | 'createdAt'>) => {
+  const addEvent = async (eventData: Omit<GiraEvent, 'id' | 'createdAt'>): Promise<boolean> => {
     try {
       const created = await api.post<GiraEvent>('/api/admin/events', eventData);
       setEvents(prev => [...prev, created]);
-    } catch (err) { handleError(err); }
+      setLastError(null);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
   };
   const updateEvent = async (id: string, data: Partial<GiraEvent>) => {
     try {
