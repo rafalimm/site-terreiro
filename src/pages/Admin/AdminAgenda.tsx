@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Calendar, X, Check } from 'lucide-react';
 import { useApp, GiraEvent } from '../../store/AppContext';
 import { format } from 'date-fns';
+import { dateOnlyTimestamp, parseDateOnly } from '../../utils/date';
 
 const emptyEvent: Omit<GiraEvent, 'id' | 'createdAt' | 'createdBy'> = {
   title: '',
@@ -49,7 +50,7 @@ export const AdminAgenda: React.FC = () => {
     setShowModal(false);
   };
 
-  const sortedEvents = [...events].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedEvents = [...events].sort((a, b) => dateOnlyTimestamp(b.date) - dateOnlyTimestamp(a.date));
 
   return (
     <div className="space-y-4">
@@ -88,7 +89,7 @@ export const AdminAgenda: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-sm font-inter text-[rgba(245,240,232,0.45)]">
-                    <span>📅 {format(new Date(ev.date), "dd/MM/yyyy")}</span>
+                    <span>📅 {format(parseDateOnly(ev.date), "dd/MM/yyyy")}</span>
                     <span>🕐 {ev.time}</span>
                     <span className="text-[#c9a84c] opacity-70">{ev.type}</span>
                   </div>
