@@ -42,10 +42,15 @@ export const AdminAgenda: React.FC = () => {
 
   const handleSave = () => {
     if (!form.title || !form.date) return;
+
+    // Giras usam uma data de calendário, sem horário/fuso.
+    // Mantemos somente YYYY-MM-DD para impedir deslocamentos de dia.
+    const normalizedForm = { ...form, date: form.date.slice(0, 10) };
+
     if (editing) {
-      updateEvent(editing.id, form);
+      updateEvent(editing.id, normalizedForm);
     } else {
-      addEvent({ ...form, createdBy: currentUser?.id || '1' });
+      addEvent({ ...normalizedForm, createdBy: currentUser?.id || '1' });
     }
     setShowModal(false);
   };
