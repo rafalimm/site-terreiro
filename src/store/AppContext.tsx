@@ -284,8 +284,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     if (!authReady) return;
-    loadPublicData();
-    if (currentUser?.role === 'filho') loadFilhoDevelopmentEvents();
+    (async () => {
+      await loadPublicData();
+      if (currentUser?.role === 'filho') {
+        await loadFilhoDevelopmentEvents();
+      }
+    })();
   }, [authReady, currentUser, loadPublicData, loadFilhoDevelopmentEvents]);
 
   // Tenta retomar a sessão salva (token no localStorage) quando o app carrega
