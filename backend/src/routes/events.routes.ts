@@ -12,8 +12,9 @@ router.get('/', async (_req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  const data = { ...req.body, date: typeof req.body.date === 'string' ? req.body.date.slice(0, 10) : req.body.date };
   const event = await prisma.giraEvent.create({
-    data: { ...req.body, createdBy: req.user!.name, createdAt: new Date().toISOString() },
+    data: { ...data, createdBy: req.user!.name, createdAt: new Date().toISOString() },
   });
   await createLog(req.user!.id, req.user!.name, 'Criou', 'Gira/Evento', `Criou o evento "${event.title}"`);
   res.status(201).json(event);
@@ -22,6 +23,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const data = { ...req.body };
+    if (typeof data.date === 'string') data.date = data.date.slice(0, 10);
     delete data.id;
     delete data.createdAt;
     const event = await prisma.giraEvent.update({ where: { id: req.params.id }, data });
