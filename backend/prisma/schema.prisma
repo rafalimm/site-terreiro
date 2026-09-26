@@ -17,6 +17,7 @@ enum Role {
   agenda
   content
   atendimento
+  filho
   consulente
 }
 
