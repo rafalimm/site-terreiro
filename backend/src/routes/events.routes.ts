@@ -12,12 +12,40 @@ router.get('/', async (_req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const data = { ...req.body, date: typeof req.body.date === 'string' ? req.body.date.slice(0, 10) : req.body.date };
-  const event = await prisma.giraEvent.create({
-    data: { ...data, createdBy: req.user!.name, createdAt: new Date().toISOString() },
-  });
-  await createLog(req.user!.id, req.user!.name, 'Criou', 'Gira/Evento', `Criou o evento "${event.title}"`);
-  res.status(201).json(event);
+  try {
+    const data = {
+      title: String(req.body.title || '').trim(),
+      date: typeof req.body.date === 'string' ? req.body.date.slice(0, 10) : '',
+      time: String(req.body.time || ''),
+      type: String(req.body.type || ''),
+      description: String(req.body.description || ''),
+      orientation: String(req.body.orientation || ''),
+      isPublic: req.body.isPublic !== false,
+      requiresScheduling: req.body.requiresScheduling === true,
+      observations: String(req.body.observations || ''),
+      createdBy: req.user!.name,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!data.title || !data.date) {
+      return res.status(400).json({ error: 'Título e data da gira são obrigatórios.' });
+    }
+
+    const event = await prisma.giraEvent.create({ data });
+
+    // O registro da gira não pode depender do sistema de logs.
+    // Se o log falhar, a gira continua salva no banco e é retornada ao front-end.
+    try {
+      await createLog(req.user!.id, req.user!.name, 'Criou', 'Gira/Evento', `Criou o evento "${event.title}"`);
+    } catch (logError) {
+      console.error('Falha ao registrar log da criação da gira:', logError);
+    }
+
+    return res.status(201).json(event);
+  } catch (error) {
+    console.error('Erro ao salvar gira:', error);
+    return res.status(500).json({ error: 'Não foi possível salvar a gira no banco de dados.' });
+  }
 });
 
 router.patch('/:id', async (req, res) => {
