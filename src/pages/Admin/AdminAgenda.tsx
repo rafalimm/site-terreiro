@@ -4,6 +4,16 @@ import { useApp, GiraEvent } from '../../store/AppContext';
 import { format } from 'date-fns';
 import { dateOnlyTimestamp, parseDateOnly } from '../../utils/date';
 
+const DEVELOPMENT_GIRA_TYPE = 'Gira de Desenvolvimento';
+const GIRA_TYPES = [
+  'Gira de Caboclos',
+  'Gira de Pretos-Velhos',
+  'Gira de Exus e Pombagiras',
+  'Gira de Erês',
+  DEVELOPMENT_GIRA_TYPE,
+  'Outro',
+];
+
 const emptyEvent: Omit<GiraEvent, 'id' | 'createdAt' | 'createdBy'> = {
   title: '',
   date: '',
@@ -45,7 +55,12 @@ export const AdminAgenda: React.FC = () => {
 
     // Giras usam uma data de calendário, sem horário/fuso.
     // Mantemos somente YYYY-MM-DD para impedir deslocamentos de dia.
-    const normalizedForm = { ...form, date: form.date.slice(0, 10) };
+    const normalizedForm = {
+      ...form,
+      date: form.date.slice(0, 10),
+      // Gira de Desenvolvimento nunca fica disponível para consulentes.
+      isPublic: form.type !== DEVELOPMENT_GIRA_TYPE && form.isPublic,
+    };
 
     if (editing) {
       updateEvent(editing.id, normalizedForm);
@@ -156,7 +171,31 @@ export const AdminAgenda: React.FC = () => {
               </div>
               <div>
                 <label className="form-label">Tipo de Gira</label>
-                <input className="form-input" placeholder="Ex: Gira de Caboclos" value={form.type} onChange={e => setForm({...form, type: e.target.value})} />
+                <select
+                  className="form-input"
+                  value={form.type}
+                  onChange={e => {
+                    const type = e.target.value;
+                    setForm({
+                      ...form,
+                      type,
+                      isPublic: type === DEVELOPMENT_GIRA_TYPE ? false : form.isPublic,
+                    });
+                  }}
+                >
+                  {!GIRA_TYPES.includes(form.type) && form.type && (
+                    <option value={form.type}>{form.type}</option>
+                  )}
+                  <option value="">Selecione o tipo de gira</option>
+                  {GIRA_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+                {form.type === DEVELOPMENT_GIRA_TYPE && (
+                  <p className="font-inter text-amber-300/70 text-xs mt-2">
+                    Exclusiva para usuários com o cargo Filho. Consulentes não terão acesso a esta gira.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="form-label">Descrição</label>
@@ -172,8 +211,13 @@ export const AdminAgenda: React.FC = () => {
               </div>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.isPublic} onChange={e => setForm({...form, isPublic: e.target.checked})}
-                    className="w-4 h-4 accent-[#c9a84c]" />
+                  <input
+                    type="checkbox"
+                    checked={form.isPublic}
+                    disabled={form.type === DEVELOPMENT_GIRA_TYPE}
+                    onChange={e => setForm({...form, isPublic: e.target.checked})}
+                    className="w-4 h-4 accent-[#c9a84c] disabled:opacity-40"
+                  />
                   <span className="font-inter text-[rgba(245,240,232,0.7)] text-sm">Aberto ao Público</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
