@@ -51,6 +51,12 @@ router.patch('/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const data: Record<string, unknown> = { ...req.body };
 
+  // O banco pode ter sido criado antes da inclusão do cargo Filho no schema.
+  // Garante que o enum PostgreSQL esteja atualizado antes de persistir a troca de cargo.
+  if (data.role === 'filho') {
+    await prisma.$executeRawUnsafe('ALTER TYPE "Role" ADD VALUE IF NOT EXISTS \'filho\'');
+  }
+
   if (data.email) data.email = String(data.email).toLowerCase();
   if (data.password) {
     data.password = await bcrypt.hash(data.password as string, 10);
