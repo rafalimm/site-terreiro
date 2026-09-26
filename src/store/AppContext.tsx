@@ -257,19 +257,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   // ---- Dados restritos à equipe (usuários, mensagens, logs e agenda administrativa) ----
-  // A agenda administrativa precisa ser carregada pelo endpoint protegido para
-  // também incluir giras privadas, como "Gira de Desenvolvimento". O bundle público
-  // só retorna eventos públicos, então depender apenas dele fazia uma gira salva
-  // desaparecer da tela depois de recarregar a página.
+  // O bundle público só retorna giras públicas. A área administrativa precisa
+  // carregar também as giras privadas para que elas continuem visíveis após
+  // salvar e recarregar a página.
   const refreshAdminData = useCallback(async () => {
     if (!currentUser || currentUser.role === 'consulente') return;
 
-    const requests: [
-      PromiseSettledResult<User[]>,
-      PromiseSettledResult<ContactMessage[]>,
-      PromiseSettledResult<ActivityLog[]>,
-      PromiseSettledResult<GiraEvent[]> | null
-    ] = await Promise.all([
+    const [usersRes, messagesRes, logsRes, eventsRes] = await Promise.allSettled([
       api.get<User[]>('/api/admin/users'),
       api.get<ContactMessage[]>('/api/admin/messages'),
       api.get<ActivityLog[]>('/api/admin/logs'),
@@ -278,11 +272,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         : Promise.resolve(null),
     ]);
 
-    const [usersRes, messagesRes, logsRes, eventsRes] = requests;
     if (usersRes.status === 'fulfilled') setUsers(usersRes.value);
     if (messagesRes.status === 'fulfilled') setContactMessages(messagesRes.value);
     if (logsRes.status === 'fulfilled') setActivityLogs(logsRes.value);
-    if (eventsRes?.status === 'fulfilled') setEvents(eventsRes.value);
+    if (eventsRes.status === 'fulfilled' && eventsRes.value) setEvents(eventsRes.value);
   }, [currentUser]);
 
   // Carrega a agenda pública ou, para Filho, a agenda pública + Giras de Desenvolvimento.
