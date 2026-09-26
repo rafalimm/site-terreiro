@@ -352,6 +352,18 @@
     outline: none;
   }
 
+  select.form-input {
+    color: #f5f0e8;
+    background-color: #1a0a0a;
+    color-scheme: dark;
+  }
+
+  select.form-input option,
+  select.form-input optgroup {
+    color: #f5f0e8;
+    background-color: #1a0a0a;
+  }
+
   .form-input:focus {
     border-color: rgba(201, 168, 76, 0.6);
     background: rgba(255, 255, 255, 0.08);
