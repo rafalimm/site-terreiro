@@ -269,8 +269,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (logsRes.status === 'fulfilled') setActivityLogs(logsRes.value);
   }, [currentUser]);
 
-  // Carrega os dados públicos assim que o site abre (funciona sem login)
-  useEffect(() => { loadPublicData(); }, [loadPublicData]);
+  // Carrega a agenda pública ou, para Filho, a agenda pública + Giras de Desenvolvimento.
+  const loadFilhoDevelopmentEvents = useCallback(async () => {
+    try {
+      const developmentEvents = await api.get<GiraEvent[]>('/api/public/filho/desenvolvimento');
+      setEvents(prev => {
+        const ids = new Set(developmentEvents.map(event => event.id));
+        return [...prev.filter(event => !ids.has(event.id)), ...developmentEvents];
+      });
+    } catch (err) {
+      handleError(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    loadPublicData();
+    if (currentUser?.role === 'filho') loadFilhoDevelopmentEvents();
+  }, [authReady, currentUser, loadPublicData, loadFilhoDevelopmentEvents]);
 
   // Tenta retomar a sessão salva (token no localStorage) quando o app carrega
   useEffect(() => {
