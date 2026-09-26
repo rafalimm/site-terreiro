@@ -136,10 +136,10 @@ const emptySiteConfig: SiteConfig = {
 
 const PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ['*'],
-  admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes'],
-  agenda: ['agenda', 'events'],
-  content: ['news', 'faq', 'gallery', 'institutional'],
-  atendimento: ['messages', 'consulentes'],
+  admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content'],
+  agenda: ['agenda', 'events', 'filho_content'],
+  content: ['news', 'faq', 'gallery', 'institutional', 'filho_content'],
+  atendimento: ['messages', 'consulentes', 'filho_content'],
   filho: ['own_account', 'filho_content'],
   consulente: ['own_account'],
 };
@@ -286,7 +286,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!authReady) return;
     (async () => {
       await loadPublicData();
-      if (currentUser?.role === 'filho') {
+      if (currentUser && hasPermission('filho_content')) {
         await loadFilhoDevelopmentEvents();
       }
     })();
