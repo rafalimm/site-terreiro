@@ -50,7 +50,7 @@ export const AdminAgenda: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title || !form.date) return;
 
     // Giras usam uma data de calendário, sem horário/fuso.
@@ -63,11 +63,15 @@ export const AdminAgenda: React.FC = () => {
     };
 
     if (editing) {
-      updateEvent(editing.id, normalizedForm);
-    } else {
-      addEvent({ ...normalizedForm, createdBy: currentUser?.id || '1' });
+      await updateEvent(editing.id, normalizedForm);
+      setShowModal(false);
+      return;
     }
-    setShowModal(false);
+
+    const saved = await addEvent({ ...normalizedForm, createdBy: currentUser?.id || '1' });
+    // Só fecha o formulário depois que a API confirmar a criação.
+    // Se o backend/banco falhar, os dados preenchidos permanecem no formulário.
+    if (saved) setShowModal(false);
   };
 
   const sortedEvents = [...events].sort((a, b) => dateOnlyTimestamp(b.date) - dateOnlyTimestamp(a.date));
