@@ -9,12 +9,13 @@ const roleLabels: Record<UserRole, string> = {
   agenda: 'Resp. Agenda',
   content: 'Resp. Conteúdo',
   atendimento: 'Atendimento',
+  filho: 'Filho',
   consulente: 'Consulente',
 };
 
 // Cargos de equipe que podem ser atribuídos a um consulente já cadastrado.
 // "super_admin" fica de fora daqui — esse cargo só é atribuído em Usuários & Permissões.
-const promotableRoles: UserRole[] = ['admin', 'agenda', 'content', 'atendimento'];
+const promotableRoles: UserRole[] = ['admin', 'agenda', 'content', 'atendimento', 'filho'];
 
 export const AdminConsulentes: React.FC = () => {
   const { users, updateUser, currentUser } = useApp();
