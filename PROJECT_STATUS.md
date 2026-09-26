@@ -34,4 +34,5 @@ ChatGPT e Claude devem tratar este arquivo como um resumo operacional compartilh
 6. Manter documentação mínima para continuidade entre ChatGPT e Claude.
 
 ## Histórico de tarefas
+- 2026-09-26: corrigido o deslocamento de datas da Agenda/Giras causado por `new Date('YYYY-MM-DD')` interpretar a data como UTC. Criado `src/utils/date.ts` para tratar datas de gira como datas civis locais; atualizado calendário público e painel administrativo. O build local não pôde ser executado neste ambiente porque o acesso de rede ao GitHub está indisponível; a validação final deve ser feita com `npm run build` no ambiente do projeto.
 - 2026-09-26: configurado protocolo de colaboração entre ChatGPT e Claude através do GitHub; adicionados CLAUDE.md e PROJECT_STATUS.md.
