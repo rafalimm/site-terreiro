@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, Phone, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { useApp } from '../store/AppContext';
-import { format, isFuture, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { dateOnlyTimestamp, isDateOnlyPast, parseDateOnly } from '../utils/date';
 
 const EventCard: React.FC<{ event: any; whatsapp: string }> = ({ event, whatsapp }) => {
   const [expanded, setExpanded] = useState(false);
-  const eventDate = new Date(event.date);
-  const isUpcoming = isFuture(eventDate) || format(eventDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+  const eventDate = parseDateOnly(event.date);
+  const isUpcoming = !isDateOnlyPast(event.date);
 
   const openWhatsApp = () => {
     window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent('Olá! Gostaria de saber mais informações sobre a próxima gira.')}`, '_blank');
   };
 
   return (
-    <div className={`card-spiritual overflow-hidden transition-all ${isPast(eventDate) ? 'opacity-60' : ''}`}>
+    <div className={`card-spiritual overflow-hidden transition-all ${isDateOnlyPast(event.date) ? 'opacity-60' : ''}`}>
       {/* Color strip */}
       <div className={`h-1 ${isUpcoming ? 'bg-gradient-to-r from-[#8b1a1a] via-[#c9a84c] to-[#8b1a1a]' : 'bg-[rgba(201,168,76,0.2)]'}`} />
 
@@ -114,13 +115,13 @@ export const Agenda: React.FC = () => {
 
   const filteredEvents = events
     .filter(e => {
-      if (filter === 'upcoming') return !isPast(new Date(e.date)) || format(new Date(e.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-      if (filter === 'past') return isPast(new Date(e.date));
+      if (filter === 'upcoming') return !isDateOnlyPast(e.date);
+      if (filter === 'past') return isDateOnlyPast(e.date);
       return true;
     })
     .sort((a, b) => {
-      if (filter === 'past') return new Date(b.date).getTime() - new Date(a.date).getTime();
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (filter === 'past') return dateOnlyTimestamp(b.date) - dateOnlyTimestamp(a.date);
+      return dateOnlyTimestamp(a.date) - dateOnlyTimestamp(b.date);
     });
 
   return (
