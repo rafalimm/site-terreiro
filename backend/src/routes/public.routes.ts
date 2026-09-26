@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
+import { authenticate, authorize } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,6 +17,15 @@ router.get('/bundle', async (_req, res) => {
     prisma.siteConfig.findUnique({ where: { id: 1 } }),
   ]);
   res.json({ events, faqItems, newsItems, galleryItems, services, entities, siteConfig });
+});
+
+// Giras de Desenvolvimento são exclusivas para usuários com cargo Filho.
+router.get('/filho/desenvolvimento', authenticate, authorize('filho_content'), async (_req, res) => {
+  const events = await prisma.giraEvent.findMany({
+    where: { type: 'Gira de Desenvolvimento' },
+    orderBy: { date: 'asc' },
+  });
+  res.json(events);
 });
 
 // POST /api/public/contact — formulário de contato do site, sem necessidade de login
