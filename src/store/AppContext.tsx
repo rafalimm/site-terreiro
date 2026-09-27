@@ -307,6 +307,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
+  // ---- Confirmação de presença nas giras ----
+  const loadMyConfirmations = useCallback(async () => {
+    if (!currentUser) {
+      setConfirmedEventIds([]);
+      return;
+    }
+    try {
+      const ids = await api.get<string[]>('/api/events/confirmations/mine');
+      setConfirmedEventIds(ids);
+    } catch (err) {
+      handleError(err);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (!authReady) return;
     (async () => {
@@ -398,20 +412,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setUsers(prev => prev.filter(u => u.id !== id));
     } catch (err) { handleError(err); }
   };
-
-  // ---- Confirmação de presença nas giras ----
-  const loadMyConfirmations = useCallback(async () => {
-    if (!currentUser) {
-      setConfirmedEventIds([]);
-      return;
-    }
-    try {
-      const ids = await api.get<string[]>('/api/events/confirmations/mine');
-      setConfirmedEventIds(ids);
-    } catch (err) {
-      handleError(err);
-    }
-  }, [currentUser]);
 
   const confirmEvent = async (eventId: string): Promise<boolean> => {
     try {
