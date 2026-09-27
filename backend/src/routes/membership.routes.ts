@@ -115,7 +115,7 @@ router.post('/membership/me/asaas-payment', authorize('membership'), async (req,
 
 router.get('/admin/asaas/status',authorize('membership'),async(_req,res)=>{
   const config=await prisma.paymentConfig.findUnique({where:{id:1}});
-  res.json({configured:asaasConfigured(),enabled:Boolean(config?.asaasEnabled&&asaasConfigured()),environment:config?.asaasEnvironment||asaasEnvironment(),webhookConfigured:Boolean(config?.asaasWebhookId),backendPublicUrl:process.env.BACKEND_PUBLIC_URL||null});
+  res.json({configured:asaasConfigured(),enabled:Boolean(config?.asaasEnabled&&asaasConfigured()),environment:asaasEnvironment(),webhookConfigured:Boolean(config?.asaasWebhookId),backendPublicUrl:process.env.BACKEND_PUBLIC_URL||null});
 });
 router.post('/admin/asaas/test',authorize('membership'),async(_req,res)=>{
   if(!asaasConfigured()) return res.status(400).json({error:'ASAAS_API_KEY não está configurada no Railway.'});
