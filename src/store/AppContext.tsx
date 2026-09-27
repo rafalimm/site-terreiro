@@ -242,6 +242,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         events: GiraEvent[]; faqItems: FAQItem[]; newsItems: NewsItem[];
         galleryItems: GalleryItem[]; services: ServiceInfo[]; entities: Entity[]; siteConfig: SiteConfig | null;
       }>('/api/public/bundle', false);
+
+      // Primeiro carregamos somente o conteúdo público.
       setEvents(bundle.events);
       setFaqItems(bundle.faqItems);
       setNewsItems(bundle.newsItems);
@@ -249,12 +251,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setServices(bundle.services);
       setEntities(bundle.entities);
       if (bundle.siteConfig) setSiteConfig(bundle.siteConfig);
+
+      // Usuários com acesso administrativo à agenda precisam receber também
+      // as giras privadas. Sem esta segunda leitura, uma resposta do bundle
+      // público poderia sobrescrever a lista e fazer uma gira privada recém-criada
+      // desaparecer da tela, mesmo estando salva no banco.
+      if (currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'admin' || currentUser.role === 'agenda')) {
+        const adminEvents = await api.get<GiraEvent[]>('/api/admin/events');
+        setEvents(adminEvents);
+      }
     } catch (err) {
       handleError(err);
     } finally {
       setLoadingPublicData(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // ---- Dados restritos à equipe (usuários, mensagens, logs e agenda administrativa) ----
   // O bundle público só retorna giras públicas. A área administrativa precisa
