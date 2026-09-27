@@ -31,6 +31,8 @@ model User {
   active    Boolean  @default(true)
   createdAt String // mantido como string ISO para bater com o front-end existente
 
+  confirmations EventConfirmation[]
+
   @@map("users")
 }
 
@@ -47,8 +49,23 @@ model GiraEvent {
   observations       String   @db.Text
   createdBy          String
   createdAt          String
+  confirmations      EventConfirmation[]
 
   @@map("events")
+}
+
+model EventConfirmation {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  createdAt String
+  event     GiraEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_confirmations")
 }
 
 model FAQItem {
