@@ -17,6 +17,7 @@ export interface User {
   whatsapp?: string;
   createdAt: string;
   active: boolean;
+  cpfCnpj?: string | null;
 }
 
 export interface GiraEvent {
