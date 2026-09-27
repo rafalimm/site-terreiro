@@ -32,7 +32,7 @@ function statusFor(payment: { status: string; dueDate: string; paidAt: string | 
 async function ensureCurrentPayment(userId: string) {
   const membership = await prisma.membership.findUnique({
     where: { userId },
-    include: { user: { select: { id: true, name: true, email: true, role: true } } },
+    include: { user: { select: { id: true, name: true, email: true, role: true, cpfCnpj: true } } },
   });
   if (!membership || !membership.active) return null;
 
@@ -98,7 +98,7 @@ router.post('/membership/me/asaas-payment', authorize('membership'), async (req,
   if(data.currentPayment.status==='paid') return res.status(400).json({error:'A mensalidade deste mês já está paga.'});
   const config=await prisma.paymentConfig.findUnique({where:{id:1}});
   if(!config?.asaasEnabled||!asaasConfigured()) return res.status(400).json({error:'A integração com o Asaas ainda não está ativada pela administração.'});
-  const cpfCnpj=String(req.body?.cpfCnpj||req.user!.cpfCnpj||'').replace(/\D/g,'');
+  const cpfCnpj=String(req.body?.cpfCnpj||data.membership.user.cpfCnpj||'').replace(/\D/g,'');
   if(![11,14].includes(cpfCnpj.length)) return res.status(400).json({error:'Informe um CPF ou CNPJ válido para gerar o pagamento Asaas.'});
   const user=await prisma.user.update({where:{id:req.user!.id},data:{cpfCnpj}});
   const customerId=await ensureAsaasCustomer(user,data.membership.asaasCustomerId);
@@ -123,7 +123,7 @@ router.post('/admin/asaas/test',authorize('membership'),async(_req,res)=>{
   catch(error){res.status(400).json({error:error instanceof Error?error.message:'Falha ao conectar ao Asaas.'});}
 });
 router.put('/admin/asaas/config',authorize('membership'),async(req,res)=>{
-  const environment=String(req.body?.environment||'sandbox')==='production'?'production':'sandbox';
+  const environment=asaasEnvironment();
   const enabled=req.body?.enabled===true;
   if(enabled&&!asaasConfigured()) return res.status(400).json({error:'Configure ASAAS_API_KEY no Railway antes de ativar.'});
   const config=await prisma.paymentConfig.upsert({where:{id:1},create:{id:1,enabled:false,method:'pix',receiverName:'Centro de Umbanda Zé do Laço',city:'São Paulo',asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()},update:{asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()}});
