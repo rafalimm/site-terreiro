@@ -1,12 +1,31 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User, Calendar, Newspaper, Phone, Star } from 'lucide-react';
+import { User, Calendar, Newspaper, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle } from 'lucide-react';
 import { useApp } from '../store/AppContext';
+import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const MinhaConta: React.FC = () => {
   const { currentUser, events, newsItems, siteConfig, authReady } = useApp();
+  const [membership, setMembership] = React.useState<{
+    membership: { id: string; monthlyAmountCents: number; dueDay: number; active: boolean };
+    currentPayment: { referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
+    payments: Array<{ id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null }>;
+  } | null>(null);
+  const [membershipLoading, setMembershipLoading] = React.useState(false);
+  const [paymentRequested, setPaymentRequested] = React.useState(false);
+
+  const canUseMembership = currentUser && currentUser.role !== 'consulente';
+
+  React.useEffect(() => {
+    if (!canUseMembership) return;
+    setMembershipLoading(true);
+    api.get<typeof membership>('/api/membership/me')
+      .then(setMembership)
+      .catch(() => setMembership(null))
+      .finally(() => setMembershipLoading(false));
+  }, [currentUser?.role]);
 
   if (!authReady) {
     return (
@@ -63,6 +82,75 @@ export const MinhaConta: React.FC = () => {
             )}
           </div>
         </div>
+
+        {canUseMembership && (
+          <div className="card-spiritual p-6 mb-6 border border-[rgba(201,168,76,0.2)]">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <h3 className="font-cinzel font-bold text-[#c9a84c] text-base flex items-center gap-2">
+                  <CreditCard size={16} /> Minha Mensalidade
+                </h3>
+                <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">Acompanhe seus pagamentos e vencimentos.</p>
+              </div>
+              {membership?.currentPayment && (
+                <span className={`px-2.5 py-1 rounded border text-xs ${membership.currentPayment.status === 'paid' ? 'text-green-400 border-green-500/30 bg-green-500/10' : membership.currentPayment.status === 'overdue' ? 'text-red-400 border-red-500/30 bg-red-500/10' : 'text-yellow-300 border-yellow-500/30 bg-yellow-500/10'}`}>
+                  {membership.currentPayment.status === 'paid' ? 'Pago' : membership.currentPayment.status === 'overdue' ? 'Atrasado' : 'Pendente'}
+                </span>
+              )}
+            </div>
+            {membershipLoading ? (
+              <p className="font-inter text-sm text-[rgba(245,240,232,0.45)]">Carregando mensalidade...</p>
+            ) : !membership ? (
+              <p className="font-crimson text-[rgba(245,240,232,0.45)] text-sm italic">Sua mensalidade ainda não foi configurada pela administração.</p>
+            ) : (
+              <>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]">
+                    <p className="text-xs text-[rgba(245,240,232,0.4)]">Valor</p>
+                    <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{(membership.currentPayment.amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                  </div>
+                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]">
+                    <p className="text-xs text-[rgba(245,240,232,0.4)]">Vencimento</p>
+                    <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{new Date(membership.currentPayment.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]">
+                    <p className="text-xs text-[rgba(245,240,232,0.4)]">Referência</p>
+                    <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{membership.currentPayment.referenceMonth}</p>
+                  </div>
+                </div>
+                {membership.currentPayment.status !== 'paid' && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.post('/api/membership/me/payment-request', {});
+                        setPaymentRequested(true);
+                      } catch { setPaymentRequested(false); }
+                    }}
+                    className="btn-gold text-xs mt-4"
+                  >
+                    Solicitar instruções de pagamento
+                  </button>
+                )}
+                {paymentRequested && <p className="text-green-400 text-xs mt-2">Solicitação registrada. A administração poderá enviar as instruções de pagamento.</p>}
+                <div className="mt-5 pt-4 border-t border-[rgba(201,168,76,0.08)]">
+                  <p className="font-cinzel text-[#c9a84c] text-sm mb-3">Histórico</p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {membership.payments.map(payment => (
+                      <div key={payment.id} className="flex items-center justify-between gap-3 p-2 rounded border border-[rgba(201,168,76,0.06)]">
+                        <span className="text-xs text-[rgba(245,240,232,0.65)]">{payment.referenceMonth}</span>
+                        <span className="text-xs text-[rgba(245,240,232,0.5)]">{(payment.amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        <span className="text-xs flex items-center gap-1">
+                          {payment.status === 'paid' ? <CheckCircle2 size={13} className="text-green-400" /> : payment.status === 'overdue' ? <AlertCircle size={13} className="text-red-400" /> : <Clock3 size={13} className="text-yellow-300" />}
+                          {payment.status === 'paid' ? 'Pago' : payment.status === 'overdue' ? 'Atrasado' : 'Pendente'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Upcoming Events */}
