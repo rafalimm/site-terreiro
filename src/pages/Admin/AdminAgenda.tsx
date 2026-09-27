@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Calendar, X, Check } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, Edit2, Trash2, Calendar, X, Check, Users } from 'lucide-react';
 import { useApp, GiraEvent } from '../../store/AppContext';
 import { format } from 'date-fns';
 import { dateOnlyTimestamp, parseDateOnly } from '../../utils/date';
+import { api } from '../../lib/api';
 
 const DEVELOPMENT_GIRA_TYPE = 'Gira de Desenvolvimento';
 const GIRA_TYPES = [
@@ -32,6 +33,23 @@ export const AdminAgenda: React.FC = () => {
   const [editing, setEditing] = useState<GiraEvent | null>(null);
   const [form, setForm] = useState(emptyEvent);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [confirmationCounts, setConfirmationCounts] = useState<Record<string, { count: number; users: Array<{ id: string; name: string; role: string }> }>>({});
+
+  useEffect(() => {
+    let active = true;
+
+    const loadConfirmationCounts = async () => {
+      try {
+        const summary = await api.get<Record<string, { count: number; users: Array<{ id: string; name: string; role: string }> }>>('/api/events/confirmations/summary');
+        if (active) setConfirmationCounts(summary);
+      } catch (err) {
+        console.error('Não foi possível carregar as confirmações das giras:', err);
+      }
+    };
+
+    if (events.length > 0) loadConfirmationCounts();
+    return () => { active = false; };
+  }, [events]);
 
   const openCreate = () => {
     setEditing(null);
@@ -120,6 +138,12 @@ export const AdminAgenda: React.FC = () => {
                   {ev.description && (
                     <p className="font-crimson text-[rgba(245,240,232,0.45)] text-sm mt-1 line-clamp-1">{ev.description}</p>
                   )}
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[rgba(201,168,76,0.18)] bg-[rgba(201,168,76,0.04)] text-[#c9a84c] text-xs font-inter">
+                      <Users size={13} />
+                      {confirmationCounts[ev.id]?.count ?? 0} confirmado(s)
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button onClick={() => openEdit(ev)} className="p-2 text-[rgba(245,240,232,0.4)] hover:text-[#c9a84c] border border-[rgba(201,168,76,0.1)] hover:border-[rgba(201,168,76,0.4)] rounded transition-all">
