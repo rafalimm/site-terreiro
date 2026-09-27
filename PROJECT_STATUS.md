@@ -34,6 +34,15 @@ ChatGPT e Claude devem tratar este arquivo como um resumo operacional compartilh
 - A estrutura foi preparada para futura integração com PIX/gateway; nenhum dado de pagamento foi inventado.
 - Build/produção ainda precisam ser validados no ambiente de deploy após a publicação das alterações.
 
+## Última implementação — Recebimento das mensalidades
+- 2026-09-27: adicionada configuração administrativa de recebimento em Administração → Mensalidades.
+- O administrador pode cadastrar forma de recebimento, nome do recebedor, cidade, chave PIX, tipo de chave, banco/titular, dados bancários e instruções.
+- Os dados ficam persistidos no PostgreSQL em `payment_config` e só são expostos a usuários com acesso à mensalidade.
+- Em Minha Conta, membros Filho ou superiores podem copiar a chave PIX e gerar um código PIX "copia e cola" com o valor exato da mensalidade.
+- Não existe integração automática com banco/gateway nesta etapa: o pagamento ainda precisa ser conferido/confirmado pela administração.
+- Criada migração `20260927170000_add_payment_config` e utilitário `src/utils/pix.ts` para geração do payload PIX com CRC.
+- Build/produção ainda precisam ser validados no ambiente de deploy.
+
 ## Próximas prioridades
 1. Garantir build limpo.
 2. Corrigir erros TypeScript restantes sem remover funcionalidades.
