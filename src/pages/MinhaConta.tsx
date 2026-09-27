@@ -12,7 +12,7 @@ export const MinhaConta: React.FC = () => {
   const { currentUser, events, newsItems, siteConfig, authReady } = useApp();
   const [membership, setMembership] = React.useState<{
     membership: { id: string; monthlyAmountCents: number; dueDay: number; active: boolean };
-    currentPayment: { referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
+    currentPayment: { id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
     payments: Array<{ id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null }>;
     paymentConfig: PixPaymentConfig | null;
   } | null>(null);
