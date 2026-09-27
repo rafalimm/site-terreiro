@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { createLog } from '../utils/log';
+import { asaasConfigured, asaasEnvironment, asaasRequest, ensureAsaasCustomer, createPixCharge, getPixQrCode, createAsaasWebhook } from '../services/asaas';
 
 const router = Router();
 router.use(authenticate);
@@ -84,7 +85,61 @@ router.get('/membership/me', authorize('membership'), async (req, res) => {
       bankDetails: paymentConfig.bankDetails,
       instructions: paymentConfig.instructions,
     } : null,
+    asaas: paymentConfig?.asaasEnabled && asaasConfigured() ? {
+      enabled: true,
+      environment: paymentConfig.asaasEnvironment,
+    } : null,
   });
+});
+
+router.post('/membership/me/asaas-payment', authorize('membership'), async (req,res)=>{
+  const data=await ensureCurrentPayment(req.user!.id);
+  if(!data) return res.status(404).json({error:'Mensalidade não configurada para sua conta.'});
+  if(data.currentPayment.status==='paid') return res.status(400).json({error:'A mensalidade deste mês já está paga.'});
+  const config=await prisma.paymentConfig.findUnique({where:{id:1}});
+  if(!config?.asaasEnabled||!asaasConfigured()) return res.status(400).json({error:'A integração com o Asaas ainda não está ativada pela administração.'});
+  const cpfCnpj=String(req.body?.cpfCnpj||req.user!.cpfCnpj||'').replace(/\D/g,'');
+  if(![11,14].includes(cpfCnpj.length)) return res.status(400).json({error:'Informe um CPF ou CNPJ válido para gerar o pagamento Asaas.'});
+  const user=await prisma.user.update({where:{id:req.user!.id},data:{cpfCnpj}});
+  const customerId=await ensureAsaasCustomer(user,data.membership.asaasCustomerId);
+  if(customerId!==data.membership.asaasCustomerId) await prisma.membership.update({where:{id:data.membership.id},data:{asaasCustomerId:customerId,updatedAt:new Date().toISOString()}});
+  let asaasPaymentId=data.currentPayment.transactionId;
+  if(!asaasPaymentId||data.currentPayment.method!=='asaas_pix'){
+    const created=await createPixCharge(customerId,data.currentPayment.amountCents,data.currentPayment.dueDate,data.currentPayment.id);
+    asaasPaymentId=created.id;
+    await prisma.membershipPayment.update({where:{id:data.currentPayment.id},data:{transactionId:created.id,method:'asaas_pix',updatedAt:new Date().toISOString()}});
+  }
+  const qr=await getPixQrCode(asaasPaymentId);
+  res.json({paymentId:asaasPaymentId,encodedImage:qr.encodedImage,payload:qr.payload,expirationDate:qr.expirationDate});
+});
+
+router.get('/admin/asaas/status',authorize('membership'),async(_req,res)=>{
+  const config=await prisma.paymentConfig.findUnique({where:{id:1}});
+  res.json({configured:asaasConfigured(),enabled:Boolean(config?.asaasEnabled&&asaasConfigured()),environment:config?.asaasEnvironment||asaasEnvironment(),webhookConfigured:Boolean(config?.asaasWebhookId),backendPublicUrl:process.env.BACKEND_PUBLIC_URL||null});
+});
+router.post('/admin/asaas/test',authorize('membership'),async(_req,res)=>{
+  if(!asaasConfigured()) return res.status(400).json({error:'ASAAS_API_KEY não está configurada no Railway.'});
+  try{await asaasRequest('/customers?limit=1');res.json({ok:true,message:'Conexão com o Asaas validada.'});}
+  catch(error){res.status(400).json({error:error instanceof Error?error.message:'Falha ao conectar ao Asaas.'});}
+});
+router.put('/admin/asaas/config',authorize('membership'),async(req,res)=>{
+  const environment=String(req.body?.environment||'sandbox')==='production'?'production':'sandbox';
+  const enabled=req.body?.enabled===true;
+  if(enabled&&!asaasConfigured()) return res.status(400).json({error:'Configure ASAAS_API_KEY no Railway antes de ativar.'});
+  const config=await prisma.paymentConfig.upsert({where:{id:1},create:{id:1,enabled:false,method:'pix',receiverName:'Centro de Umbanda Zé do Laço',city:'São Paulo',asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()},update:{asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()}});
+  await createLog(req.user!.id,req.user!.name,'Configurou','Asaas',`Integração Asaas ${enabled?'ativada':'desativada'} (${environment})`);
+  res.json({enabled:config.asaasEnabled,environment:config.asaasEnvironment});
+});
+router.post('/admin/asaas/webhook',authorize('membership'),async(req,res)=>{
+  const config=await prisma.paymentConfig.findUnique({where:{id:1}});
+  if(!config?.asaasEnabled||!asaasConfigured()) return res.status(400).json({error:'Ative e configure o Asaas antes de criar o webhook.'});
+  const publicUrl=String(process.env.BACKEND_PUBLIC_URL||'').replace(/\/$/,'');
+  if(!publicUrl) return res.status(400).json({error:'Configure BACKEND_PUBLIC_URL no Railway.'});
+  const email=String(process.env.ASAAS_WEBHOOK_EMAIL||'');
+  if(!email) return res.status(400).json({error:'Configure ASAAS_WEBHOOK_EMAIL no Railway.'});
+  const webhook=await createAsaasWebhook(`${publicUrl}/api/webhooks/asaas`,email);
+  await prisma.paymentConfig.update({where:{id:1},data:{asaasWebhookId:webhook.id,updatedAt:new Date().toISOString()}});
+  res.json({id:webhook.id,url:webhook.url});
 });
 
 router.post('/membership/me/payment-request', authorize('membership'), async (req, res) => {
