@@ -1,7 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, CreditCard, Edit2, Users, X } from 'lucide-react';
+import { Check, CreditCard, Edit2, Users, X, Copy, Save } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useApp } from '../../store/AppContext';
+
+type PaymentConfig = {
+  id?: number;
+  enabled: boolean;
+  method: string;
+  receiverName: string;
+  city: string;
+  pixKeyType?: string | null;
+  pixKey?: string | null;
+  bankName?: string | null;
+  accountHolder?: string | null;
+  bankDetails?: string | null;
+  instructions?: string | null;
+};
 
 type MembershipRow = {
   id: string | null;
@@ -34,12 +48,42 @@ export const AdminMensalidades: React.FC = () => {
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState<MembershipRow | null>(null);
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
+    enabled: false,
+    method: 'pix',
+    receiverName: '',
+    city: '',
+    pixKeyType: 'random',
+    pixKey: '',
+    bankName: '',
+    accountHolder: '',
+    bankDetails: '',
+    instructions: '',
+  });
+  const [paymentConfigOpen, setPaymentConfigOpen] = useState(false);
+  const [configSaving, setConfigSaving] = useState(false);
+  const [configSaved, setConfigSaved] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await api.get<MembershipRow[]>('/api/admin/memberships');
+      const [data, config] = await Promise.all([
+        api.get<MembershipRow[]>('/api/admin/memberships'),
+        api.get<PaymentConfig | null>('/api/admin/payment-config'),
+      ]);
       setRows(data);
+      if (config) setPaymentConfig({
+        enabled: config.enabled,
+        method: config.method || 'pix',
+        receiverName: config.receiverName || '',
+        city: config.city || '',
+        pixKeyType: config.pixKeyType || 'random',
+        pixKey: config.pixKey || '',
+        bankName: config.bankName || '',
+        accountHolder: config.accountHolder || '',
+        bankDetails: config.bankDetails || '',
+        instructions: config.instructions || '',
+      });
     } finally {
       setLoading(false);
     }
@@ -83,6 +127,18 @@ export const AdminMensalidades: React.FC = () => {
     }
   };
 
+  const savePaymentConfig = async () => {
+    setConfigSaving(true);
+    setConfigSaved(false);
+    try {
+      const saved = await api.put<PaymentConfig>('/api/admin/payment-config', paymentConfig);
+      setPaymentConfig(saved);
+      setConfigSaved(true);
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+
   const registerPayment = async () => {
     if (!paymentTarget?.id) return;
     setSaving(true);
@@ -119,6 +175,104 @@ export const AdminMensalidades: React.FC = () => {
             <p className="font-cinzel font-bold text-[#c9a84c] text-lg mt-1">{value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-cinzel font-bold text-[#f5f0e8]">Conta / PIX para recebimento</h3>
+            <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">
+              Configure aqui os dados que aparecerão para os membros na hora de pagar.
+            </p>
+          </div>
+          <button onClick={() => setPaymentConfigOpen(prev => !prev)} className="btn-outline-gold text-xs">
+            {paymentConfigOpen ? 'Fechar' : 'Configurar'}
+          </button>
+        </div>
+        {!paymentConfigOpen ? (
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+            <span className={`px-2 py-1 rounded border ${paymentConfig.enabled ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-yellow-300 border-yellow-500/30 bg-yellow-500/10'}`}>
+              {paymentConfig.enabled ? 'Recebimento ativo' : 'Não publicado para os membros'}
+            </span>
+            <span className="text-[rgba(245,240,232,0.5)]">
+              {paymentConfig.pixKey ? `PIX: ${paymentConfig.pixKey}` : 'Chave PIX não configurada'}
+            </span>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-4">
+            <label className="flex items-center gap-2 text-sm text-[rgba(245,240,232,0.75)]">
+              <input type="checkbox" checked={paymentConfig.enabled} onChange={e => setPaymentConfig(prev => ({ ...prev, enabled: e.target.checked }))} className="accent-[#c9a84c]" />
+              Mostrar os dados de pagamento para os membros
+            </label>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Forma de pagamento</label>
+                <select className="form-input" value={paymentConfig.method} onChange={e => setPaymentConfig(prev => ({ ...prev, method: e.target.value }))}>
+                  <option value="pix">PIX</option>
+                  <option value="bank_transfer">Transferência bancária</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Tipo de chave PIX</label>
+                <select className="form-input" value={paymentConfig.pixKeyType || 'random'} onChange={e => setPaymentConfig(prev => ({ ...prev, pixKeyType: e.target.value }))}>
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="email">E-mail</option>
+                  <option value="phone">Telefone</option>
+                  <option value="random">Chave aleatória</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Nome do recebedor</label>
+                <input className="form-input" maxLength={25} value={paymentConfig.receiverName} onChange={e => setPaymentConfig(prev => ({ ...prev, receiverName: e.target.value }))} placeholder="Centro de Umbanda Ze do Laco" />
+              </div>
+              <div>
+                <label className="form-label">Cidade</label>
+                <input className="form-input" maxLength={15} value={paymentConfig.city} onChange={e => setPaymentConfig(prev => ({ ...prev, city: e.target.value }))} placeholder="SAO PAULO" />
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label">Chave PIX</label>
+              <input className="form-input" value={paymentConfig.pixKey || ''} onChange={e => setPaymentConfig(prev => ({ ...prev, pixKey: e.target.value }))} placeholder="Digite a chave PIX de recebimento" />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Banco / instituição (opcional)</label>
+                <input className="form-input" value={paymentConfig.bankName || ''} onChange={e => setPaymentConfig(prev => ({ ...prev, bankName: e.target.value }))} placeholder="Nome do banco" />
+              </div>
+              <div>
+                <label className="form-label">Titular da conta (opcional)</label>
+                <input className="form-input" value={paymentConfig.accountHolder || ''} onChange={e => setPaymentConfig(prev => ({ ...prev, accountHolder: e.target.value }))} placeholder="Nome do titular" />
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label">Dados bancários / instruções</label>
+              <textarea className="form-input min-h-20" value={paymentConfig.bankDetails || ''} onChange={e => setPaymentConfig(prev => ({ ...prev, bankDetails: e.target.value }))} placeholder="Agência, conta ou outras instruções..." />
+            </div>
+
+            <div>
+              <label className="form-label">Mensagem para quem vai pagar</label>
+              <textarea className="form-input min-h-20" value={paymentConfig.instructions || ''} onChange={e => setPaymentConfig(prev => ({ ...prev, instructions: e.target.value }))} placeholder="Ex.: Após realizar o PIX, aguarde a confirmação da administração." />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button onClick={savePaymentConfig} disabled={configSaving} className="btn-gold text-xs">
+                <Save size={14} /> {configSaving ? 'Salvando...' : 'Salvar dados de recebimento'}
+              </button>
+              {configSaved && <span className="text-green-400 text-xs">Dados salvos.</span>}
+            </div>
+            <p className="text-[rgba(245,240,232,0.35)] text-[11px]">
+              O sistema não processa o PIX automaticamente nesta etapa. O código PIX é gerado para o valor da mensalidade e o pagamento continua sendo confirmado pela administração.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
