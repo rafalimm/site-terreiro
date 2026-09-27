@@ -23,7 +23,7 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   auth?: boolean; // default true — envia o token salvo, se existir
 }
@@ -65,5 +65,6 @@ export const api = {
   get: <T>(path: string, auth = true) => apiRequest<T>(path, { method: 'GET', auth }),
   post: <T>(path: string, body?: unknown, auth = true) => apiRequest<T>(path, { method: 'POST', body, auth }),
   patch: <T>(path: string, body?: unknown, auth = true) => apiRequest<T>(path, { method: 'PATCH', body, auth }),
+  put: <T>(path: string, body?: unknown, auth = true) => apiRequest<T>(path, { method: 'PUT', body, auth }),
   delete: <T>(path: string, auth = true) => apiRequest<T>(path, { method: 'DELETE', auth }),
 };
