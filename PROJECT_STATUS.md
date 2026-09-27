@@ -25,6 +25,15 @@ ChatGPT e Claude devem tratar este arquivo como um resumo operacional compartilh
 - Erros restantes
 - Próximo passo recomendado
 
+## Última implementação — Mensalidades
+- 2026-09-27: implementado sistema inicial de mensalidades para cargos Filho e superiores.
+- Usuários com cargo Consulente não recebem acesso à mensalidade.
+- Minha Conta agora mostra valor, vencimento, referência, status e histórico; também permite solicitar instruções de pagamento.
+- Painel administrativo ganhou a seção Mensalidades para configurar valor/dia, ativar/desativar cobrança, acompanhar pagos/pendentes/atrasados e registrar pagamento manual.
+- Backend recebeu modelos Prisma, migração PostgreSQL e API protegida por permissão.
+- A estrutura foi preparada para futura integração com PIX/gateway; nenhum dado de pagamento foi inventado.
+- Build/produção ainda precisam ser validados no ambiente de deploy após a publicação das alterações.
+
 ## Próximas prioridades
 1. Garantir build limpo.
 2. Corrigir erros TypeScript restantes sem remover funcionalidades.
