@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, CreditCard, Edit2, Users, X, Save } from 'lucide-react';
+import { Check, CreditCard, Edit2, Users, X, Save, PlugZap, TestTube2, Webhook } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useApp } from '../../store/AppContext';
 
@@ -16,6 +16,8 @@ type PaymentConfig = {
   bankDetails?: string | null;
   instructions?: string | null;
 };
+
+type AsaasStatus = { configured:boolean; enabled:boolean; environment:string; webhookConfigured:boolean; backendPublicUrl?:string|null; };
 
 type MembershipRow = {
   id: string | null;
@@ -63,15 +65,21 @@ export const AdminMensalidades: React.FC = () => {
   const [paymentConfigOpen, setPaymentConfigOpen] = useState(false);
   const [configSaving, setConfigSaving] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
+  const [asaas,setAsaas]=useState<AsaasStatus|null>(null);
+  const [asaasTesting,setAsaasTesting]=useState(false);
+  const [asaasSaving,setAsaasSaving]=useState(false);
+  const [asaasMessage,setAsaasMessage]=useState('');
 
   const load = async () => {
     setLoading(true);
     try {
-      const [data, config] = await Promise.all([
+      const [data, config, asaasStatus] = await Promise.all([
         api.get<MembershipRow[]>('/api/admin/memberships'),
         api.get<PaymentConfig | null>('/api/admin/payment-config'),
+        api.get<AsaasStatus>('/api/admin/asaas/status'),
       ]);
       setRows(data);
+      setAsaas(asaasStatus);
       if (config) setPaymentConfig({
         enabled: config.enabled,
         method: config.method || 'pix',
@@ -161,6 +169,17 @@ export const AdminMensalidades: React.FC = () => {
       </div>
 
       {lastError && <div className="p-3 rounded border border-red-500/30 bg-red-500/10 text-red-300 text-sm">{lastError}</div>}
+
+      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-5">
+        <div className="flex items-center justify-between gap-4"><div><h3 className="font-cinzel font-bold text-[#f5f0e8] flex items-center gap-2"><PlugZap size={17}/> Integração Asaas</h3><p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">PIX dinâmico com confirmação automática.</p></div><span className={`px-2 py-1 rounded border text-xs ${asaas?.enabled?'text-green-400 border-green-500/30 bg-green-500/10':'text-yellow-300 border-yellow-500/30 bg-yellow-500/10'}`}>{asaas?.enabled?'Ativo':'Desativado'}</span></div>
+        <div className="mt-4 grid md:grid-cols-3 gap-3"><div><label className="form-label">Ambiente</label><select className="form-input" value={asaas?.environment||'sandbox'} onChange={async e=>{const environment=e.target.value;try{const r=await api.put<{enabled:boolean;environment:string}>('/api/admin/asaas/config',{enabled:asaas?.enabled===true,environment});setAsaas(p=>p?{...p,enabled:r.enabled,environment:r.environment}:p);}catch{await load();}}}><option value="sandbox">Sandbox / testes</option><option value="production">Produção</option></select></div><div className="md:col-span-2 flex flex-wrap items-end gap-2">
+          <button onClick={async()=>{setAsaasTesting(true);setAsaasMessage('');try{const r=await api.post<{message:string}>('/api/admin/asaas/test',{});setAsaasMessage(r.message);}catch(e){setAsaasMessage(e instanceof Error?e.message:'Falha ao testar.');}finally{setAsaasTesting(false);}}} className="btn-outline-gold text-xs" disabled={asaasTesting}><TestTube2 size={14}/> {asaasTesting?'Testando...':'Testar conexão'}</button>
+          <button onClick={async()=>{setAsaasSaving(true);setAsaasMessage('');try{const r=await api.put<{enabled:boolean;environment:string}>('/api/admin/asaas/config',{enabled:!(asaas?.enabled===true),environment:asaas?.environment||'sandbox'});setAsaas(p=>p?{...p,enabled:r.enabled,environment:r.environment}:p);setAsaasMessage(r.enabled?'Integração ativada.':'Integração desativada.');}catch(e){setAsaasMessage(e instanceof Error?e.message:'Não foi possível alterar.');}finally{setAsaasSaving(false);}}} className={asaas?.enabled?'btn-outline-gold text-xs':'btn-gold text-xs'} disabled={asaasSaving}><PlugZap size={14}/> {asaas?.enabled?'Desativar Asaas':'Ativar Asaas'}</button>
+          <button onClick={async()=>{setAsaasMessage('');try{const r=await api.post<{id:string}>('/api/admin/asaas/webhook',{});setAsaas(p=>p?{...p,webhookConfigured:true}:p);setAsaasMessage(`Webhook configurado: ${r.id}`);}catch(e){setAsaasMessage(e instanceof Error?e.message:'Não foi possível configurar.');}}} className="btn-outline-gold text-xs" disabled={!asaas?.enabled}><Webhook size={14}/> {asaas?.webhookConfigured?'Recriar webhook':'Configurar webhook'}</button>
+        </div></div>
+        <div className="mt-3 p-3 rounded border border-[rgba(201,168,76,0.08)] text-xs text-[rgba(245,240,232,0.55)]">A API Key não fica no GitHub nem no banco. Configure <code>ASAAS_API_KEY</code> e <code>ASAAS_WEBHOOK_TOKEN</code> como secrets no Railway. Configure também <code>BACKEND_PUBLIC_URL</code> e <code>ASAAS_WEBHOOK_EMAIL</code> para criar o webhook.{asaas?.backendPublicUrl&&<span className="block mt-1">Webhook: {asaas.backendPublicUrl}/api/webhooks/asaas</span>}</div>
+        {asaasMessage&&<p className="mt-3 text-xs text-[#c9a84c]">{asaasMessage}</p>}
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
