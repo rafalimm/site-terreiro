@@ -38,6 +38,7 @@ router.post('/', requireSuperAdmin, async (req, res) => {
       password: hashed,
       role: role || 'consulente',
       whatsapp: whatsapp || null,
+      cpfCnpj: req.body?.cpfCnpj ? String(req.body.cpfCnpj).replace(/\D/g, '') : null,
       active: active ?? true,
       createdAt: new Date().toISOString(),
     },
