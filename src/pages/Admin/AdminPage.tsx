@@ -14,6 +14,7 @@ import { AdminEntidades } from './AdminEntidades';
 import { AdminLogs } from './AdminLogs';
 import { AdminConsulentes } from './AdminConsulentes';
 import { AdminConfiguracoes } from './AdminConfiguracoes';
+import { AdminMensalidades } from './AdminMensalidades';
 
 const ADMIN_ROLES = ['super_admin', 'admin', 'agenda', 'content', 'atendimento'];
 
@@ -49,6 +50,7 @@ export const AdminPage: React.FC = () => {
       case 'logs': return <AdminLogs />;
       case 'consulentes': return <AdminConsulentes />;
       case 'configuracoes': return <AdminConfiguracoes />;
+      case 'mensalidades': return <AdminMensalidades />;
       default: return <Dashboard />;
     }
   };
