@@ -53,6 +53,25 @@ router.get('/events/confirmations/mine', async (req, res) => {
   res.json(confirmations.map(item => item.eventId));
 });
 
+router.get('/events/confirmations/summary', authorize('events', 'agenda'), async (_req, res) => {
+  const confirmations = await prisma.eventConfirmation.findMany({
+    select: {
+      eventId: true,
+      user: { select: { id: true, name: true, role: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const summary = confirmations.reduce<Record<string, { count: number; users: Array<{ id: string; name: string; role: string }> }>>((acc, item) => {
+    if (!acc[item.eventId]) acc[item.eventId] = { count: 0, users: [] };
+    acc[item.eventId].count += 1;
+    acc[item.eventId].users.push(item.user);
+    return acc;
+  }, {});
+
+  res.json(summary);
+});
+
 router.get('/events/:id/confirmations', authorize('events', 'agenda'), async (req, res) => {
   const confirmations = await prisma.eventConfirmation.findMany({
     where: { eventId: req.params.id },
