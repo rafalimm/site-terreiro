@@ -10,7 +10,7 @@ import { useApp } from '../../store/AppContext';
 export type AdminSection =
   | 'dashboard' | 'agenda' | 'noticias' | 'faq' | 'galeria'
   | 'usuarios' | 'configuracoes' | 'mensagens' | 'servicos'
-  | 'entidades' | 'logs' | 'consulentes';
+  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -28,6 +28,7 @@ const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[
   { key: 'entidades', label: 'Entidades', icon: Star, perm: 'entities' },
   { key: 'mensagens', label: 'Mensagens', icon: MessageSquare, perm: 'messages' },
   { key: 'consulentes', label: 'Consulentes', icon: Users, perm: 'consulentes' },
+  { key: 'mensalidades', label: 'Mensalidades', icon: CreditCard, perm: 'membership' },
   { key: 'usuarios', label: 'Usuários', icon: Shield },
   { key: 'logs', label: 'Logs', icon: Activity },
   { key: 'configuracoes', label: 'Configurações', icon: Settings },
