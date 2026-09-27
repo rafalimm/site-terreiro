@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
       type: String(req.body.type || ''),
       description: String(req.body.description || ''),
       orientation: String(req.body.orientation || ''),
-      isPublic: req.body.isPublic !== false,
+      isPublic: req.body.isPublic !== false && String(req.body.type || '') !== 'Gira de Desenvolvimento',
       requiresScheduling: req.body.requiresScheduling === true,
       observations: String(req.body.observations || ''),
       createdBy: req.user!.name,
@@ -52,6 +52,7 @@ router.patch('/:id', async (req, res) => {
   try {
     const data = { ...req.body };
     if (typeof data.date === 'string') data.date = data.date.slice(0, 10);
+    if (data.type === 'Gira de Desenvolvimento') data.isPublic = false;
     delete data.id;
     delete data.createdAt;
     const event = await prisma.giraEvent.update({ where: { id: req.params.id }, data });
