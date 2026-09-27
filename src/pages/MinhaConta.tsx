@@ -20,6 +20,10 @@ export const MinhaConta: React.FC = () => {
   const [paymentRequested, setPaymentRequested] = React.useState(false);
   const [pixCode, setPixCode] = React.useState('');
   const [pixCopied, setPixCopied] = React.useState(false);
+  const [asaasPayment,setAsaasPayment]=React.useState<{paymentId:string;encodedImage:string;payload:string;expirationDate:string}|null>(null);
+  const [asaasLoading,setAsaasLoading]=React.useState(false);
+  const [asaasCpf,setAsaasCpf]=React.useState((currentUser as {cpfCnpj?:string|null})?.cpfCnpj||'');
+  const [asaasError,setAsaasError]=React.useState('');
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
@@ -124,6 +128,15 @@ export const MinhaConta: React.FC = () => {
                     <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{membership.currentPayment.referenceMonth}</p>
                   </div>
                 </div>
+                {membership.currentPayment.status !== 'paid' && membership.asaas?.enabled && (
+                  <div className="mt-5 p-4 rounded border border-green-500/20 bg-green-500/5">
+                    <p className="font-cinzel text-green-300 text-sm">Pagamento pelo Asaas</p><p className="text-[11px] text-[rgba(245,240,232,0.45)] mt-1">Gere um PIX dinâmico. Quando o pagamento for confirmado, a mensalidade será atualizada automaticamente.</p>
+                    {!asaasPayment&&<div className="mt-3 space-y-2"><label className="form-label">CPF/CNPJ do pagador</label><input value={asaasCpf} onChange={e=>setAsaasCpf(e.target.value)} placeholder="Digite seu CPF ou CNPJ" className="form-input" inputMode="numeric"/><button onClick={async()=>{setAsaasLoading(true);setAsaasError('');try{const r=await api.post<{paymentId:string;encodedImage:string;payload:string;expirationDate:string}>('/api/membership/me/asaas-payment',{cpfCnpj:asaasCpf});setAsaasPayment(r);}catch(e){setAsaasError(e instanceof Error?e.message:'Não foi possível gerar o PIX.');}finally{setAsaasLoading(false);}}} className="btn-gold text-xs" disabled={asaasLoading}>{asaasLoading?'Gerando PIX...':'Gerar PIX pelo Asaas'}</button></div>}
+                    {asaasError&&<p className="mt-2 text-xs text-red-300">{asaasError}</p>}
+                    {asaasPayment&&<div className="mt-3 grid md:grid-cols-[160px_1fr] gap-4 items-start"><div className="bg-white rounded p-2"><img src={`data:image/png;base64,${asaasPayment.encodedImage}`} alt="QR Code PIX da mensalidade" className="w-full aspect-square object-contain"/></div><div><p className="text-xs text-[rgba(245,240,232,0.6)] mb-2">PIX copia e cola</p><textarea readOnly value={asaasPayment.payload} className="form-input min-h-24 text-[11px]" onFocus={e=>e.currentTarget.select()}/><button onClick={async()=>{await navigator.clipboard.writeText(asaasPayment.payload);setPixCopied(true);window.setTimeout(()=>setPixCopied(false),1800);}} className="btn-outline-gold text-xs mt-2"><Copy size={13}/> {pixCopied?'Copiado!':'Copiar PIX'}</button><p className="text-[10px] text-[rgba(245,240,232,0.4)] mt-2">Expira em: {new Date(asaasPayment.expirationDate).toLocaleString('pt-BR')}</p></div></div>}
+                  </div>
+                )}
+
                 {membership.currentPayment.status !== 'paid' && membership.paymentConfig && (
                   <div className="mt-5 p-4 rounded border border-[rgba(201,168,76,0.14)] bg-[rgba(201,168,76,0.03)]">
                     <div className="flex items-center justify-between gap-3 mb-3">
