@@ -16,6 +16,7 @@ import logsRoutes from './routes/logs.routes';
 import importRoutes from './routes/import.routes';
 import publicRoutes from './routes/public.routes';
 import confirmationsRoutes from './routes/confirmations.routes';
+import membershipRoutes from './routes/membership.routes';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date()
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api', confirmationsRoutes);
+app.use('/api', membershipRoutes);
 app.use('/api/admin/users', usersRoutes);
 app.use('/api/admin/events', eventsRoutes);
 app.use('/api/admin/faq', faqRoutes);
