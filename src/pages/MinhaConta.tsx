@@ -50,6 +50,7 @@ export const MinhaConta: React.FC = () => {
     agenda: 'Resp. Agenda',
     content: 'Resp. Conteúdo',
     atendimento: 'Atendimento',
+    filho: 'Filho',
     consulente: 'Consulente',
   };
 
