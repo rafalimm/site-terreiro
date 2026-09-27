@@ -15,6 +15,7 @@ export const MinhaConta: React.FC = () => {
     currentPayment: { id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
     payments: Array<{ id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null }>;
     paymentConfig: PixPaymentConfig | null;
+    asaas: { enabled: boolean; environment: string } | null;
   } | null>(null);
   const [membershipLoading, setMembershipLoading] = React.useState(false);
   const [paymentRequested, setPaymentRequested] = React.useState(false);
