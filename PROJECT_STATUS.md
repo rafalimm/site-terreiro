@@ -43,6 +43,18 @@ ChatGPT e Claude devem tratar este arquivo como um resumo operacional compartilh
 - Criada migração `20260927170000_add_payment_config` e utilitário `src/utils/pix.ts` para geração do payload PIX com CRC.
 - Build/produção ainda precisam ser validados no ambiente de deploy.
 
+## Última implementação — Integração Asaas
+- 2026-09-27: integrada a opção de Asaas ao sistema de mensalidades, usando cobrança PIX convencional (não Pix Automático recorrente).
+- Administração → Mensalidades ganhou status da integração, teste de conexão, ativação/desativação e configuração do webhook.
+- Minha Conta ganhou geração de PIX dinâmico do Asaas com QR Code e código copia e cola.
+- O backend cria/atualiza o cliente no Asaas, cria a cobrança mensal e grava o ID da cobrança em MembershipPayment.transactionId.
+- Webhook público /api/webhooks/asaas valida asaas-access-token, aplica idempotência e atualiza automaticamente a mensalidade em PAYMENT_RECEIVED, PAYMENT_OVERDUE, PAYMENT_DELETED e PAYMENT_REFUNDED.
+- API Key e token do webhook ficam somente nas variáveis secretas do Railway; não são armazenados no GitHub ou frontend.
+- Adicionados campos de CPF/CNPJ no usuário e ID do cliente Asaas na mensalidade.
+- Variáveis necessárias no Railway: ASAAS_API_KEY, ASAAS_ENVIRONMENT (sandbox ou production), ASAAS_WEBHOOK_TOKEN (32+ caracteres), BACKEND_PUBLIC_URL e ASAAS_WEBHOOK_EMAIL.
+- A migração 20260927190000_add_asaas_integration deve ser aplicada pelo prisma migrate deploy no start do backend.
+- Build final ainda precisa ser validado no ambiente de deploy.
+
 ## Próximas prioridades
 1. Garantir build limpo.
 2. Corrigir erros TypeScript restantes sem remover funcionalidades.
