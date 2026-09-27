@@ -32,6 +32,7 @@ model User {
   createdAt String // mantido como string ISO para bater com o front-end existente
 
   confirmations EventConfirmation[]
+  membership Membership?
 
   @@map("users")
 }
@@ -66,6 +67,43 @@ model EventConfirmation {
   @@index([eventId])
   @@index([userId])
   @@map("event_confirmations")
+}
+
+model Membership {
+  id            String              @id @default(cuid())
+  userId        String              @unique
+  monthlyAmountCents Int
+  dueDay        Int                 @default(10)
+  active        Boolean             @default(true)
+  createdAt     String
+  updatedAt     String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments      MembershipPayment[]
+
+  @@map("memberships")
+}
+
+model MembershipPayment {
+  id              String      @id @default(cuid())
+  membershipId    String
+  referenceMonth  String
+  amountCents     Int
+  dueDate         String
+  paidAt          String?
+  method          String?
+  status          String      @default("pending")
+  transactionId   String?
+  proofUrl        String?
+  notes           String?
+  createdAt       String
+  updatedAt       String
+  membership      Membership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, referenceMonth])
+  @@index([membershipId])
+  @@index([referenceMonth])
+  @@index([status])
+  @@map("membership_payments")
 }
 
 model FAQItem {
