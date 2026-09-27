@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, Phone, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Phone, ChevronDown, ChevronUp, Users, CheckCircle2, Circle } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { dateOnlyTimestamp, isDateOnlyPast, parseDateOnly } from '../utils/date';
 
-const EventCard: React.FC<{ event: any; whatsapp: string }> = ({ event, whatsapp }) => {
+const EventCard: React.FC<{ event: any; whatsapp: string; currentUser: any; confirmed: boolean; onConfirm: (id: string) => Promise<boolean>; onCancel: (id: string) => Promise<boolean> }> = ({ event, whatsapp, currentUser, confirmed, onConfirm, onCancel }) => {
   const [expanded, setExpanded] = useState(false);
   const eventDate = parseDateOnly(event.date);
   const isUpcoming = !isDateOnlyPast(event.date);
@@ -103,6 +103,21 @@ const EventCard: React.FC<{ event: any; whatsapp: string }> = ({ event, whatsapp
               Informações
             </button>
           )}
+          {isUpcoming && currentUser ? (
+            <button
+              onClick={() => confirmed ? onCancel(event.id) : onConfirm(event.id)}
+              className={confirmed
+                ? "btn-gold text-xs py-2 px-4 flex items-center gap-2"
+                : "btn-outline-gold text-xs py-2 px-4 flex items-center gap-2"}
+            >
+              {confirmed ? <CheckCircle2 size={14} /> : <Circle size={14} />}
+              {confirmed ? 'Presença confirmada' : 'Confirmar presença'}
+            </button>
+          ) : isUpcoming ? (
+            <span className="text-xs text-[rgba(245,240,232,0.45)] self-center">
+              Entre na sua conta para confirmar presença
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
@@ -110,7 +125,7 @@ const EventCard: React.FC<{ event: any; whatsapp: string }> = ({ event, whatsapp
 };
 
 export const Agenda: React.FC = () => {
-  const { events, siteConfig } = useApp();
+  const { events, siteConfig, currentUser, confirmedEventIds, confirmEvent, cancelEventConfirmation } = useApp();
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
 
   const filteredEvents = events
@@ -187,7 +202,15 @@ export const Agenda: React.FC = () => {
         ) : (
           <div className="space-y-6">
             {filteredEvents.map(event => (
-              <EventCard key={event.id} event={event} whatsapp={siteConfig.whatsapp} />
+              <EventCard
+                key={event.id}
+                event={event}
+                whatsapp={siteConfig.whatsapp}
+                currentUser={currentUser}
+                confirmed={confirmedEventIds.includes(event.id)}
+                onConfirm={confirmEvent}
+                onCancel={cancelEventConfirmation}
+              />
             ))}
           </div>
         )}
