@@ -17,6 +17,7 @@ import importRoutes from './routes/import.routes';
 import publicRoutes from './routes/public.routes';
 import confirmationsRoutes from './routes/confirmations.routes';
 import membershipRoutes from './routes/membership.routes';
+import asaasWebhookRoutes from './routes/asaas-webhook.routes';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api', confirmationsRoutes);
 app.use('/api', membershipRoutes);
+app.use('/api', asaasWebhookRoutes);
 app.use('/api/admin/users', usersRoutes);
 app.use('/api/admin/events', eventsRoutes);
 app.use('/api/admin/faq', faqRoutes);
