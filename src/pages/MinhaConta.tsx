@@ -5,7 +5,8 @@ import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { generatePixPayload, PixPaymentConfig } from '../utils/pix';
+import { generatePixPayload } from '../utils/pix';
+import type { PixPaymentConfig } from '../utils/pix';
 
 export const MinhaConta: React.FC = () => {
   const { currentUser, events, newsItems, siteConfig, authReady } = useApp();
