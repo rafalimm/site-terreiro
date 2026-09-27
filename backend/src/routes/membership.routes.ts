@@ -87,15 +87,25 @@ router.post('/membership/me/payment-request', authorize('membership'), async (re
 
 // Administração
 router.get('/admin/memberships', authorize('membership'), async (_req, res) => {
-  const memberships = await prisma.membership.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: { select: { id: true, name: true, email: true, role: true, whatsapp: true, active: true } },
-      payments: { orderBy: { referenceMonth: 'desc' }, take: 12 },
-    },
-  });
+  const [users, memberships] = await Promise.all([
+    prisma.user.findMany({
+      where: { role: { in: ['filho', 'atendimento', 'content', 'agenda', 'admin', 'super_admin'] } },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, email: true, role: true, whatsapp: true, active: true },
+    }),
+    prisma.membership.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true, whatsapp: true, active: true } },
+        payments: { orderBy: { referenceMonth: 'desc' }, take: 12 },
+      },
+    }),
+  ]);
 
-  const result = memberships.map(item => {
+  const byUserId = new Map(memberships.map(item => [item.userId, item]));
+  const result = users.map(user => {
+    const item = byUserId.get(user.id);
+    if (!item) return { id: null, user, monthlyAmountCents: 0, dueDay: 10, active: false, currentPayment: null, payments: [] };
     const current = item.payments.find(p => p.referenceMonth === monthKey());
     return {
       id: item.id,
@@ -109,7 +119,6 @@ router.get('/admin/memberships', authorize('membership'), async (_req, res) => {
   });
   res.json(result);
 });
-
 router.post('/admin/memberships', authorize('membership'), async (req, res) => {
   const { userId, monthlyAmountCents, dueDay, active } = req.body ?? {};
   const user = await prisma.user.findUnique({ where: { id: String(userId || '') } });
