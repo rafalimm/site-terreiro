@@ -22,7 +22,7 @@ router.get('/bundle', async (_req, res) => {
 // Giras de Desenvolvimento são exclusivas para usuários com cargo Filho.
 router.get('/filho/desenvolvimento', authenticate, authorize('filho_content'), async (_req, res) => {
   const events = await prisma.giraEvent.findMany({
-    where: { type: 'Gira de Desenvolvimento' },
+    where: { type: 'Gira de Desenvolvimento', isPublic: false },
     orderBy: { date: 'asc' },
   });
   res.json(events);
