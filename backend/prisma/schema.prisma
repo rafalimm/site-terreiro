@@ -29,6 +29,7 @@ model User {
   role      Role     @default(consulente)
   whatsapp  String?
   active    Boolean  @default(true)
+  cpfCnpj   String?
   createdAt String // mantido como string ISO para bater com o front-end existente
 
   confirmations EventConfirmation[]
@@ -77,6 +78,7 @@ model Membership {
   active        Boolean             @default(true)
   createdAt     String
   updatedAt     String
+  asaasCustomerId String?
   user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments      MembershipPayment[]
 
@@ -118,9 +120,20 @@ model PaymentConfig {
   accountHolder   String?
   bankDetails     String? @db.Text
   instructions    String? @db.Text
+  asaasEnabled    Boolean @default(false)
+  asaasEnvironment String @default("sandbox")
+  asaasWebhookId  String?
   updatedAt       String
 
   @@map("payment_config")
+}
+
+model AsaasWebhookEvent {
+  id          String   @id
+  event       String
+  receivedAt  String
+  processedAt String?
+  @@map("asaas_webhook_events")
 }
 
 model FAQItem {
