@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, CreditCard, Edit2, Users, X, Copy, Save } from 'lucide-react';
+import { Check, CreditCard, Edit2, Users, X, Save } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useApp } from '../../store/AppContext';
 
