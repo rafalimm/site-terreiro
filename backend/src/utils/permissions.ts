@@ -7,11 +7,11 @@ export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendim
 
 export const PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ['*'],
-  admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content'],
-  agenda: ['agenda', 'events', 'filho_content'],
-  content: ['news', 'faq', 'gallery', 'institutional', 'filho_content'],
-  atendimento: ['messages', 'consulentes', 'filho_content'],
-  filho: ['own_account', 'filho_content'],
+  admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership'],
+  agenda: ['agenda', 'events', 'filho_content', 'membership'],
+  content: ['news', 'faq', 'gallery', 'institutional', 'filho_content', 'membership'],
+  atendimento: ['messages', 'consulentes', 'filho_content', 'membership'],
+  filho: ['own_account', 'filho_content', 'membership'],
   consulente: ['own_account'],
 };
 
