@@ -1,10 +1,11 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User, Calendar, Newspaper, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle } from 'lucide-react';
+import { User, Calendar, Newspaper, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { generatePixPayload, PixPaymentConfig } from '../utils/pix';
 
 export const MinhaConta: React.FC = () => {
   const { currentUser, events, newsItems, siteConfig, authReady } = useApp();
@@ -12,9 +13,12 @@ export const MinhaConta: React.FC = () => {
     membership: { id: string; monthlyAmountCents: number; dueDay: number; active: boolean };
     currentPayment: { referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
     payments: Array<{ id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null }>;
+    paymentConfig: PixPaymentConfig | null;
   } | null>(null);
   const [membershipLoading, setMembershipLoading] = React.useState(false);
   const [paymentRequested, setPaymentRequested] = React.useState(false);
+  const [pixCode, setPixCode] = React.useState('');
+  const [pixCopied, setPixCopied] = React.useState(false);
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
@@ -119,6 +123,89 @@ export const MinhaConta: React.FC = () => {
                     <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{membership.currentPayment.referenceMonth}</p>
                   </div>
                 </div>
+                {membership.currentPayment.status !== 'paid' && membership.paymentConfig && (
+                  <div className="mt-5 p-4 rounded border border-[rgba(201,168,76,0.14)] bg-[rgba(201,168,76,0.03)]">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <p className="font-cinzel text-[#c9a84c] text-sm">Pagamento da mensalidade</p>
+                        <p className="text-[11px] text-[rgba(245,240,232,0.45)] mt-1">Use o PIX configurado pela administração para este valor.</p>
+                      </div>
+                      <span className="text-xs text-[rgba(245,240,232,0.55)]">{membership.paymentConfig.receiverName}</span>
+                    </div>
+
+                    {membership.paymentConfig.method === 'pix' && membership.paymentConfig.pixKey && (
+                      <>
+                        <div className="p-3 rounded border border-[rgba(201,168,76,0.08)]">
+                          <p className="text-[11px] text-[rgba(245,240,232,0.4)]">Chave PIX</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <code className="text-sm text-[#f5f0e8] break-all flex-1">{membership.paymentConfig.pixKey}</code>
+                            <button
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(membership.paymentConfig?.pixKey || '');
+                                setPixCopied(true);
+                                window.setTimeout(() => setPixCopied(false), 1800);
+                              }}
+                              className="p-2 border border-[rgba(201,168,76,0.15)] rounded text-[#c9a84c]"
+                              title="Copiar chave PIX"
+                            >
+                              {pixCopied ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <button
+                            onClick={() => {
+                              try {
+                                const code = generatePixPayload(
+                                  membership.paymentConfig as PixPaymentConfig,
+                                  membership.currentPayment.amountCents,
+                                  membership.currentPayment.id
+                                );
+                                setPixCode(code);
+                              } catch {
+                                setPixCode('');
+                              }
+                            }}
+                            className="btn-gold text-xs"
+                          >
+                            Gerar código PIX
+                          </button>
+                          {pixCode && (
+                            <button
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(pixCode);
+                                setPixCopied(true);
+                                window.setTimeout(() => setPixCopied(false), 1800);
+                              }}
+                              className="btn-outline-gold text-xs"
+                            >
+                              <Copy size={13} /> Copiar código PIX
+                            </button>
+                          )}
+                        </div>
+
+                        {pixCode && (
+                          <div className="mt-3">
+                            <p className="text-[11px] text-[rgba(245,240,232,0.4)] mb-1">PIX copia e cola</p>
+                            <textarea readOnly value={pixCode} className="form-input min-h-24 text-[11px] break-all" onFocus={e => e.currentTarget.select()} />
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {membership.paymentConfig.bankDetails && (
+                      <div className="mt-3">
+                        <p className="text-[11px] text-[rgba(245,240,232,0.4)] mb-1">Dados para transferência</p>
+                        <p className="text-xs text-[rgba(245,240,232,0.7)] whitespace-pre-line">{membership.paymentConfig.bankDetails}</p>
+                      </div>
+                    )}
+                    {membership.paymentConfig.instructions && (
+                      <p className="text-xs text-[rgba(245,240,232,0.55)] mt-3 whitespace-pre-line">{membership.paymentConfig.instructions}</p>
+                    )}
+                  </div>
+                )}
+
                 {membership.currentPayment.status !== 'paid' && (
                   <button
                     onClick={async () => {
@@ -127,12 +214,12 @@ export const MinhaConta: React.FC = () => {
                         setPaymentRequested(true);
                       } catch { setPaymentRequested(false); }
                     }}
-                    className="btn-gold text-xs mt-4"
+                    className="btn-outline-gold text-xs mt-3"
                   >
-                    Solicitar instruções de pagamento
+                    Solicitar confirmação / instruções
                   </button>
                 )}
-                {paymentRequested && <p className="text-green-400 text-xs mt-2">Solicitação registrada. A administração poderá enviar as instruções de pagamento.</p>}
+                {paymentRequested && <p className="text-green-400 text-xs mt-2">Solicitação registrada para a administração.</p>}
                 <div className="mt-5 pt-4 border-t border-[rgba(201,168,76,0.08)]">
                   <p className="font-cinzel text-[#c9a84c] text-sm mb-3">Histórico</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
