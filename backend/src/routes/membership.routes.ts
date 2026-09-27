@@ -126,7 +126,7 @@ router.put('/admin/asaas/config',authorize('membership'),async(req,res)=>{
   const environment=asaasEnvironment();
   const enabled=req.body?.enabled===true;
   if(enabled&&!asaasConfigured()) return res.status(400).json({error:'Configure ASAAS_API_KEY no Railway antes de ativar.'});
-  const config=await prisma.paymentConfig.upsert({where:{id:1},create:{id:1,enabled:false,method:'pix',receiverName:'Centro de Umbanda Zé do Laço',city:'São Paulo',asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()},update:{asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()}});
+  const config=await prisma.paymentConfig.upsert({where:{id:1},create:{id:1,enabled:false,method:'pix',receiverName:'Centro Zé do Laço',city:'São Paulo',asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()},update:{asaasEnabled:enabled,asaasEnvironment:environment,updatedAt:new Date().toISOString()}});
   await createLog(req.user!.id,req.user!.name,'Configurou','Asaas',`Integração Asaas ${enabled?'ativada':'desativada'} (${environment})`);
   res.json({enabled:config.asaasEnabled,environment:config.asaasEnvironment});
 });
