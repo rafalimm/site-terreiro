@@ -160,6 +160,7 @@ interface AppContextType {
   activityLogs: ActivityLog[];
   siteConfig: SiteConfig;
   contactMessages: ContactMessage[];
+  confirmedEventIds: string[];
 
   loadingPublicData: boolean;
   authReady: boolean;
@@ -177,6 +178,9 @@ interface AppContextType {
   addEvent: (event: Omit<GiraEvent, 'id' | 'createdAt'>) => Promise<boolean>;
   updateEvent: (id: string, data: Partial<GiraEvent>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
+  confirmEvent: (eventId: string) => Promise<boolean>;
+  cancelEventConfirmation: (eventId: string) => Promise<boolean>;
+  loadMyConfirmations: () => Promise<void>;
 
   addFAQ: (item: Omit<FAQItem, 'id'>) => Promise<void>;
   updateFAQ: (id: string, data: Partial<FAQItem>) => Promise<void>;
@@ -224,6 +228,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(emptySiteConfig);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [confirmedEventIds, setConfirmedEventIds] = useState<string[]>([]);
 
   const [loadingPublicData, setLoadingPublicData] = useState(true);
   const [authReady, setAuthReady] = useState(false);
@@ -306,11 +311,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!authReady) return;
     (async () => {
       await loadPublicData();
+      await loadMyConfirmations();
       if (currentUser && hasPermission('filho_content')) {
         await loadFilhoDevelopmentEvents();
       }
     })();
-  }, [authReady, currentUser, loadPublicData, loadFilhoDevelopmentEvents]);
+  }, [authReady, currentUser, loadPublicData, loadFilhoDevelopmentEvents, loadMyConfirmations]);
 
   // Tenta retomar a sessão salva (token no localStorage) quando o app carrega
   useEffect(() => {
@@ -391,6 +397,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await api.delete(`/api/admin/users/${id}`);
       setUsers(prev => prev.filter(u => u.id !== id));
     } catch (err) { handleError(err); }
+  };
+
+  // ---- Confirmação de presença nas giras ----
+  const loadMyConfirmations = useCallback(async () => {
+    if (!currentUser) {
+      setConfirmedEventIds([]);
+      return;
+    }
+    try {
+      const ids = await api.get<string[]>('/api/events/confirmations/mine');
+      setConfirmedEventIds(ids);
+    } catch (err) {
+      handleError(err);
+    }
+  }, [currentUser]);
+
+  const confirmEvent = async (eventId: string): Promise<boolean> => {
+    try {
+      await api.post('/api/events/' + eventId + '/confirmation', {});
+      setConfirmedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+      setLastError(null);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const cancelEventConfirmation = async (eventId: string): Promise<boolean> => {
+    try {
+      await api.delete('/api/events/' + eventId + '/confirmation');
+      setConfirmedEventIds(prev => prev.filter(id => id !== eventId));
+      setLastError(null);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
   };
 
   // ---- Agenda / Giras ----
@@ -543,11 +587,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{
       currentUser, users, events, faqItems, newsItems, galleryItems, services,
-      entities, activityLogs, siteConfig, contactMessages,
+      entities, activityLogs, siteConfig, contactMessages, confirmedEventIds,
       loadingPublicData, authReady, lastError,
       login, register, logout, hasPermission,
       addUser, updateUser, deleteUser,
-      addEvent, updateEvent, deleteEvent,
+      addEvent, updateEvent, deleteEvent, confirmEvent, cancelEventConfirmation, loadMyConfirmations,
       addFAQ, updateFAQ, deleteFAQ,
       addNews, updateNews, deleteNews,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
