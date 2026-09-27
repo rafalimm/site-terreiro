@@ -63,6 +63,7 @@ router.get('/membership/me', authorize('membership'), async (req, res) => {
     where: { membershipId: data.membership.id },
     orderBy: { referenceMonth: 'desc' },
   });
+  const paymentConfig = await prisma.paymentConfig.findUnique({ where: { id: 1 } });
   res.json({
     membership: {
       id: data.membership.id,
@@ -72,6 +73,17 @@ router.get('/membership/me', authorize('membership'), async (req, res) => {
     },
     currentPayment: data.currentPayment,
     payments: payments.map(payment => ({ ...payment, status: statusFor(payment) })),
+    paymentConfig: paymentConfig?.enabled ? {
+      method: paymentConfig.method,
+      receiverName: paymentConfig.receiverName,
+      city: paymentConfig.city,
+      pixKeyType: paymentConfig.pixKeyType,
+      pixKey: paymentConfig.pixKey,
+      bankName: paymentConfig.bankName,
+      accountHolder: paymentConfig.accountHolder,
+      bankDetails: paymentConfig.bankDetails,
+      instructions: paymentConfig.instructions,
+    } : null,
   });
 });
 
@@ -83,6 +95,49 @@ router.post('/membership/me/payment-request', authorize('membership'), async (re
   }
   await createLog(req.user!.id, req.user!.name, 'Solicitou', 'Mensalidade', `Solicitou instruções de pagamento da mensalidade ${data.currentPayment.referenceMonth}`);
   res.json({ message: 'Solicitação registrada. A administração poderá enviar as instruções de pagamento.' });
+});
+
+// Configuração de recebimento usada pelos membros e administradores.
+router.get('/admin/payment-config', authorize('membership'), async (_req, res) => {
+  const config = await prisma.paymentConfig.findUnique({ where: { id: 1 } });
+  res.json(config);
+});
+
+router.put('/admin/payment-config', authorize('membership'), async (req, res) => {
+  const body = req.body ?? {};
+  const method = String(body.method || 'pix');
+  const receiverName = String(body.receiverName || '').trim();
+  const city = String(body.city || '').trim();
+  const pixKey = body.pixKey ? String(body.pixKey).trim() : null;
+  const pixKeyType = body.pixKeyType ? String(body.pixKeyType) : null;
+  const bankName = body.bankName ? String(body.bankName).trim() : null;
+  const accountHolder = body.accountHolder ? String(body.accountHolder).trim() : null;
+  const bankDetails = body.bankDetails ? String(body.bankDetails).trim() : null;
+  const instructions = body.instructions ? String(body.instructions).trim() : null;
+  const enabled = body.enabled === true;
+
+  if (!receiverName) return res.status(400).json({ error: 'Informe o nome do recebedor.' });
+  if (!city) return res.status(400).json({ error: 'Informe a cidade do recebedor.' });
+  if (method === 'pix' && !pixKey) return res.status(400).json({ error: 'Informe a chave PIX.' });
+  if (receiverName.length > 25) return res.status(400).json({ error: 'O nome do recebedor deve ter no máximo 25 caracteres para o PIX.' });
+  if (city.length > 15) return res.status(400).json({ error: 'A cidade deve ter no máximo 15 caracteres para o PIX.' });
+
+  const config = await prisma.paymentConfig.upsert({
+    where: { id: 1 },
+    create: {
+      id: 1, enabled, method, receiverName, city, pixKeyType, pixKey,
+      bankName, accountHolder, bankDetails, instructions,
+      updatedAt: new Date().toISOString(),
+    },
+    update: {
+      enabled, method, receiverName, city, pixKeyType, pixKey,
+      bankName, accountHolder, bankDetails, instructions,
+      updatedAt: new Date().toISOString(),
+    },
+  });
+
+  await createLog(req.user!.id, req.user!.name, 'Configurou', 'Recebimento', 'Atualizou os dados de recebimento das mensalidades');
+  res.json(config);
 });
 
 // Administração
