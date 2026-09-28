@@ -88,7 +88,7 @@ export const Home: React.FC = () => {
           {/* Rating badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 border border-[rgba(201,168,76,0.3)] rounded-full bg-[rgba(201,168,76,0.05)] mb-8 animate-fadeInUp">
             <div className="star-rating text-sm">★★★★★</div>
-            <span className="font-inter text-[rgba(245,240,232,0.7)] text-xs">5,0 — 27 avaliações</span>
+            <span className="font-inter text-[rgba(245,240,232,0.7)] text-xs">5,0 — 30 avaliações</span>
           </div>
 
           {/* Title */}
@@ -338,13 +338,46 @@ export const Home: React.FC = () => {
         </section>
       )}
 
+      {/* ========== DEPOIMENTOS ========== */}
+      <section className="py-24 bg-[#0a0404]">
+        <div className="max-w-6xl mx-auto px-4">
+          <AnimatedSection>
+            <div className="text-center mb-14">
+              <p className="font-cinzel text-[#c9a84c] text-xs tracking-widest uppercase mb-3">Quem já passou por aqui</p>
+              <h2 className="section-title mb-4" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>Depoimentos</h2>
+              <div className="gold-divider" />
+            </div>
+          </AnimatedSection>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              'Me sinto bem, energia boa, uma casa pra se fazer coisas boas.',
+              'Que experiência indescritível foi o Jogo de Búzios do Pai William de Odé.',
+              'Lugar e pessoas maravilhosas. Recomendo!',
+              'Lugar incrível e acolhedor, energia surreal.',
+            ].map((text, i) => (
+              <AnimatedSection key={i} delay={i * 100}>
+                <figure className="h-full p-6 border border-[rgba(201,168,76,0.15)] rounded-sm bg-[rgba(201,168,76,0.02)] hover:border-[rgba(201,168,76,0.35)] transition-all flex flex-col">
+                  <div className="star-rating text-sm mb-4">★★★★★</div>
+                  <blockquote className="font-crimson text-[rgba(245,240,232,0.75)] text-lg italic leading-relaxed flex-1">
+                    “{text}”
+                  </blockquote>
+                  <figcaption className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-4">
+                    Avaliação no Google
+                  </figcaption>
+                </figure>
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ========== INFO CARDS ========== */}
       <section className="py-24 bg-[#0d0505]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { icon: '⭐', value: '5,0', label: 'Avaliação no Google' },
-              { icon: '❤️', value: '27+', label: 'Avaliações de Consulentes' },
+              { icon: '❤️', value: '30+', label: 'Avaliações de Consulentes' },
               { icon: '🕯️', value: '100%', label: 'Fé e Dedicação' },
               { icon: '🌟', value: '∞', label: 'Caridade e Acolhimento' },
             ].map((stat, i) => (

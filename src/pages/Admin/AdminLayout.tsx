@@ -3,12 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Newspaper, HelpCircle, Image,
   Users, Settings, LogOut, Menu, X, Star, MessageSquare,
-  Activity, Layers, CreditCard, Shield
+  Activity, Layers, CreditCard, Shield, CalendarCheck
 } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 
 export type AdminSection =
-  | 'dashboard' | 'agenda' | 'noticias' | 'faq' | 'galeria'
+  | 'dashboard' | 'agenda' | 'agendamentos' | 'noticias' | 'faq' | 'galeria'
   | 'usuarios' | 'configuracoes' | 'mensagens' | 'servicos'
   | 'entidades' | 'logs' | 'consulentes' | 'mensalidades';
 
@@ -21,6 +21,7 @@ interface AdminLayoutProps {
 const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'agenda', label: 'Agenda / Giras', icon: Calendar, perm: 'agenda' },
+  { key: 'agendamentos', label: 'Agendamentos', icon: CalendarCheck, perm: 'agenda' },
   { key: 'noticias', label: 'Notícias', icon: Newspaper, perm: 'news' },
   { key: 'faq', label: 'FAQ', icon: HelpCircle, perm: 'faq' },
   { key: 'galeria', label: 'Galeria', icon: Image, perm: 'gallery' },

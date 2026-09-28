@@ -241,3 +241,19 @@ model ContactMessage {
 
   @@map("contact_messages")
 }
+
+// Pedidos de agendamento de consulta (búzios, cartas, ou atendimento geral)
+model Appointment {
+  id            String   @id @default(cuid())
+  name          String
+  whatsapp      String
+  email         String?
+  type          String // 'buzios' | 'cartas' | 'consulta'
+  preferredDate String // data desejada pela pessoa (YYYY-MM-DD)
+  preferredTime String // horário desejado (HH:mm)
+  notes         String   @db.Text
+  status        String   @default("pendente") // 'pendente' | 'confirmado' | 'cancelado'
+  createdAt     String
+
+  @@map("appointments")
+}

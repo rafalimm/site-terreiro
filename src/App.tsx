@@ -10,6 +10,7 @@ import { Home } from './pages/Home';
 import { Sobre } from './pages/Sobre';
 import { NossaCasa } from './pages/NossaCasa';
 import { Agenda } from './pages/Agenda';
+import { Agendar } from './pages/Agendar';
 import { CartasBuzios } from './pages/CartasBuzios';
 import { Duvidas } from './pages/Duvidas';
 import { Galeria } from './pages/Galeria';
@@ -52,6 +53,7 @@ function App() {
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/nossa-casa" element={<NossaCasa />} />
             <Route path="/agenda" element={<Agenda />} />
+            <Route path="/agendar" element={<Agendar />} />
             <Route path="/cartas-buzios" element={<CartasBuzios />} />
             <Route path="/duvidas" element={<Duvidas />} />
             <Route path="/galeria" element={<Galeria />} />

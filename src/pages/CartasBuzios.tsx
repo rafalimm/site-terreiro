@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Phone, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
 export const CartasBuzios: React.FC = () => {
   const { services, siteConfig } = useApp();
+  const navigate = useNavigate();
 
   const cards = services.find(s => s.type === 'cards');
   const buzios = services.find(s => s.type === 'buzios');
@@ -12,7 +14,7 @@ export const CartasBuzios: React.FC = () => {
     window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  const ServiceCard = ({ service, icon, waMsg }: { service: any; icon: string; waMsg: string }) => (
+  const ServiceCard = ({ service, icon, waMsg, tipo }: { service: any; icon: string; waMsg: string; tipo: string }) => (
     <div className="card-spiritual p-8 md:p-10">
       <div className="text-5xl mb-4">{icon}</div>
       <h2 className="font-cinzel font-bold text-[#c9a84c] text-2xl mb-2">{service.title}</h2>
@@ -56,13 +58,22 @@ export const CartasBuzios: React.FC = () => {
         </div>
       </div>
 
-      <button
-        onClick={() => openWhatsApp(waMsg)}
-        className="btn-wine w-full justify-center"
-      >
-        <Phone size={16} />
-        Solicitar Informações
-      </button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          onClick={() => navigate(`/agendar?tipo=${tipo}`)}
+          className="btn-gold flex-1 justify-center"
+        >
+          <Calendar size={16} />
+          Agendar Consulta
+        </button>
+        <button
+          onClick={() => openWhatsApp(waMsg)}
+          className="btn-outline-gold flex-1 justify-center"
+        >
+          <Phone size={16} />
+          Falar no WhatsApp
+        </button>
+      </div>
     </div>
   );
 
@@ -113,6 +124,7 @@ export const CartasBuzios: React.FC = () => {
               service={cards}
               icon="🃏"
               waMsg="Olá! Gostaria de obter informações sobre o jogo de cartas."
+              tipo="cartas"
             />
           )}
           {buzios && (
@@ -120,6 +132,7 @@ export const CartasBuzios: React.FC = () => {
               service={buzios}
               icon="🐚"
               waMsg="Olá! Gostaria de obter informações sobre o jogo de búzios."
+              tipo="buzios"
             />
           )}
         </div>
@@ -147,10 +160,10 @@ export const CartasBuzios: React.FC = () => {
           </div>
           <div className="mt-6 text-center">
             <button
-              onClick={() => openWhatsApp('Olá! Gostaria de agendar uma consulta no Centro de Umbanda Zé do Laço.')}
+              onClick={() => navigate('/agendar?tipo=consulta')}
               className="btn-gold"
             >
-              <Phone size={16} />
+              <Calendar size={16} />
               Agendar Consulta
             </button>
           </div>

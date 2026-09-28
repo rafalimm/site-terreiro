@@ -48,4 +48,31 @@ router.post('/contact', async (req, res) => {
   res.status(201).json(msg);
 });
 
+// POST /api/public/appointments — pedido de agendamento (búzios, cartas ou consulta), sem login
+router.post('/appointments', async (req, res) => {
+  const { name, whatsapp, email, type, preferredDate, preferredTime, notes } = req.body ?? {};
+  if (!name || !whatsapp || !type || !preferredDate || !preferredTime) {
+    return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
+  }
+  try {
+    const appointment = await prisma.appointment.create({
+      data: {
+        name,
+        whatsapp,
+        email: email || null,
+        type,
+        preferredDate: String(preferredDate).slice(0, 10),
+        preferredTime,
+        notes: notes || '',
+        status: 'pendente',
+        createdAt: new Date().toISOString(),
+      },
+    });
+    res.status(201).json(appointment);
+  } catch (error) {
+    console.error('Erro ao salvar agendamento:', error);
+    res.status(500).json({ error: 'Não foi possível registrar seu agendamento.' });
+  }
+});
+
 export default router;

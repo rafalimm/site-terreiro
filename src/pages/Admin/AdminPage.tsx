@@ -4,6 +4,7 @@ import { useApp } from '../../store/AppContext';
 import { AdminLayout, AdminSection } from './AdminLayout';
 import { Dashboard } from './Dashboard';
 import { AdminAgenda } from './AdminAgenda';
+import { AdminAgendamentos } from './AdminAgendamentos';
 import { AdminNoticias } from './AdminNoticias';
 import { AdminFAQ } from './AdminFAQ';
 import { AdminGaleria } from './AdminGaleria';
@@ -40,6 +41,7 @@ export const AdminPage: React.FC = () => {
     switch (section) {
       case 'dashboard': return <Dashboard />;
       case 'agenda': return <AdminAgenda />;
+      case 'agendamentos': return <AdminAgendamentos />;
       case 'noticias': return <AdminNoticias />;
       case 'faq': return <AdminFAQ />;
       case 'galeria': return <AdminGaleria />;

@@ -18,6 +18,7 @@ import publicRoutes from './routes/public.routes';
 import confirmationsRoutes from './routes/confirmations.routes';
 import membershipRoutes from './routes/membership.routes';
 import asaasWebhookRoutes from './routes/asaas-webhook.routes';
+import appointmentsRoutes from './routes/appointments.routes';
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api/admin/config', configRoutes);
 app.use('/api/admin/messages', messagesRoutes);
 app.use('/api/admin/logs', logsRoutes);
 app.use('/api/admin/import', importRoutes);
+app.use('/api/admin/appointments', appointmentsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.path}` });

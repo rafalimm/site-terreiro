@@ -123,6 +123,19 @@ export interface ContactMessage {
   read: boolean;
 }
 
+export interface Appointment {
+  id: string;
+  name: string;
+  whatsapp: string;
+  email?: string;
+  type: 'buzios' | 'cartas' | 'consulta';
+  preferredDate: string;
+  preferredTime: string;
+  notes: string;
+  status: 'pendente' | 'confirmado' | 'cancelado';
+  createdAt: string;
+}
+
 const emptySiteConfig: SiteConfig = {
   heroTitle: '', heroSubtitle: '', aboutText: '', aboutHistory: '', whatsapp: '',
   instagram: '', address: '', mapUrl: '', email: '', workingHours: '', heroImage: '', aboutImage: '',
@@ -161,6 +174,7 @@ interface AppContextType {
   activityLogs: ActivityLog[];
   siteConfig: SiteConfig;
   contactMessages: ContactMessage[];
+  appointments: Appointment[];
   confirmedEventIds: string[];
 
   loadingPublicData: boolean;
@@ -203,9 +217,13 @@ interface AppContextType {
 
   updateSiteConfig: (data: Partial<SiteConfig>) => Promise<void>;
 
-  addContactMessage: (msg: Omit<ContactMessage, 'id' | 'receivedAt' | 'read'>) => Promise<void>;
+  addContactMessage: (msg: Omit<ContactMessage, 'id' | 'receivedAt' | 'read'>) => Promise<boolean>;
   markMessageRead: (id: string) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
+
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'status'>) => Promise<boolean>;
+  updateAppointmentStatus: (id: string, status: Appointment['status']) => Promise<void>;
+  deleteAppointment: (id: string) => Promise<void>;
 
   refreshAdminData: () => Promise<void>;
   importLegacyData: (snapshot: Record<string, unknown>) => Promise<{ message: string; result: Record<string, unknown> }>;
@@ -229,6 +247,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(emptySiteConfig);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [confirmedEventIds, setConfirmedEventIds] = useState<string[]>([]);
 
   const [loadingPublicData, setLoadingPublicData] = useState(true);
@@ -280,12 +299,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const refreshAdminData = useCallback(async () => {
     if (!currentUser || currentUser.role === 'consulente') return;
 
-    const [usersRes, messagesRes, logsRes, eventsRes] = await Promise.allSettled([
+    const [usersRes, messagesRes, logsRes, eventsRes, appointmentsRes] = await Promise.allSettled([
       api.get<User[]>('/api/admin/users'),
       api.get<ContactMessage[]>('/api/admin/messages'),
       api.get<ActivityLog[]>('/api/admin/logs'),
       hasPermission('events') || hasPermission('agenda')
         ? api.get<GiraEvent[]>('/api/admin/events')
+        : Promise.resolve(null),
+      hasPermission('events') || hasPermission('agenda')
+        ? api.get<Appointment[]>('/api/admin/appointments')
         : Promise.resolve(null),
     ]);
 
@@ -293,6 +315,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (messagesRes.status === 'fulfilled') setContactMessages(messagesRes.value);
     if (logsRes.status === 'fulfilled') setActivityLogs(logsRes.value);
     if (eventsRes.status === 'fulfilled' && eventsRes.value) setEvents(eventsRes.value);
+    if (appointmentsRes.status === 'fulfilled' && appointmentsRes.value) setAppointments(appointmentsRes.value);
   }, [currentUser]);
 
   // Carrega a agenda pública ou, para Filho, a agenda pública + Giras de Desenvolvimento.
@@ -560,10 +583,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // ---- Mensagens de contato ----
-  const addContactMessage = async (msg: Omit<ContactMessage, 'id' | 'receivedAt' | 'read'>) => {
+  const addContactMessage = async (msg: Omit<ContactMessage, 'id' | 'receivedAt' | 'read'>): Promise<boolean> => {
     try {
       await api.post('/api/public/contact', msg, false);
-    } catch (err) { handleError(err); }
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
   };
   const markMessageRead = async (id: string) => {
     try {
@@ -578,6 +605,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (err) { handleError(err); }
   };
 
+  // ---- Agendamentos (búzios, cartas ou consulta) ----
+  const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt' | 'status'>): Promise<boolean> => {
+    try {
+      await api.post('/api/public/appointments', appointment, false);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+  const updateAppointmentStatus = async (id: string, status: Appointment['status']) => {
+    try {
+      const updated = await api.patch<Appointment>(`/api/admin/appointments/${id}`, { status });
+      setAppointments(prev => prev.map(a => (a.id === id ? updated : a)));
+    } catch (err) { handleError(err); }
+  };
+  const deleteAppointment = async (id: string) => {
+    try {
+      await api.delete(`/api/admin/appointments/${id}`);
+      setAppointments(prev => prev.filter(a => a.id !== id));
+    } catch (err) { handleError(err); }
+  };
+
   // ---- Migração dos dados antigos (localStorage -> backend) ----
   const importLegacyData = async (snapshot: Record<string, unknown>) => {
     const result = await api.post<{ message: string; result: Record<string, unknown> }>('/api/admin/import', snapshot);
@@ -588,7 +638,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{
       currentUser, users, events, faqItems, newsItems, galleryItems, services,
-      entities, activityLogs, siteConfig, contactMessages, confirmedEventIds,
+      entities, activityLogs, siteConfig, contactMessages, appointments, confirmedEventIds,
       loadingPublicData, authReady, lastError,
       login, register, logout, hasPermission,
       addUser, updateUser, deleteUser,
@@ -600,6 +650,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addEntity, updateEntity, deleteEntity,
       updateSiteConfig,
       addContactMessage, markMessageRead, deleteMessage,
+      addAppointment, updateAppointmentStatus, deleteAppointment,
       refreshAdminData, importLegacyData,
     }}>
       {children}

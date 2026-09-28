@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
-import { Phone, MapPin, Send, CheckCircle } from 'lucide-react';
+import { Phone, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { useApp } from '../store/AppContext';
+
+// Transforma "5511940087119" em "(11) 94008-7119" para exibição
+function formatWhatsApp(raw: string): string {
+  const digits = (raw || '').replace(/\D/g, '').replace(/^55/, '');
+  if (digits.length !== 11) return raw || 'A definir';
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
 
 export const Contato: React.FC = () => {
   const { siteConfig, addContactMessage } = useApp();
   const [form, setForm] = useState({ name: '', whatsapp: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.message) return;
     setLoading(true);
-    setTimeout(() => {
-      addContactMessage(form);
-      setSubmitted(true);
-      setLoading(false);
-    }, 800);
+    setError(false);
+    const success = await addContactMessage(form);
+    setLoading(false);
+    // Só mostra "enviado" se a mensagem realmente foi salva no servidor.
+    if (success) setSubmitted(true);
+    else setError(true);
   };
 
   const openWhatsApp = () => {
@@ -82,7 +91,7 @@ export const Contato: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-cinzel text-[#f5f0e8] text-sm font-bold tracking-wider mb-0.5">WhatsApp</p>
-                    <p className="font-crimson text-[rgba(245,240,232,0.65)] text-base">(11) 94008-7119</p>
+                    <p className="font-crimson text-[rgba(245,240,232,0.65)] text-base">{formatWhatsApp(siteConfig.whatsapp)}</p>
                     <button onClick={openWhatsApp} className="btn-wine text-xs mt-2">
                       Falar Agora
                     </button>
@@ -114,9 +123,7 @@ export const Contato: React.FC = () => {
                   <div>
                     <p className="font-cinzel text-[#f5f0e8] text-sm font-bold tracking-wider mb-0.5">Endereço</p>
                     <p className="font-crimson text-[rgba(245,240,232,0.65)] text-base leading-relaxed">
-                      Av. Santo Amaro, 5914 - Subsolo<br />
-                      Santo Amaro — São Paulo/SP<br />
-                      CEP 04702-001
+                      {siteConfig.address || 'Endereço a definir'}
                     </p>
                     <a
                       href={siteConfig.mapUrl}
@@ -136,7 +143,7 @@ export const Contato: React.FC = () => {
             <div className="rounded overflow-hidden border border-[rgba(201,168,76,0.2)]" style={{ height: '250px' }}>
               <iframe
                 title="Mapa"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3654.0!2d-46.7!3d-23.65!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce5a7a0a5f5a1b%3A0x1234567890abcdef!2sAv.+Santo+Amaro%2C+5914+Santo+Amaro%2C+S%C3%A3o+Paulo+-+SP!5e0!3m2!1spt-BR!2sbr!4v1234567890"
+                src={`https://www.google.com/maps?q=${encodeURIComponent(siteConfig.address || 'Centro de Umbanda Zé do Laço')}&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0, filter: 'grayscale(0.4) sepia(0.4) hue-rotate(330deg)' }}
@@ -212,6 +219,14 @@ export const Contato: React.FC = () => {
                 />
               </div>
               <div className="pt-2">
+                {error && (
+                  <div className="flex items-center gap-2 mb-3 p-3 bg-[rgba(139,26,26,0.15)] border border-red-500/30 rounded">
+                    <AlertCircle size={16} className="text-red-400 flex-shrink-0" />
+                    <p className="font-inter text-red-300 text-xs">
+                      Não foi possível enviar sua mensagem. Verifique sua conexão e tente novamente.
+                    </p>
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={loading}
