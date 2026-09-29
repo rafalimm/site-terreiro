@@ -118,10 +118,6 @@ router.post('/pre-registration/complete', preCompleteLimiter, async (req, res) =
     });
     if (!user) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou já concluído.' });
 
-    const attendance = await prisma.giraAttendance.findFirst({
-      where: { userId: user.id, event: { id: user.attendances?.[0]?.eventId } },
-    }).catch(() => null);
-
     const pendingAttendance = await prisma.giraAttendance.findFirst({
       where: { userId: user.id, queueNumber },
       select: { id: true },
