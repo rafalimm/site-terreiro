@@ -7,7 +7,7 @@ import { createLog } from '../utils/log';
 const router = Router();
 router.use(authenticate);
 
-function sanitize(user: { password: string | null; [key: string]: unknown }) {
+function sanitize(user: any) {
   const { password: _password, ...rest } = user;
   return rest;
 
