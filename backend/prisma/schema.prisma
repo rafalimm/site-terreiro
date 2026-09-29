@@ -257,3 +257,14 @@ model Appointment {
 
   @@map("appointments")
 }
+
+// Imagens enviadas pelo painel (galeria, entidades...). Ficam no banco e são
+// servidas em /api/images/:id, então não dependem de links externos.
+model UploadedImage {
+  id        String @id @default(cuid())
+  mimeType  String
+  data      Bytes
+  createdAt String
+
+  @@map("uploaded_images")
+}

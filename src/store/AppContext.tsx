@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { api, setToken, getToken, ApiError } from '../lib/api';
+import { api, setToken, getToken, ApiError, mediaUrl } from '../lib/api';
 
 // ============================================================
 // TYPES
@@ -136,6 +136,9 @@ export interface Appointment {
   createdAt: string;
 }
 
+const withGalleryMedia = (g: GalleryItem): GalleryItem => ({ ...g, url: mediaUrl(g.url) });
+const withEntityMedia = (e: Entity): Entity => ({ ...e, image: e.image ? mediaUrl(e.image) : e.image });
+
 const emptySiteConfig: SiteConfig = {
   heroTitle: '', heroSubtitle: '', aboutText: '', aboutHistory: '', whatsapp: '',
   instagram: '', address: '', mapUrl: '', email: '', workingHours: '', heroImage: '', aboutImage: '',
@@ -205,14 +208,14 @@ interface AppContextType {
   updateNews: (id: string, data: Partial<NewsItem>) => Promise<void>;
   deleteNews: (id: string) => Promise<void>;
 
-  addGalleryItem: (item: Omit<GalleryItem, 'id' | 'createdAt'>) => Promise<void>;
+  addGalleryItem: (item: Omit<GalleryItem, 'id' | 'createdAt'>) => Promise<boolean>;
   updateGalleryItem: (id: string, data: Partial<GalleryItem>) => Promise<void>;
   deleteGalleryItem: (id: string) => Promise<void>;
 
   updateService: (id: string, data: Partial<ServiceInfo>) => Promise<void>;
 
-  addEntity: (entity: Omit<Entity, 'id'>) => Promise<void>;
-  updateEntity: (id: string, data: Partial<Entity>) => Promise<void>;
+  addEntity: (entity: Omit<Entity, 'id'>) => Promise<boolean>;
+  updateEntity: (id: string, data: Partial<Entity>) => Promise<boolean>;
   deleteEntity: (id: string) => Promise<void>;
 
   updateSiteConfig: (data: Partial<SiteConfig>) => Promise<void>;
@@ -272,9 +275,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setEvents(bundle.events);
       setFaqItems(bundle.faqItems);
       setNewsItems(bundle.newsItems);
-      setGalleryItems(bundle.galleryItems);
+      setGalleryItems(bundle.galleryItems.map(withGalleryMedia));
       setServices(bundle.services);
-      setEntities(bundle.entities);
+      setEntities(bundle.entities.map(withEntityMedia));
       if (bundle.siteConfig) setSiteConfig(bundle.siteConfig);
 
       // Usuários com acesso administrativo à agenda precisam receber também
@@ -527,16 +530,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // ---- Galeria ----
-  const addGalleryItem = async (item: Omit<GalleryItem, 'id' | 'createdAt'>) => {
+  const addGalleryItem = async (item: Omit<GalleryItem, 'id' | 'createdAt'>): Promise<boolean> => {
     try {
       const created = await api.post<GalleryItem>('/api/admin/gallery', item);
-      setGalleryItems(prev => [created, ...prev]);
-    } catch (err) { handleError(err); }
+      setGalleryItems(prev => [withGalleryMedia(created), ...prev]);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
   };
   const updateGalleryItem = async (id: string, data: Partial<GalleryItem>) => {
     try {
       const updated = await api.patch<GalleryItem>(`/api/admin/gallery/${id}`, data);
-      setGalleryItems(prev => prev.map(g => (g.id === id ? updated : g)));
+      setGalleryItems(prev => prev.map(g => (g.id === id ? withGalleryMedia(updated) : g)));
     } catch (err) { handleError(err); }
   };
   const deleteGalleryItem = async (id: string) => {
@@ -555,17 +562,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // ---- Entidades / Linhas ----
-  const addEntity = async (entity: Omit<Entity, 'id'>) => {
+  const addEntity = async (entity: Omit<Entity, 'id'>): Promise<boolean> => {
     try {
       const created = await api.post<Entity>('/api/admin/entities', entity);
-      setEntities(prev => [...prev, created]);
-    } catch (err) { handleError(err); }
+      setEntities(prev => [...prev, withEntityMedia(created)]);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
   };
-  const updateEntity = async (id: string, data: Partial<Entity>) => {
+  const updateEntity = async (id: string, data: Partial<Entity>): Promise<boolean> => {
     try {
       const updated = await api.patch<Entity>(`/api/admin/entities/${id}`, data);
-      setEntities(prev => prev.map(e => (e.id === id ? updated : e)));
-    } catch (err) { handleError(err); }
+      setEntities(prev => prev.map(e => (e.id === id ? withEntityMedia(updated) : e)));
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
   };
   const deleteEntity = async (id: string) => {
     try {

@@ -2,7 +2,14 @@
 // A URL da API vem de uma variável de ambiente (VITE_API_URL), então trocar de
 // hospedagem/domínio no futuro é só mudar essa variável — nada de código muda.
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+
+// Imagens enviadas pelo painel ficam guardadas como "/api/images/ID". Aqui completamos
+// com o endereço da API, então trocar de domínio no futuro não quebra nenhuma foto.
+export function mediaUrl(url?: string | null): string {
+  if (!url) return '';
+  return url.startsWith('/api/images/') ? `${API_URL}${url}` : url;
+}
 const TOKEN_KEY = 'zedolaco_token';
 
 export function getToken(): string | null {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, X, Check, Star } from 'lucide-react';
+import { Plus, Trash2, X, Check, Star, AlertCircle } from 'lucide-react';
 import { useApp, GalleryItem } from '../../store/AppContext';
+import { ImageUploader } from '../../components/ImageUploader';
 
 const GALLERY_CATEGORIES = ['Nosso Terreiro', 'Giras', 'Eventos', 'Momentos da Casa', 'Equipe', 'Eventos Especiais'];
 
@@ -18,14 +19,26 @@ export const AdminGaleria: React.FC = () => {
   const [form, setForm] = useState(emptyItem);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [filterCat, setFilterCat] = useState('Todos');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const filtered = filterCat === 'Todos' ? galleryItems : galleryItems.filter(g => g.category === filterCat);
 
-  const handleSave = () => {
-    if (!form.url || !form.title) return;
-    addGalleryItem(form);
-    setShowModal(false);
-    setForm(emptyItem);
+  const handleSave = async () => {
+    if (!form.url || !form.title) {
+      setError('Escolha uma foto e defina um título antes de salvar.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    const success = await addGalleryItem(form);
+    setSaving(false);
+    if (success) {
+      setShowModal(false);
+      setForm(emptyItem);
+    } else {
+      setError('Não foi possível salvar a foto. Tente novamente.');
+    }
   };
 
   return (
@@ -111,11 +124,8 @@ export const AdminGaleria: React.FC = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="form-label">URL da Imagem *</label>
-                <input className="form-input" placeholder="https://..." value={form.url} onChange={e => setForm({...form, url: e.target.value})} />
-                {form.url && (
-                  <img src={form.url} alt="Preview" className="mt-2 w-full h-32 object-cover rounded border border-[rgba(201,168,76,0.2)]" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                )}
+                <label className="form-label">Foto *</label>
+                <ImageUploader value={form.url} onChange={url => setForm({ ...form, url })} maxSize={1600} />
               </div>
               <div>
                 <label className="form-label">Título *</label>
@@ -136,10 +146,16 @@ export const AdminGaleria: React.FC = () => {
                 <span className="font-inter text-[rgba(245,240,232,0.7)] text-sm">Definir como foto principal</span>
               </label>
             </div>
+            {error && (
+              <div className="flex items-center gap-2 mt-4 p-3 bg-[rgba(139,26,26,0.15)] border border-red-500/30 rounded">
+                <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                <p className="font-inter text-red-300 text-xs">{error}</p>
+              </div>
+            )}
             <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
-              <button onClick={handleSave} className="btn-gold text-xs flex-1 justify-center">
-                <Check size={14} />
-                Adicionar
+              <button onClick={handleSave} disabled={saving} className="btn-gold text-xs flex-1 justify-center disabled:opacity-60">
+                {saving ? <div className="w-3.5 h-3.5 border-2 border-[rgba(13,5,5,0.3)] border-t-[#0d0505] rounded-full animate-spin" /> : <Check size={14} />}
+                {saving ? 'Salvando...' : 'Adicionar'}
               </button>
               <button onClick={() => setShowModal(false)} className="btn-outline-gold text-xs px-6">Cancelar</button>
             </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useApp, Entity } from '../../store/AppContext';
+import { ImageUploader } from '../../components/ImageUploader';
 
 const emptyEntity: Omit<Entity, 'id'> = {
   name: '',
@@ -19,15 +20,23 @@ export const AdminEntidades: React.FC = () => {
   const [editing, setEditing] = useState<Entity | null>(null);
   const [form, setForm] = useState(emptyEntity);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const openCreate = () => { setEditing(null); setForm(emptyEntity); setShowModal(true); };
-  const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active }); setShowModal(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyEntity); setError(''); setShowModal(true); };
+  const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active }); setError(''); setShowModal(true); };
 
-  const handleSave = () => {
-    if (!form.name) return;
-    if (editing) updateEntity(editing.id, form);
-    else addEntity(form);
-    setShowModal(false);
+  const handleSave = async () => {
+    if (!form.name) {
+      setError('Informe ao menos o nome da entidade.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    const success = editing ? await updateEntity(editing.id, form) : await addEntity(form);
+    setSaving(false);
+    if (success) setShowModal(false);
+    else setError('Não foi possível salvar a entidade. Tente novamente.');
   };
 
   return (
@@ -121,8 +130,8 @@ export const AdminEntidades: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="form-label">URL da Imagem</label>
-                <input className="form-input" placeholder="https://..." value={form.image} onChange={e => setForm({...form, image: e.target.value})} />
+                <label className="form-label">Foto</label>
+                <ImageUploader value={form.image || ''} onChange={image => setForm({ ...form, image })} maxSize={1200} shape="round" />
               </div>
               <div>
                 <label className="form-label">Descrição</label>
@@ -145,8 +154,17 @@ export const AdminEntidades: React.FC = () => {
                 <span className="font-inter text-[rgba(245,240,232,0.7)] text-sm">Visível no site</span>
               </label>
             </div>
+            {error && (
+              <div className="flex items-center gap-2 mt-4 p-3 bg-[rgba(139,26,26,0.15)] border border-red-500/30 rounded">
+                <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                <p className="font-inter text-red-300 text-xs">{error}</p>
+              </div>
+            )}
             <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
-              <button onClick={handleSave} className="btn-gold text-xs flex-1 justify-center"><Check size={14} />{editing ? 'Salvar' : 'Adicionar'}</button>
+              <button onClick={handleSave} disabled={saving} className="btn-gold text-xs flex-1 justify-center disabled:opacity-60">
+                {saving ? <div className="w-3.5 h-3.5 border-2 border-[rgba(13,5,5,0.3)] border-t-[#0d0505] rounded-full animate-spin" /> : <Check size={14} />}
+                {saving ? 'Salvando...' : editing ? 'Salvar' : 'Adicionar'}
+              </button>
               <button onClick={() => setShowModal(false)} className="btn-outline-gold text-xs px-6">Cancelar</button>
             </div>
           </div>
