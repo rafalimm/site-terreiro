@@ -6,7 +6,7 @@ import { api, setToken, getToken, ApiError, mediaUrl } from '../lib/api';
 // (mesmos tipos de antes — nada muda para quem importa daqui)
 // ============================================================
 
-export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendimento' | 'filho' | 'consulente' | 'compras';
+export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendimento' | 'filho' | 'consulente' | 'compras' | 'responsavel_fila';
 
 export interface User {
   id: string;
@@ -182,6 +182,7 @@ const PERMISSIONS: Record<UserRole, string[]> = {
   filho: ['own_account', 'filho_content', 'membership'],
   consulente: ['own_account'],
   compras: ['compras'],
+  responsavel_fila: ['fila'],
 };
 
 // ============================================================
