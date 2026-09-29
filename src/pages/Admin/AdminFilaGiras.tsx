@@ -5,7 +5,7 @@ import { useApp, GiraAttendance } from '../../store/AppContext';
 import { api } from '../../lib/api';
 
 type QueueResponse = {
-  event: { id: string; title: string; date: string; time: string; type: string };
+  event: { id: string; title: string; date: string; time: string; type: string; firstVisitEntityIds?: string[] };
   counts: { confirmed: number; arrived: number; called: number; inService: number; attended: number };
   attendances: Array<GiraAttendance & { user: { id: string; name: string; email: string; whatsapp?: string; role: string } }>;
   entities: Array<{ id: string; name: string; line: string; active: boolean }>;
@@ -318,12 +318,12 @@ export const AdminFilaGiras: React.FC = () => {
 
                 {(() => {
                   const target = queue?.attendances.find(a => a.id === callTargetId);
-                  const entitiesForCall = target?.isFirstVisit && queue?.availableFirstVisitEntities?.length ? queue.availableFirstVisitEntities : queue?.availableEntities || [];
+                  const entitiesForCall = target?.isFirstVisit && (queue?.event.firstVisitEntityIds?.length || 0) > 0 ? (queue?.availableFirstVisitEntities || []) : (queue?.availableEntities || []);
                   return entitiesForCall.length ? (
 
                   <div className="space-y-2">
                     <label className="form-label">Escolha a entidade disponível</label>
-                    {queue.availableEntities.map(entity => (
+                    {entitiesForCall.map(entity => (
                       <button
                         key={entity.id}
                         onClick={() => setSelectedEntityId(entity.id)}
