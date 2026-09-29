@@ -63,6 +63,9 @@ router.patch('/:id', requireSuperAdmin, async (req, res) => {
   if (data.role === 'filho') {
     await prisma.$executeRawUnsafe('ALTER TYPE "Role" ADD VALUE IF NOT EXISTS \'filho\'');
   }
+  if (data.role === 'responsavel_fila') {
+    await prisma.$executeRawUnsafe('ALTER TYPE "Role" ADD VALUE IF NOT EXISTS \'responsavel_fila\'');
+  }
 
   if (data.email) data.email = String(data.email).toLowerCase();
   if (data.password) {
