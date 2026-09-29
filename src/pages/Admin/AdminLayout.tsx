@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Newspaper, HelpCircle, Image,
   Users, Settings, LogOut, Menu, X, Star, MessageSquare,
-  Activity, Layers, CreditCard, Shield, CalendarCheck, ShoppingCart, ListOrdered
+  Activity, Layers, CreditCard, Shield, CalendarCheck, ShoppingCart, ListOrdered, UserPlus
 } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 
 export type AdminSection =
   | 'dashboard' | 'agenda' | 'agendamentos' | 'noticias' | 'faq' | 'galeria'
   | 'usuarios' | 'configuracoes' | 'mensagens' | 'servicos'
-  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades' | 'compras' | 'fila';
+  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades' | 'compras' | 'fila' | 'pre-cadastro';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -22,6 +22,7 @@ const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'agenda', label: 'Agenda / Giras', icon: Calendar, perm: 'agenda' },
   { key: 'fila', label: 'Fila de Atendimento', icon: ListOrdered, perm: 'fila' },
+  { key: 'pre-cadastro', label: 'Pré-cadastro', icon: UserPlus, perm: 'pre_cadastro' },
   { key: 'agendamentos', label: 'Agendamentos', icon: CalendarCheck, perm: 'agenda' },
   { key: 'noticias', label: 'Notícias', icon: Newspaper, perm: 'news' },
   { key: 'faq', label: 'FAQ', icon: HelpCircle, perm: 'faq' },
