@@ -8,7 +8,8 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 // com o endereço da API, então trocar de domínio no futuro não quebra nenhuma foto.
 export function mediaUrl(url?: string | null): string {
   if (!url) return '';
-  return url.startsWith('/api/images/') ? `${API_URL}${url}` : url;
+  if (!url.startsWith('/api/images/')) return url;
+  return `${API_URL.replace(/\/+$/, '')}${url}`;
 }
 const TOKEN_KEY = 'zedolaco_token';
 
