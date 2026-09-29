@@ -3,11 +3,12 @@
 // usa a cópia dele para decidir o que mostrar na tela, mas quem garante
 // segurança de verdade é sempre o servidor).
 
-export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendimento' | 'filho' | 'consulente' | 'compras';
+export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendimento' | 'filho' | 'consulente' | 'compras' | 'responsavel_fila';
 
 export const PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ['*'],
   compras: ['compras'],
+  responsavel_fila: ['fila'],
   admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership', 'compras'],
   agenda: ['agenda', 'events', 'filho_content', 'membership'],
   content: ['news', 'faq', 'gallery', 'institutional', 'filho_content', 'membership'],
