@@ -142,16 +142,16 @@ export const AdminFilaGiras: React.FC = () => {
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
-              ['Confirmados', queue.counts.confirmed, Users],
-              ['Aguardando', queue.counts.arrived, Clock3],
-              ['Chamados', queue.counts.called, PhoneCall],
-              ['Em atendimento', queue.counts.inService, Play],
-              ['Atendidos', queue.counts.attended, CheckCircle2],
-            ].map(([label, count, Icon]) => (
-              <div key={String(label)} className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-4">
+              { label: 'Confirmados', count: queue.counts.confirmed, Icon: Users },
+              { label: 'Aguardando', count: queue.counts.arrived, Icon: Clock3 },
+              { label: 'Chamados', count: queue.counts.called, Icon: PhoneCall },
+              { label: 'Em atendimento', count: queue.counts.inService, Icon: Play },
+              { label: 'Atendidos', count: queue.counts.attended, Icon: CheckCircle2 },
+            ].map(({ label, count, Icon }) => (
+              <div key={label} className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-4">
                 <Icon size={17} className="text-[#c9a84c] mb-2" />
-                <p className="text-[rgba(245,240,232,0.4)] text-xs">{String(label)}</p>
-                <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold">{String(count)}</p>
+                <p className="text-[rgba(245,240,232,0.4)] text-xs">{label}</p>
+                <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold">{count}</p>
               </div>
             ))}
           </div>
@@ -207,7 +207,7 @@ export const AdminFilaGiras: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={statusClass[attendance.status] || '' + ' px-2.5 py-1 rounded border text-xs'}>
+                    <span className={(statusClass[attendance.status] || '') + ' px-2.5 py-1 rounded border text-xs'}>
                       {statusLabel[attendance.status] || attendance.status}
                     </span>
                     {attendance.status === 'arrived' && <button onClick={() => action(attendance.id, 'call')} className="btn-outline-gold text-xs"><PhoneCall size={13}/> Chamar</button>}
