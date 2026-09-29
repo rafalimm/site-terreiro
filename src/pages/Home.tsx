@@ -169,7 +169,7 @@ export const Home: React.FC = () => {
                 <img
                   src={siteConfig.aboutImage}
                   alt="Altar do Centro de Umbanda Zé do Laço"
-                  className="relative w-full h-80 object-cover rounded-sm border border-[rgba(201,168,76,0.2)]"
+                  className="relative w-full h-64 sm:h-72 md:h-80 object-contain md:object-cover bg-[#0a0404] rounded-sm border border-[rgba(201,168,76,0.2)]"
                 />
                 <div className="absolute bottom-4 left-4 right-4 bg-[rgba(13,5,5,0.9)] border border-[rgba(201,168,76,0.2)] rounded p-3">
                   <p className="font-cinzel text-[#c9a84c] text-xs tracking-wider text-center">
