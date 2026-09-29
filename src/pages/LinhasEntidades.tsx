@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Star, Phone } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
 export const LinhasEntidades: React.FC = () => {
-  const { entities, siteConfig } = useApp();
+  const { entities, entityLines, siteConfig } = useApp();
   const activeEntities = entities.filter(e => e.active);
+  const [selectedLineId, setSelectedLineId] = useState('all');
+  const visibleEntities = useMemo(() => selectedLineId === 'all'
+    ? activeEntities
+    : activeEntities.filter(entity => entity.lineId === selectedLineId || entityLines.find(line => line.id === selectedLineId)?.name === entity.line),
+    [activeEntities, selectedLineId, entityLines]);
 
   return (
     <div className="min-h-screen bg-[#0d0505]">
@@ -54,8 +59,32 @@ export const LinhasEntidades: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {activeEntities.map(entity => (
+          <>
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              <button
+                onClick={() => setSelectedLineId('all')}
+                className={`px-4 py-2 rounded-full border text-xs font-inter tracking-wide transition-all ${selectedLineId === 'all' ? 'border-[#c9a84c] bg-[rgba(201,168,76,0.12)] text-[#c9a84c]' : 'border-[rgba(201,168,76,0.15)] text-[rgba(245,240,232,0.55)] hover:border-[rgba(201,168,76,0.35)]'}`}
+              >
+                Todas as linhas
+              </button>
+              {entityLines.map(line => (
+                <button
+                  key={line.id}
+                  onClick={() => setSelectedLineId(line.id)}
+                  className={`px-4 py-2 rounded-full border text-xs font-inter tracking-wide transition-all ${selectedLineId === line.id ? 'border-[#c9a84c] bg-[rgba(201,168,76,0.12)] text-[#c9a84c]' : 'border-[rgba(201,168,76,0.15)] text-[rgba(245,240,232,0.55)] hover:border-[rgba(201,168,76,0.35)]'}`}
+                >
+                  {line.name}
+                </button>
+              ))}
+            </div>
+
+            {visibleEntities.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="font-cinzel text-[#c9a84c] text-lg">Nenhuma entidade nesta linha</p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleEntities.map(entity => (
               <div key={entity.id} className="card-spiritual p-6">
                 {entity.image && (
                   <img src={entity.image} alt={entity.name} className="w-20 h-20 object-cover rounded-full border-2 border-[rgba(201,168,76,0.3)] mx-auto mb-4" />
@@ -73,7 +102,9 @@ export const LinhasEntidades: React.FC = () => {
                 )}
               </div>
             ))}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
