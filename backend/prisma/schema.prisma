@@ -244,7 +244,8 @@ model Entity {
   history         String  @db.Text
   characteristics String  @db.Text
   additionalInfo  String  @db.Text
-  active          Boolean @default(true)
+  active          Boolean          @default(true)
+  attendances     GiraAttendance[]
 
   @@map("entities")
 }
