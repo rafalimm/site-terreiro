@@ -21,6 +21,7 @@ router.get('/attendance/mine', async (req, res) => {
         event: {
           select: { id: true, title: true, date: true, time: true, type: true },
         },
+        entity: { select: { id: true, name: true, line: true, active: true } },
       },
     });
     res.json(attendances);
