@@ -29,6 +29,7 @@ export const AdminEntidades: React.FC = () => {
   const [editingLine, setEditingLine] = useState<string | null>(null);
   const [lineForm, setLineForm] = useState({ name: '', description: '', entityIds: [] as string[] });
   const [lineSaving, setLineSaving] = useState(false);
+  const [lineError, setLineError] = useState('');
   const [lineModalMode, setLineModalMode] = useState<'create' | 'edit' | 'members'>('create');
 
   const openCreate = () => { setEditing(null); setForm(emptyEntity); setError(''); setShowModal(true); };
@@ -39,6 +40,7 @@ export const AdminEntidades: React.FC = () => {
     setEditingLine(null);
     setLineForm({ name: '', description: '', entityIds: [] });
     setLineModalMode('create');
+    setLineError('');
     setShowLineModal(true);
   };
 
@@ -46,6 +48,7 @@ export const AdminEntidades: React.FC = () => {
     setEditingLine(line.id);
     setLineForm({ name: line.name, description: line.description || '', entityIds: (line.members || []).map(entity => entity.id) });
     setLineModalMode('edit');
+    setLineError('');
     setShowLineModal(true);
   };
 
@@ -53,6 +56,7 @@ export const AdminEntidades: React.FC = () => {
     setEditingLine(line.id);
     setLineForm({ name: line.name, description: line.description || '', entityIds: (line.members || []).map(entity => entity.id) });
     setLineModalMode('members');
+    setLineError('');
     setShowLineModal(true);
   };
 
@@ -66,13 +70,18 @@ export const AdminEntidades: React.FC = () => {
   };
 
   const handleSaveLine = async () => {
-    if (!lineForm.name.trim()) return;
+    if (!lineForm.name.trim()) {
+      setLineError('Informe o nome da linha.');
+      return;
+    }
+    setLineError('');
     setLineSaving(true);
     const success = editingLine
       ? await updateEntityLine(editingLine, lineModalMode === 'members' ? { entityIds: lineForm.entityIds } : { name: lineForm.name, description: lineForm.description })
       : await addEntityLine({ name: lineForm.name, description: lineForm.description, entityIds: [] });
     setLineSaving(false);
     if (success) setShowLineModal(false);
+    else setLineError('Não foi possível salvar a linha. Verifique se o nome já existe e se o backend está atualizado.');
   };
 
   const handleSave = async () => {
@@ -212,18 +221,27 @@ export const AdminEntidades: React.FC = () => {
               {lineModalMode === 'members' && (
                 <div>
                   <p className="font-inter text-xs text-[rgba(245,240,232,0.55)] mb-3">Selecione as entidades que pertencem a <strong className="text-[#c9a84c]">{lineForm.name}</strong>. Uma entidade pode participar de mais de uma linha personalizada.</p>
-                  <div className="max-h-64 overflow-y-auto space-y-1 border border-[rgba(201,168,76,0.1)] rounded p-2">
-                    {entities.length === 0 ? <p className="text-sm text-[rgba(245,240,232,0.4)] p-2">Cadastre entidades primeiro.</p> : entities.map(entity => (
-                      <label key={entity.id} className="flex items-center gap-3 p-2 rounded hover:bg-[rgba(201,168,76,0.05)] cursor-pointer">
-                        <input type="checkbox" checked={lineForm.entityIds.includes(entity.id)} onChange={() => toggleLineEntity(entity.id)} className="w-4 h-4 accent-[#c9a84c]" />
-                        <span className="font-inter text-sm text-[rgba(245,240,232,0.75)]">{entity.name}</span>
-                        <span className="ml-auto text-xs text-[#c9a84c]">{entity.line}</span>
-                      </label>
+                  <div className="max-h-64 overflow-y-auto space-y-3 border border-[rgba(201,168,76,0.1)] rounded p-2">
+                    {entities.length === 0 ? <p className="text-sm text-[rgba(245,240,232,0.4)] p-2">Cadastre entidades primeiro.</p> : Object.entries(entities.reduce<Record<string, Entity[]>>((groups, entity) => {
+                      const key = entity.line || 'Sem linha';
+                      (groups[key] ||= []).push(entity);
+                      return groups;
+                    }, {})).map(([lineName, lineEntities]) => (
+                      <div key={lineName}>
+                        <p className="font-cinzel text-[#c9a84c] text-xs px-2 py-1 border-b border-[rgba(201,168,76,0.08)]">{lineName}</p>
+                        {lineEntities.map(entity => (
+                          <label key={entity.id} className="flex items-center gap-3 p-2 rounded hover:bg-[rgba(201,168,76,0.05)] cursor-pointer">
+                            <input type="checkbox" checked={lineForm.entityIds.includes(entity.id)} onChange={() => toggleLineEntity(entity.id)} className="w-4 h-4 accent-[#c9a84c]" />
+                            <span className="font-inter text-sm text-[rgba(245,240,232,0.75)]">{entity.name}</span>
+                          </label>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
+            {lineError && <div className="mt-4 p-3 rounded border border-red-500/30 bg-red-500/10 text-red-300 text-xs">{lineError}</div>}
             <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
               <button onClick={handleSaveLine} disabled={lineSaving || (lineModalMode !== 'members' && !lineForm.name.trim())} className="btn-gold text-xs flex-1 justify-center disabled:opacity-60">
                 {lineSaving ? 'Salvando...' : lineModalMode === 'members' ? 'Salvar Entidades' : lineModalMode === 'edit' ? 'Salvar Alterações' : 'Criar Linha'}
