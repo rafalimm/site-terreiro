@@ -103,6 +103,7 @@ export interface EntityLine {
   description?: string | null;
   sortOrder: number;
   active: boolean;
+  members?: Entity[];
 }
 
 export interface Entity {
@@ -251,6 +252,9 @@ interface AppContextType {
   updateService: (id: string, data: Partial<ServiceInfo>) => Promise<void>;
 
   addEntity: (entity: Omit<Entity, 'id'>) => Promise<boolean>;
+  addEntityLine: (line: { name: string; description?: string; entityIds: string[] }) => Promise<boolean>;
+  updateEntityLine: (id: string, line: { name?: string; description?: string; entityIds?: string[] }) => Promise<boolean>;
+  deleteEntityLine: (id: string) => Promise<boolean>;
   updateEntity: (id: string, data: Partial<Entity>) => Promise<boolean>;
   deleteEntity: (id: string) => Promise<void>;
 
@@ -616,6 +620,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // ---- Entidades / Linhas ----
+  const addEntityLine = async (line: { name: string; description?: string; entityIds: string[] }): Promise<boolean> => {
+    try {
+      const created = await api.post<EntityLine>('/api/admin/entities/lines', line);
+      setEntityLines(prev => [...prev, created]);
+      return true;
+    } catch (err) { handleError(err); return false; }
+  };
+  const updateEntityLine = async (id: string, line: { name?: string; description?: string; entityIds?: string[] }): Promise<boolean> => {
+    try {
+      const updated = await api.patch<EntityLine>(`/api/admin/entities/lines/${id}`, line);
+      setEntityLines(prev => prev.map(item => item.id === id ? updated : item));
+      return true;
+    } catch (err) { handleError(err); return false; }
+  };
+  const deleteEntityLine = async (id: string): Promise<boolean> => {
+    try {
+      await api.delete(`/api/admin/entities/lines/${id}`);
+      setEntityLines(prev => prev.filter(item => item.id !== id));
+      return true;
+    } catch (err) { handleError(err); return false; }
+  };
+
   const addEntity = async (entity: Omit<Entity, 'id'>): Promise<boolean> => {
     try {
       const created = await api.post<Entity>('/api/admin/entities', entity);
@@ -716,7 +742,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addNews, updateNews, deleteNews,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       updateService,
-      addEntity, updateEntity, deleteEntity,
+      addEntity, updateEntity, deleteEntity, addEntityLine, updateEntityLine, deleteEntityLine,
       updateSiteConfig,
       addContactMessage, markMessageRead, deleteMessage,
       addAppointment, updateAppointmentStatus, deleteAppointment,
