@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
+import { contactLimiter, appointmentLimiter } from '../middleware/security';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get('/filho/desenvolvimento', authenticate, authorize('filho_content'), a
 });
 
 // POST /api/public/contact — formulário de contato do site, sem necessidade de login
-router.post('/contact', async (req, res) => {
+router.post('/contact', contactLimiter, async (req, res) => {
   const { name, whatsapp, email, subject, message } = req.body ?? {};
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
@@ -50,7 +51,7 @@ router.post('/contact', async (req, res) => {
 });
 
 // POST /api/public/appointments — pedido de agendamento (búzios, cartas ou consulta), sem login
-router.post('/appointments', async (req, res) => {
+router.post('/appointments', appointmentLimiter, async (req, res) => {
   const { name, whatsapp, email, type, preferredDate, preferredTime, notes } = req.body ?? {};
   if (!name || !whatsapp || !type || !preferredDate || !preferredTime) {
     return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
