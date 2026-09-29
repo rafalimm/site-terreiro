@@ -30,11 +30,14 @@ export const MinhaConta: React.FC = () => {
   const [asaasCpf,setAsaasCpf]=React.useState((currentUser as {cpfCnpj?:string|null})?.cpfCnpj||'');
   const [asaasError,setAsaasError]=React.useState('');
   const [profilePhoto, setProfilePhoto] = React.useState('');
+  const [profilePhotoError, setProfilePhotoError] = React.useState(false);
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
   React.useEffect(() => {
-    setProfilePhoto(currentUser?.profilePhoto ? mediaUrl(currentUser.profilePhoto) : '');
+    const nextPhoto = currentUser?.profilePhoto ? mediaUrl(currentUser.profilePhoto) : '';
+    setProfilePhoto(nextPhoto);
+    setProfilePhotoError(false);
   }, [currentUser?.profilePhoto]);
 
   React.useEffect(() => {
@@ -99,7 +102,16 @@ export const MinhaConta: React.FC = () => {
           <div className="flex items-center gap-6 flex-wrap">
             <div className="w-20 h-20 rounded-full border-2 border-[#c9a84c] bg-[rgba(201,168,76,0.1)] flex items-center justify-center flex-shrink-0 overflow-hidden">
               {profilePhoto ? (
-                <img src={profilePhoto} alt={`Foto de perfil de ${currentUser.name}`} className="w-full h-full object-cover" />
+                profilePhotoError ? (
+                  <User size={32} className="text-[#c9a84c]" />
+                ) : (
+                  <img
+                    src={profilePhoto}
+                    alt={`Foto de perfil de ${currentUser.name}`}
+                    className="w-full h-full object-cover"
+                    onError={() => setProfilePhotoError(true)}
+                  />
+                )
               ) : (
                 <User size={32} className="text-[#c9a84c]" />
               )}
@@ -135,6 +147,7 @@ export const MinhaConta: React.FC = () => {
               value={profilePhoto}
               onChange={(url) => {
                 setProfilePhoto(url);
+                setProfilePhotoError(false);
               }}
               uploadPath="/api/auth/profile-photo"
               maxSize={600}
