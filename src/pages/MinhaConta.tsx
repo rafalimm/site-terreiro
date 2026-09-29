@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { generatePixPayload } from '../utils/pix';
-import { dateOnlyTimestamp, todayDateOnly } from '../utils/date';
+import { dateOnlyTimestamp, todayDateOnly, parseDateOnly } from '../utils/date';
 import { QRCodeSVG } from 'qrcode.react';
 import type { PixPaymentConfig } from '../utils/pix';
 
@@ -361,7 +361,7 @@ export const MinhaConta: React.FC = () => {
                       {ev.type === 'Gira de Desenvolvimento' && <span className="text-[10px] px-2 py-0.5 rounded border border-purple-400/30 text-purple-300">Desenvolvimento</span>}
                     </div>
                     <p className="font-inter text-[rgba(245,240,232,0.4)] text-xs mt-0.5">
-                      {format(new Date(ev.date), "dd 'de' MMMM", { locale: ptBR })} às {ev.time}
+                      {format(parseDateOnly(ev.date), "dd 'de' MMMM", { locale: ptBR })} às {ev.time}
                     </p>
                   </div>
                 ))}
