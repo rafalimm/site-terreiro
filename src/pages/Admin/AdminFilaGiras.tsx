@@ -8,6 +8,13 @@ type QueueResponse = {
   event: { id: string; title: string; date: string; time: string; type: string };
   counts: { confirmed: number; arrived: number; called: number; inService: number; attended: number };
   attendances: Array<GiraAttendance & { user: { id: string; name: string; email: string; whatsapp?: string; role: string } }>;
+  entities: Array<{ id: string; name: string; line: string; active: boolean }>;
+  availableEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
+  entityHistory: Array<{
+    entity: { id: string; name: string; line: string; active: boolean };
+    attendedCount: number;
+    consulentes: Array<{ attendanceId: string; userId: string; name: string; queueNumber?: number | null; attendedAt?: string | null }>;
+  }>;
 };
 
 const statusLabel: Record<string, string> = {
@@ -33,6 +40,8 @@ export const AdminFilaGiras: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [callTargetId, setCallTargetId] = useState<string | null>(null);
+  const [selectedEntityId, setSelectedEntityId] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const loadQueue = async () => {
@@ -109,14 +118,55 @@ export const AdminFilaGiras: React.FC = () => {
     }, 100);
   };
 
-  const action = async (attendanceId: string, endpoint: 'call' | 'start' | 'complete') => {
+  const openCallDialog = (attendanceId: string) => {
+    setCallTargetId(attendanceId);
+    setSelectedEntityId('');
+    setMessage('');
+  };
+
+  const performCall = async () => {
+    if (!callTargetId) return;
+    if ((queue?.entities.length || 0) > 0 && !selectedEntityId) {
+      setMessage('Selecione a entidade disponível para chamar este consulente.');
+      return;
+    }
+
+    try {
+      const updated = await api.post<GiraAttendance>(
+        `/api/admin/events/${eventId}/attendance/${callTargetId}/call`,
+        { entityId: selectedEntityId || undefined }
+      );
+      setCallTargetId(null);
+      setSelectedEntityId('');
+      await loadQueue();
+      setMessage(
+        updated.entity?.name
+          ? `Participante chamado para ${updated.entity.name}.`
+          : 'Participante chamado.'
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível chamar a pessoa.');
+      await loadQueue();
+    }
+  };
+
+  const action = async (attendanceId: string, endpoint: 'start' | 'complete') => {
     try {
       await api.post(`/api/admin/events/${eventId}/attendance/${attendanceId}/${endpoint}`, {});
       await loadQueue();
-      setMessage(endpoint === 'call' ? 'Participante chamado.' : endpoint === 'start' ? 'Atendimento iniciado.' : 'Atendimento finalizado.');
+      setMessage(endpoint === 'start' ? 'Atendimento iniciado.' : 'Atendimento finalizado.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a fila.');
     }
+  };
+
+  const callNext = () => {
+    const next = queue?.attendances.find(a => a.status === 'arrived');
+    if (!next) {
+      setMessage('Não há consulentes aguardando na fila.');
+      return;
+    }
+    openCallDialog(next.id);
   };
 
   const current = queue?.attendances.find(a => a.status === 'in_service') || queue?.attendances.find(a => a.status === 'called');
@@ -171,9 +221,57 @@ export const AdminFilaGiras: React.FC = () => {
           )}
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={startScanner} disabled={scannerOpen} className="btn-gold text-xs"><QrCode size={15}/> Escanear chegada</button>
+            <button onClick={callNext} disabled={!queue?.attendances.some(a => a.status === 'arrived')} className="btn-gold text-xs disabled:opacity-50"><PhoneCall size={15}/> Chamar próximo número</button>
+            <button onClick={startScanner} disabled={scannerOpen} className="btn-outline-gold text-xs"><QrCode size={15}/> Escanear chegada</button>
             <button onClick={loadQueue} disabled={loading} className="btn-outline-gold text-xs"><RefreshCw size={14}/> {loading ? 'Atualizando...' : 'Atualizar fila'}</button>
           </div>
+
+          {callTargetId && (
+            <div className="modal-overlay">
+              <div className="modal-content max-w-md">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">Chamar consulente</h3>
+                    <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">
+                      Senha {String(queue?.attendances.find(a => a.id === callTargetId)?.queueNumber || '').padStart(3, '0')}
+                    </p>
+                  </div>
+                  <button onClick={() => setCallTargetId(null)} className="text-[rgba(245,240,232,0.4)] hover:text-white"><XCircle size={20}/></button>
+                </div>
+
+                {queue?.availableEntities.length ? (
+                  <div className="space-y-2">
+                    <label className="form-label">Escolha a entidade disponível</label>
+                    {queue.availableEntities.map(entity => (
+                      <button
+                        key={entity.id}
+                        onClick={() => setSelectedEntityId(entity.id)}
+                        className={`w-full text-left p-3 rounded border transition-colors ${selectedEntityId === entity.id ? 'border-[#c9a84c] bg-[#c9a84c]/10' : 'border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.02)]'}`}
+                      >
+                        <span className="block text-sm text-[#f5f0e8] font-inter">{entity.name}</span>
+                        <span className="block text-xs text-[rgba(245,240,232,0.4)]">{entity.line || 'Sem linha'}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : queue?.entities.length ? (
+                  <div className="p-3 rounded border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-200/70">
+                    Todas as entidades desta gira estão ocupadas no momento. Aguarde uma ser liberada.
+                  </div>
+                ) : (
+                  <div className="p-3 rounded border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-200/70">
+                    Esta gira ainda não possui entidades vinculadas. O atendimento continuará funcionando sem vinculação de entidade.
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
+                  <button onClick={() => setCallTargetId(null)} className="btn-outline-gold text-xs flex-1 justify-center">Cancelar</button>
+                  <button onClick={performCall} disabled={(queue?.entities.length || 0) > 0 && !selectedEntityId} className="btn-gold text-xs flex-1 justify-center disabled:opacity-50">
+                    <PhoneCall size={14}/> Chamar agora
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {scannerOpen && (
             <div className="bg-[#1a0a0a] border border-[#c9a84c]/30 rounded p-4 max-w-md">
@@ -187,6 +285,39 @@ export const AdminFilaGiras: React.FC = () => {
           )}
 
           {message && <div className="p-3 rounded border border-[#c9a84c]/20 bg-[#c9a84c]/5 text-sm text-[#f5f0e8]">{message}</div>}
+
+          {queue.entities.length > 0 && (
+            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
+              <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
+                <h3 className="font-cinzel text-[#c9a84c]">Entidades desta gira</h3>
+                <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">Histórico dos consulentes já atendidos por cada entidade.</p>
+              </div>
+              <div className="divide-y divide-[rgba(201,168,76,0.07)]">
+                {queue.entityHistory.map(item => (
+                  <div key={item.entity.id} className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-cinzel text-[#f5f0e8] text-sm">{item.entity.name}</p>
+                        <p className="text-xs text-[rgba(245,240,232,0.4)]">{item.entity.line || 'Sem linha'}</p>
+                      </div>
+                      <span className="text-[#c9a84c] text-sm font-semibold">{item.attendedCount} atendido(s)</span>
+                    </div>
+                    {item.consulentes.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {item.consulentes.map(person => (
+                          <span key={person.attendanceId} className="px-2.5 py-1 rounded border border-[rgba(201,168,76,0.12)] text-xs text-[rgba(245,240,232,0.65)]">
+                            {person.name}{person.queueNumber ? ` — senha ${String(person.queueNumber).padStart(3, '0')}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[rgba(245,240,232,0.3)] mt-2">Nenhum atendimento finalizado para esta entidade.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
             <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
@@ -210,7 +341,7 @@ export const AdminFilaGiras: React.FC = () => {
                     <span className={(statusClass[attendance.status] || '') + ' px-2.5 py-1 rounded border text-xs'}>
                       {statusLabel[attendance.status] || attendance.status}
                     </span>
-                    {attendance.status === 'arrived' && <button onClick={() => action(attendance.id, 'call')} className="btn-outline-gold text-xs"><PhoneCall size={13}/> Chamar</button>}
+                    {attendance.status === 'arrived' && <button onClick={() => openCallDialog(attendance.id)} className="btn-outline-gold text-xs"><PhoneCall size={13}/> Chamar</button>}
                     {attendance.status === 'called' && <button onClick={() => action(attendance.id, 'start')} className="btn-outline-gold text-xs"><Play size={13}/> Iniciar</button>}
                     {attendance.status === 'in_service' && <button onClick={() => action(attendance.id, 'complete')} className="btn-gold text-xs"><CheckCircle2 size={13}/> Finalizar</button>}
                   </div>
