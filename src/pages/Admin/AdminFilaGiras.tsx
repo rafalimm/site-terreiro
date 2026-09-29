@@ -65,7 +65,7 @@ export const AdminFilaGiras: React.FC = () => {
     const loadAdminEvents = async () => {
       setEventsLoading(true);
       try {
-        const data = await api.get<typeof events>('/api/admin/events');
+        const data = await api.get<typeof events>('/api/attendance/queue-events');
         if (!cancelled) {
           setAdminEvents(data);
           if (!eventId && data.length) setEventId(data[0].id);
@@ -83,6 +83,13 @@ export const AdminFilaGiras: React.FC = () => {
 
   useEffect(() => {
     if (eventId) loadQueue();
+  }, [eventId]);
+
+  // Mantém dois ou mais responsáveis de fila sincronizados em celulares diferentes.
+  useEffect(() => {
+    if (!eventId) return;
+    const interval = window.setInterval(() => { loadQueue(); }, 2500);
+    return () => window.clearInterval(interval);
   }, [eventId]);
 
   useEffect(() => {
