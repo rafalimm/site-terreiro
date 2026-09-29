@@ -84,6 +84,8 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events', 'f
   );
 
   const availableEntities = entities.filter(entity => entity.active && !busyEntityIds.has(entity.id));
+  const firstVisitEntityIds = Array.isArray(event.firstVisitEntityIds) ? event.firstVisitEntityIds.filter((id): id is string => typeof id === 'string') : [];
+  const availableFirstVisitEntities = availableEntities.filter(entity => firstVisitEntityIds.includes(entity.id));
 
   const entityHistory = entities.map(entity => {
     const records = attendances.filter(a => a.entityId === entity.id && a.status === 'attended');
@@ -108,7 +110,7 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events', 'f
     attended: attendances.filter(a => a.status === 'attended').length,
   };
 
-  res.json({ event, counts, attendances, entities, availableEntities, entityHistory });
+  res.json({ event, counts, attendances, entities, availableEntities, availableFirstVisitEntities, entityHistory });
 });
 
 router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'events', 'fila'), async (req, res) => {
@@ -130,6 +132,8 @@ router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'e
       return res.status(400).json({ error: 'Esta presença já foi registrada na fila.' });
     }
 
+    const isFirstVisit = req.body.isFirstVisit === true;
+
     const last = await prisma.giraAttendance.findFirst({
       where: { eventId: attendance.eventId, queueNumber: { not: null } },
       orderBy: { queueNumber: 'desc' },
@@ -142,6 +146,7 @@ router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'e
       data: {
         queueNumber,
         status: 'arrived',
+        isFirstVisit,
         checkedInAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -167,6 +172,11 @@ router.post('/admin/events/:eventId/attendance/:attendanceId/call', authorize('a
     const entityId = typeof req.body.entityId === 'string' && req.body.entityId.trim()
       ? req.body.entityId.trim()
       : null;
+
+    const firstVisitEntityIdsForCall = Array.isArray(current.event.firstVisitEntityIds) ? current.event.firstVisitEntityIds.filter((id): id is string => typeof id === 'string') : [];
+    if (current.isFirstVisit && firstVisitEntityIdsForCall.length > 0 && (!entityId || !firstVisitEntityIdsForCall.includes(entityId))) {
+      return res.status(400).json({ error: 'Para primeira vez, selecione uma entidade destinada a novos consulentes.' });
+    }
 
     const configuredEntityIds = Array.isArray(current.event.entityIds)
       ? current.event.entityIds.filter((id): id is string => typeof id === 'string')
