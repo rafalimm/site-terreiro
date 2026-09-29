@@ -11,6 +11,7 @@ const roleLabels: Record<UserRole, string> = {
   atendimento: 'Atendimento',
   filho: 'Filho',
   consulente: 'Consulente',
+  compras: 'Responsável por Compras',
 };
 
 // Cargos de equipe que podem ser atribuídos a um consulente já cadastrado.
