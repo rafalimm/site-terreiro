@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Newspaper, HelpCircle, Image,
   Users, Settings, LogOut, Menu, X, Star, MessageSquare,
-  Activity, Layers, CreditCard, Shield, CalendarCheck
+  Activity, Layers, CreditCard, Shield, CalendarCheck, ShoppingCart
 } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 
 export type AdminSection =
   | 'dashboard' | 'agenda' | 'agendamentos' | 'noticias' | 'faq' | 'galeria'
   | 'usuarios' | 'configuracoes' | 'mensagens' | 'servicos'
-  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades';
+  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades' | 'compras';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -30,6 +30,7 @@ const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[
   { key: 'mensagens', label: 'Mensagens', icon: MessageSquare, perm: 'messages' },
   { key: 'consulentes', label: 'Consulentes', icon: Users, perm: 'consulentes' },
   { key: 'mensalidades', label: 'Mensalidades', icon: CreditCard, perm: 'membership' },
+  { key: 'compras', label: 'Compras', icon: ShoppingCart, perm: 'compras' },
   { key: 'usuarios', label: 'Usuários', icon: Shield },
   { key: 'logs', label: 'Logs', icon: Activity },
   { key: 'configuracoes', label: 'Configurações', icon: Settings },
@@ -57,6 +58,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, section, set
     content: 'Resp. Conteúdo',
     atendimento: 'Atendimento',
     consulente: 'Consulente',
+    compras: 'Responsável por Compras',
   };
 
   return (
