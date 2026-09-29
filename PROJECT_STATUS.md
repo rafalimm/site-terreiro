@@ -66,6 +66,17 @@ ChatGPT e Claude devem tratar este arquivo como um resumo operacional compartilh
 - O módulo não altera o fluxo de mensalidades, giras ou confirmações de presença.
 - Build final ainda precisa ser validado no ambiente de deploy.
 
+## Nova implementação — Fila de Atendimento das Giras
+- 2026-09-29: iniciada a implementação do fluxo `confirmação → QR Code → chegada → senha → fila → chamada → atendimento → finalização`.
+- Criado o modelo Prisma `GiraAttendance` e migração `20260929113000_add_gira_attendance`.
+- Ao confirmar presença em uma gira, o backend cria automaticamente um registro individual com `qrToken`, vinculado à pessoa e à gira.
+- Criada API protegida para carregar a fila, validar QR Code, registrar chegada, gerar senha sequencial, chamar participante, iniciar atendimento e finalizar atendimento.
+- Minha Conta passou a exibir o QR Code das giras confirmadas e a senha/status quando a chegada já foi registrada.
+- Painel administrativo ganhou a seção “Fila de Atendimento”, com seleção da gira, indicadores, scanner de câmera e controles da fila.
+- Adicionadas as dependências frontend `qrcode.react` e `html5-qrcode`.
+- Asaas continua pendente e desativado, conforme planejado.
+- Build final ainda precisa ser validado pela Vercel/Railway após a instalação das novas dependências e aplicação da migração.
+
 ## Próximas prioridades
 1. Garantir build limpo.
 2. Corrigir erros TypeScript restantes sem remover funcionalidades.
