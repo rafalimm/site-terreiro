@@ -35,11 +35,13 @@ const statusClass: Record<string, string> = {
 
 export const AdminFilaGiras: React.FC = () => {
   const { events } = useApp();
+  const [adminEvents, setAdminEvents] = useState<typeof events>([]);
   const [eventId, setEventId] = useState('');
   const [queue, setQueue] = useState<QueueResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [eventsLoading, setEventsLoading] = useState(false);
   const [callTargetId, setCallTargetId] = useState<string | null>(null);
   const [selectedEntityId, setSelectedEntityId] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -59,8 +61,25 @@ export const AdminFilaGiras: React.FC = () => {
   };
 
   useEffect(() => {
-    if (events.length && !eventId) setEventId(events[0].id);
-  }, [events, eventId]);
+    let cancelled = false;
+    const loadAdminEvents = async () => {
+      setEventsLoading(true);
+      try {
+        const data = await api.get<typeof events>('/api/admin/events');
+        if (!cancelled) {
+          setAdminEvents(data);
+          if (!eventId && data.length) setEventId(data[0].id);
+          if (!data.length) setMessage('Nenhuma gira cadastrada para gerenciar a fila. Crie uma gira na Agenda / Giras primeiro.');
+        }
+      } catch (error) {
+        if (!cancelled) setMessage(error instanceof Error ? error.message : 'Não foi possível carregar as giras para a fila.');
+      } finally {
+        if (!cancelled) setEventsLoading(false);
+      }
+    };
+    loadAdminEvents();
+    return () => { cancelled = true; };
+  }, [events]);
 
   useEffect(() => {
     if (eventId) loadQueue();
@@ -171,6 +190,7 @@ export const AdminFilaGiras: React.FC = () => {
     openCallDialog(next.id);
   };
 
+  const availableEvents = adminEvents.length ? adminEvents : events;
   const current = queue?.attendances.find(a => a.status === 'in_service') || queue?.attendances.find(a => a.status === 'called');
 
   return (
@@ -184,11 +204,23 @@ export const AdminFilaGiras: React.FC = () => {
         <label className="form-label">Selecione a gira</label>
         <select className="form-input" value={eventId} onChange={e => setEventId(e.target.value)}>
           <option value="">Selecione...</option>
-          {events.map(event => (
+          {availableEvents.map(event => (
             <option key={event.id} value={event.id}>{event.date} — {event.time} — {event.title}</option>
           ))}
         </select>
       </div>
+
+      {eventsLoading && !availableEvents.length && (
+        <div className="p-4 rounded border border-[rgba(201,168,76,0.15)] bg-[#1a0a0a] text-sm text-[rgba(245,240,232,0.6)]">
+          Carregando giras...
+        </div>
+      )}
+
+      {!eventsLoading && !availableEvents.length && (
+        <div className="p-6 rounded border border-yellow-500/20 bg-yellow-500/5 text-sm text-yellow-200/80">
+          Nenhuma gira disponível para a fila. Cadastre uma gira em <strong>Agenda / Giras</strong> e depois volte para esta tela.
+        </div>
+      )}
 
       {queue && (
         <>
