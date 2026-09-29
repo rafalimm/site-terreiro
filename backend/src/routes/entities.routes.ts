@@ -31,11 +31,19 @@ router.post('/lines', async (req, res) => {
       },
       include: { members: { include: { lineCategory: true } } },
     });
-    await createLog(req.user!.id, req.user!.name, 'Criou', 'Linha', `Criou a linha "${line.name}"`);
+    // A criação da linha não deve falhar caso o registro de auditoria tenha algum problema.
+    try {
+      await createLog(req.user!.id, req.user!.name, 'Criou', 'Linha', `Criou a linha "${line.name}"`);
+    } catch (logError) {
+      console.error('Linha criada, mas não foi possível registrar o log:', logError);
+    }
     res.status(201).json(line);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao criar linha:', error);
-    res.status(400).json({ error: 'Não foi possível criar a linha.' });
+    const message = error?.code === 'P2002'
+      ? 'Já existe uma linha com esse nome.'
+      : 'Não foi possível criar a linha.';
+    res.status(400).json({ error: message });
   }
 });
 
