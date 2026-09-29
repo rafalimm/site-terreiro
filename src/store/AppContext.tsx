@@ -18,6 +18,7 @@ export interface User {
   createdAt: string;
   active: boolean;
   cpfCnpj?: string | null;
+  profilePhoto?: string | null;
 }
 
 export interface GiraEvent {
