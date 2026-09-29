@@ -32,7 +32,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     if (!user || !user.active) {
       return res.status(401).json({ error: 'Usuário inválido ou inativo.' });
     }
-    req.user = { id: user.id, name: user.name, email: user.email ?? '', role: user.role as UserRole };
+    const email = user.email ?? '';
+    req.user = { id: user.id, name: user.name, email, role: user.role as UserRole };
     next();
   } catch {
     return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
