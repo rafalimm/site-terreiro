@@ -26,13 +26,16 @@ enum Role {
 model User {
   id        String   @id @default(cuid())
   name      String
-  email     String   @unique
-  password  String // sempre armazenada com hash (bcrypt), nunca em texto puro
+  email     String?  @unique
+  password  String? // nulo enquanto o pré-cadastro ainda não foi concluído
   role      Role     @default(consulente)
   whatsapp  String?
   active    Boolean  @default(true)
   cpfCnpj   String?
   profilePhoto String? @db.Text
+  registrationCompleted Boolean @default(true)
+  preRegisteredAt String?
+  registrationCompletedAt String?
   createdAt String // mantido como string ISO para bater com o front-end existente
 
   confirmations EventConfirmation[]
