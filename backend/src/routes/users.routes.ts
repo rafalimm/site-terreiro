@@ -23,6 +23,12 @@ router.get('/', authorize('consulentes'), async (_req, res) => {
 // exatamente como já era controlado no front-end.
 router.post('/', requireSuperAdmin, async (req, res) => {
   const { name, email, password, role, whatsapp, active } = req.body ?? {};
+  if (role === 'filho') {
+    await prisma.$executeRawUnsafe('ALTER TYPE \"Role\" ADD VALUE IF NOT EXISTS \'filho\'');
+  }
+  if (role === 'responsavel_fila') {
+    await prisma.$executeRawUnsafe('ALTER TYPE \"Role\" ADD VALUE IF NOT EXISTS \'responsavel_fila\'');
+  }
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios.' });
   }
