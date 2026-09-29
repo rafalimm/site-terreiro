@@ -24,7 +24,9 @@ router.post('/login', async (req, res) => {
   if (!user.password || user.registrationCompleted === false) {
     return res.status(401).json({ error: 'Este cadastro ainda não foi concluído. Use a opção de pré-cadastro.' });
   }
-  const valid = await bcrypt.compare(password, user.password);
+  const storedPassword = user.password;
+  if (!storedPassword) return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+  const valid = await bcrypt.compare(String(password), storedPassword);
   if (!valid) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
