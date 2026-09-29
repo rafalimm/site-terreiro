@@ -55,6 +55,17 @@ ChatGPT e Claude devem tratar este arquivo como um resumo operacional compartilh
 - A migração 20260927190000_add_asaas_integration deve ser aplicada pelo prisma migrate deploy no start do backend.
 - Build final ainda precisa ser validado no ambiente de deploy.
 
+## Nova implementação — Lista de Compras do Terreiro
+- 2026-09-29: implementado o módulo administrativo de compras.
+- Criado o cargo `compras`, com permissão exclusiva para administrar a lista; `admin` e `super_admin` também possuem acesso.
+- A lista é persistida no PostgreSQL em `purchase_items`.
+- Cada item possui nome, quantidade, unidade, categoria, prioridade, observação, responsável pela inclusão e dados de confirmação da compra.
+- O responsável pode adicionar, editar, excluir e marcar/desmarcar um item como comprado.
+- A confirmação registra quem comprou e a data/hora; as ações também passam pelo log de atividades.
+- Painel inclui busca, filtro de comprados e indicadores de pendentes, comprados, total e urgentes.
+- O módulo não altera o fluxo de mensalidades, giras ou confirmações de presença.
+- Build final ainda precisa ser validado no ambiente de deploy.
+
 ## Próximas prioridades
 1. Garantir build limpo.
 2. Corrigir erros TypeScript restantes sem remover funcionalidades.
