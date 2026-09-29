@@ -299,6 +299,7 @@ export const AdminFilaGiras: React.FC = () => {
                   <button onClick={() => confirmCheckIn(true)} className="btn-gold text-xs justify-center">Sim, primeira vez</button>
                   <button onClick={() => confirmCheckIn(false)} className="btn-outline-gold text-xs justify-center">Não, já frequenta</button>
                 </div>
+                <button onClick={() => setFirstVisitPending(null)} className="w-full mt-3 text-xs text-[rgba(245,240,232,0.45)] hover:text-white">Cancelar</button>
               </div>
             </div>
           )}
