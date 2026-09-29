@@ -51,6 +51,12 @@ router.patch('/:id', async (req, res) => {
       data.lineId = lineCategory.id;
       data.line = lineCategory.name;
     }
+    if ('lineId' in data) {
+      const lineCategory = await prisma.entityLine.findFirst({ where: { id: data.lineId, active: true } });
+      if (!lineCategory) return res.status(400).json({ error: 'Selecione uma linha válida.' });
+      data.lineId = lineCategory.id;
+      data.line = lineCategory.name;
+    }
     if ('image' in data) data.image = toRelativeImageUrl(data.image) || null;
     const before = await prisma.entity.findUnique({ where: { id: req.params.id } });
     const entity = await prisma.entity.update({ where: { id: req.params.id }, data, include: { lineCategory: true } });
