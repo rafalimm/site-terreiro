@@ -11,8 +11,62 @@ router.get('/lines', async (_req, res) => {
   const lines = await prisma.entityLine.findMany({
     where: { active: true },
     orderBy: { sortOrder: 'asc' },
+    include: { members: { where: { active: true }, include: { lineCategory: true } } },
   });
   res.json(lines);
+});
+
+router.post('/lines', async (req, res) => {
+  try {
+    const { name, description = '', entityIds = [] } = req.body ?? {};
+    if (!name?.trim()) return res.status(400).json({ error: 'Informe o nome da linha.' });
+    const ids = Array.isArray(entityIds) ? entityIds.filter(Boolean) : [];
+    const line = await prisma.entityLine.create({
+      data: {
+        id: `linha-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: name.trim(),
+        description: String(description),
+        sortOrder: 1000,
+        members: { connect: ids.map((id: string) => ({ id })) },
+      },
+      include: { members: { include: { lineCategory: true } } },
+    });
+    await createLog(req.user!.id, req.user!.name, 'Criou', 'Linha', `Criou a linha "${line.name}"`);
+    res.status(201).json(line);
+  } catch (error) {
+    console.error('Erro ao criar linha:', error);
+    res.status(400).json({ error: 'Não foi possível criar a linha.' });
+  }
+});
+
+router.patch('/lines/:id', async (req, res) => {
+  try {
+    const { name, description, entityIds } = req.body ?? {};
+    const data: any = {};
+    if (typeof name === 'string') data.name = name.trim();
+    if (typeof description === 'string') data.description = description;
+    if (Array.isArray(entityIds)) data.members = { set: entityIds.filter(Boolean).map((id: string) => ({ id })) };
+    const line = await prisma.entityLine.update({
+      where: { id: req.params.id },
+      data,
+      include: { members: { include: { lineCategory: true } } },
+    });
+    await createLog(req.user!.id, req.user!.name, 'Editou', 'Linha', `Editou a linha "${line.name}"`);
+    res.json(line);
+  } catch (error) {
+    console.error('Erro ao editar linha:', error);
+    res.status(400).json({ error: 'Não foi possível editar a linha.' });
+  }
+});
+
+router.delete('/lines/:id', async (req, res) => {
+  try {
+    const line = await prisma.entityLine.delete({ where: { id: req.params.id } });
+    await createLog(req.user!.id, req.user!.name, 'Excluiu', 'Linha', `Excluiu a linha "${line.name}"`);
+    res.status(204).send();
+  } catch {
+    res.status(404).json({ error: 'Linha não encontrada.' });
+  }
 });
 
 router.get('/', async (_req, res) => {
@@ -51,7 +105,6 @@ router.patch('/:id', async (req, res) => {
       data.lineId = lineCategory.id;
       data.line = lineCategory.name;
     }
-    if ('lineId' in data) {
       const lineCategory = await prisma.entityLine.findFirst({ where: { id: data.lineId, active: true } });
       if (!lineCategory) return res.status(400).json({ error: 'Selecione uma linha válida.' });
       data.lineId = lineCategory.id;
