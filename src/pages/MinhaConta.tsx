@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { generatePixPayload } from '../utils/pix';
+import { dateOnlyTimestamp, todayDateOnly } from '../utils/date';
 import { QRCodeSVG } from 'qrcode.react';
 import type { PixPaymentConfig } from '../utils/pix';
 
@@ -30,6 +31,20 @@ export const MinhaConta: React.FC = () => {
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
   React.useEffect(() => {
+    if (!currentUser) return;
+    const hasActiveAttendance = myAttendances.some(a =>
+      a.status === 'confirmed' || a.status === 'arrived' || a.status === 'called' || a.status === 'in_service'
+    );
+    if (!hasActiveAttendance) return;
+
+    const interval = window.setInterval(() => {
+      void loadMyAttendances();
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [currentUser, myAttendances, loadMyAttendances]);
+
+  React.useEffect(() => {
     if (!canUseMembership) return;
     setMembershipLoading(true);
     api.get<typeof membership>('/api/membership/me')
@@ -48,10 +63,12 @@ export const MinhaConta: React.FC = () => {
 
   if (!currentUser) return <Navigate to="/entrar" replace />;
 
+  const canViewDevelopment = currentUser.role !== 'consulente' && currentUser.role !== 'compras';
+  const todayTimestamp = todayDateOnly().getTime();
   const upcomingEvents = events
-    .filter(e => new Date(e.date) >= new Date() && e.isPublic)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 3);
+    .filter(e => dateOnlyTimestamp(e.date) >= todayTimestamp && (e.isPublic || (canViewDevelopment && e.type === 'Gira de Desenvolvimento')))
+    .sort((a, b) => dateOnlyTimestamp(a.date) - dateOnlyTimestamp(b.date) || a.time.localeCompare(b.time))
+    .slice(0, currentUser.role === 'consulente' ? 1 : 5);
 
   const latestNews = newsItems.filter(n => n.active).slice(0, 3);
 
@@ -265,7 +282,7 @@ export const MinhaConta: React.FC = () => {
               <h3 className="font-cinzel font-bold text-[#c9a84c] text-base">Minhas Giras Confirmadas</h3>
             </div>
             <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">
-              Apresente o QR Code abaixo na chegada. A senha será gerada no momento do check-in.
+              Apresente o QR Code abaixo na chegada. Depois do check-in, sua senha aparecerá aqui automaticamente.
             </p>
             <div className="space-y-3">
               {myAttendances.filter(a => {
@@ -294,12 +311,18 @@ export const MinhaConta: React.FC = () => {
                           <span className="px-2.5 py-1 rounded border border-[#c9a84c]/30 text-[#c9a84c] text-xs">
                             {statusLabel[attendance.status] || attendance.status}
                           </span>
-                          {attendance.queueNumber && (
-                            <span className="px-2.5 py-1 rounded border border-green-500/30 text-green-300 text-xs font-bold">
-                              Senha {String(attendance.queueNumber).padStart(3, '0')}
-                            </span>
-                          )}
                         </div>
+                        {attendance.queueNumber && (
+                          <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+                            <p className="text-[10px] uppercase tracking-wider text-green-300/70 font-cinzel">Sua senha na fila</p>
+                            <p className="font-cinzel font-bold text-green-300 text-3xl mt-1">
+                              {String(attendance.queueNumber).padStart(3, '0')}
+                            </p>
+                            <p className="text-[11px] text-green-200/70 mt-1">
+                              Aguarde sua chamada. Esta senha foi atribuída no momento da chegada.
+                            </p>
+                          </div>
+                        )}
                         <p className="text-[11px] text-[rgba(245,240,232,0.4)] mt-3">
                           {attendance.status === 'confirmed'
                             ? 'Sua senha será definida quando o responsável escanear este QR Code.'
@@ -325,7 +348,7 @@ export const MinhaConta: React.FC = () => {
           <div className="card-spiritual p-6">
             <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-4 flex items-center gap-2">
               <Calendar size={16} />
-              Próximas Giras
+              {canViewDevelopment ? 'Próximas Giras' : 'Próxima Gira Aberta'}
             </h3>
             {upcomingEvents.length === 0 ? (
               <p className="font-crimson text-[rgba(245,240,232,0.4)] text-base italic">Nenhuma gira programada no momento.</p>
@@ -333,7 +356,10 @@ export const MinhaConta: React.FC = () => {
               <div className="space-y-3">
                 {upcomingEvents.map(ev => (
                   <div key={ev.id} className="p-3 border border-[rgba(201,168,76,0.1)] rounded">
-                    <p className="font-cinzel font-bold text-[#f5f0e8] text-sm">{ev.title}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-cinzel font-bold text-[#f5f0e8] text-sm">{ev.title}</p>
+                      {ev.type === 'Gira de Desenvolvimento' && <span className="text-[10px] px-2 py-0.5 rounded border border-purple-400/30 text-purple-300">Desenvolvimento</span>}
+                    </div>
                     <p className="font-inter text-[rgba(245,240,232,0.4)] text-xs mt-0.5">
                       {format(new Date(ev.date), "dd 'de' MMMM", { locale: ptBR })} às {ev.time}
                     </p>
