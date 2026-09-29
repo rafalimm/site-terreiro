@@ -19,6 +19,7 @@ enum Role {
   atendimento
   filho
   consulente
+  compras
 }
 
 model User {
@@ -134,6 +135,26 @@ model AsaasWebhookEvent {
   receivedAt  String
   processedAt String?
   @@map("asaas_webhook_events")
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  name        String
+  quantity    String
+  unit        String?
+  category    String?
+  priority    String   @default("normal")
+  notes       String   @db.Text
+  status      String   @default("pending")
+  createdBy   String
+  purchasedBy String?
+  purchasedAt String?
+  createdAt   String
+  updatedAt   String
+
+  @@index([status])
+  @@index([priority])
+  @@map("purchase_items")
 }
 
 model FAQItem {
