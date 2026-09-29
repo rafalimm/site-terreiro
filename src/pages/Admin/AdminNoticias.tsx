@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Eye, EyeOff } from 'lucide-react';
 import { useApp, NewsItem } from '../../store/AppContext';
+import { ImageUploader } from '../../components/ImageUploader';
 import { format } from 'date-fns';
 
 const CATEGORIES = ['Comunicado', 'Gira Especial', 'Evento', 'Aviso', 'Campanha', 'Outro'];
@@ -141,8 +142,8 @@ export const AdminNoticias: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="form-label">URL da Imagem (opcional)</label>
-                <input className="form-input" placeholder="https://..." value={form.image} onChange={e => setForm({...form, image: e.target.value})} />
+                <label className="form-label">Imagem (opcional)</label>
+                <ImageUploader value={form.image || ''} onChange={image => setForm({ ...form, image })} maxSize={1600} />
               </div>
               <div>
                 <label className="form-label">Conteúdo *</label>
