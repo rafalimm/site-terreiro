@@ -222,6 +222,18 @@ export const AdminFilaGiras: React.FC = () => {
         </div>
       )}
 
+      {loading && (
+        <div className="p-4 rounded border border-[rgba(201,168,76,0.15)] bg-[#1a0a0a] text-sm text-[rgba(245,240,232,0.65)]">
+          Carregando a fila da gira...
+        </div>
+      )}
+
+      {message && (
+        <div className="p-4 rounded border border-yellow-500/20 bg-yellow-500/5 text-sm text-yellow-100">
+          {message}
+        </div>
+      )}
+
       {queue && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -317,8 +329,6 @@ export const AdminFilaGiras: React.FC = () => {
               <p className="text-[11px] text-[rgba(245,240,232,0.4)] mt-2">No celular, permita o acesso à câmera quando o navegador solicitar.</p>
             </div>
           )}
-
-          {message && <div className="p-3 rounded border border-[#c9a84c]/20 bg-[#c9a84c]/5 text-sm text-[#f5f0e8]">{message}</div>}
 
           {queue.entities.length > 0 && (
             <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
