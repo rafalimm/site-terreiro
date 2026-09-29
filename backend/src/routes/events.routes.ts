@@ -23,6 +23,7 @@ router.post('/', authorize('events', 'agenda'), async (req, res) => {
       requiresScheduling: req.body.requiresScheduling === true,
       observations: String(req.body.observations || ''),
       entityIds: Array.isArray(req.body.entityIds) ? req.body.entityIds.filter((id: unknown): id is string => typeof id === 'string') : [],
+      firstVisitEntityIds: Array.isArray(req.body.firstVisitEntityIds) ? req.body.firstVisitEntityIds.filter((id: unknown): id is string => typeof id === 'string') : [],
       createdBy: req.user!.name,
       createdAt: new Date().toISOString(),
     };
@@ -53,6 +54,7 @@ router.patch('/:id', authorize('events', 'agenda'), async (req, res) => {
     const data = { ...req.body };
     if (typeof data.date === 'string') data.date = data.date.slice(0, 10);
     if (Array.isArray(data.entityIds)) data.entityIds = data.entityIds.filter((id: unknown): id is string => typeof id === 'string');
+    if (Array.isArray(data.firstVisitEntityIds)) data.firstVisitEntityIds = data.firstVisitEntityIds.filter((id: unknown): id is string => typeof id === 'string');
     if (data.type === 'Gira de Desenvolvimento') data.isPublic = false;
     delete data.id;
     delete data.createdAt;
