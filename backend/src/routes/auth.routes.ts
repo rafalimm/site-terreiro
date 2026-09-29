@@ -98,7 +98,7 @@ router.post('/profile-photo', authenticate, async (req, res) => {
       where: { id: req.user!.id },
       data: { profilePhoto },
     });
-    return res.json(sanitize(user));
+    return res.json({ url: profilePhoto, user: sanitize(user) });
   } catch (error) {
     console.error('Erro ao salvar foto de perfil:', error);
     return res.status(500).json({ error: 'Não foi possível salvar a foto de perfil.' });
