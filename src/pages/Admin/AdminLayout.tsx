@@ -60,6 +60,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, section, set
     atendimento: 'Atendimento',
     consulente: 'Consulente',
     compras: 'Responsável por Compras',
+    responsavel_fila: 'Responsável de Fila',
     filho: 'Filho',
   };
 
