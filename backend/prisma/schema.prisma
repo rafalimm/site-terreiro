@@ -34,6 +34,7 @@ model User {
   createdAt String // mantido como string ISO para bater com o front-end existente
 
   confirmations EventConfirmation[]
+  attendances GiraAttendance[]
   membership Membership?
 
   @@map("users")
@@ -53,6 +54,7 @@ model GiraEvent {
   createdBy          String
   createdAt          String
   confirmations      EventConfirmation[]
+  attendances        GiraAttendance[]
 
   @@map("events")
 }
@@ -69,6 +71,30 @@ model EventConfirmation {
   @@index([eventId])
   @@index([userId])
   @@map("event_confirmations")
+}
+
+model GiraAttendance {
+  id                String   @id @default(cuid())
+  eventId           String
+  userId            String
+  qrToken           String   @unique
+  queueNumber       Int?
+  status            String   @default("confirmed")
+  confirmedAt       String
+  checkedInAt       String?
+  calledAt          String?
+  serviceStartedAt  String?
+  attendedAt        String?
+  updatedAt         String
+  event             GiraEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@unique([eventId, queueNumber])
+  @@index([eventId])
+  @@index([userId])
+  @@index([status])
+  @@map("gira_attendance")
 }
 
 model Membership {
