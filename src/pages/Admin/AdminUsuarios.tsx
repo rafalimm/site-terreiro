@@ -27,7 +27,16 @@ const roleColors: Record<UserRole, string> = {
   responsavel_fila: 'text-emerald-300 border-emerald-300/40 bg-emerald-300/10',
 };
 
-type UserForm = {\n  name: string;\n  email: string;\n  password: string;\n  role: UserRole;\n  whatsapp: string;\n  active: boolean;\n};\n\nconst emptyUser: UserForm = {
+type UserForm = {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  whatsapp: string;
+  active: boolean;
+};
+
+const emptyUser: UserForm = {
   name: '',
   email: '',
   password: '',
