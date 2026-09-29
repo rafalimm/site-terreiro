@@ -21,6 +21,9 @@ router.post('/login', async (req, res) => {
   if (!user || !user.active) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
+  if (!user.password || user.registrationCompleted === false) {
+    return res.status(401).json({ error: 'Este cadastro ainda não foi concluído. Use a opção de pré-cadastro.' });
+  }
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
@@ -57,6 +60,78 @@ router.post('/register', async (req, res) => {
   });
   const token = signToken({ userId: user.id, role: user.role });
   res.status(201).json({ token, user: sanitize(user) });
+});
+
+
+
+// GET /api/auth/pre-registration/:cpf — consulta pública de um pré-cadastro pendente
+router.get('/pre-registration/:cpf', async (req, res) => {
+  const cpf = String(req.params.cpf || '').replace(/\D/g, '');
+  if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
+
+  const user = await prisma.user.findFirst({
+    where: { cpfCnpj: cpf, registrationCompleted: false },
+    select: { id: true, name: true, cpfCnpj: true, registrationCompleted: true },
+  });
+
+  if (!user) return res.status(404).json({ error: 'Não encontramos um pré-cadastro pendente para este CPF.' });
+
+  const attendance = await prisma.giraAttendance.findFirst({
+    where: { userId: user.id },
+    orderBy: { confirmedAt: 'desc' },
+    select: {
+      queueNumber: true,
+      qrToken: true,
+      status: true,
+      event: { select: { id: true, title: true, date: true, time: true } },
+    },
+  });
+
+  return res.json({ user, attendance });
+});
+
+// POST /api/auth/pre-registration/complete — conclui o cadastro pelo CPF
+router.post('/pre-registration/complete', async (req, res) => {
+  try {
+    const cpf = String(req.body?.cpf || '').replace(/\D/g, '');
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const whatsapp = String(req.body?.whatsapp || '').trim();
+    const password = String(req.body?.password || '');
+
+    if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'Informe um e-mail válido.' });
+    if (password.length < 6) return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    if (!whatsapp) return res.status(400).json({ error: 'Informe o WhatsApp.' });
+
+    const user = await prisma.user.findFirst({
+      where: { cpfCnpj: cpf, registrationCompleted: false },
+    });
+    if (!user) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou já concluído.' });
+
+    const emailInUse = await prisma.user.findFirst({
+      where: { email, NOT: { id: user.id } },
+      select: { id: true },
+    });
+    if (emailInUse) return res.status(409).json({ error: 'Este e-mail já está cadastrado.' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email,
+        whatsapp,
+        password: hashed,
+        registrationCompleted: true,
+        registrationCompletedAt: new Date().toISOString(),
+      },
+    });
+
+    const token = signToken({ userId: updated.id, role: updated.role });
+    return res.json({ token, user: sanitize(updated) });
+  } catch (error) {
+    console.error('Erro ao concluir pré-cadastro:', error);
+    return res.status(500).json({ error: 'Não foi possível concluir o cadastro.' });
+  }
 });
 
 // GET /api/auth/me — retoma a sessão a partir do token salvo no navegador
