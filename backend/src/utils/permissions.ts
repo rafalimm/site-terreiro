@@ -8,8 +8,8 @@ export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendim
 export const PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ['*'],
   compras: ['compras'],
-  responsavel_fila: ['fila'],
-  admin: ['agenda', 'events', 'fila', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership', 'compras'],
+  responsavel_fila: ['fila', 'pre_cadastro'],
+  admin: ['agenda', 'events', 'fila', 'pre_cadastro', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership', 'compras'],
   agenda: ['agenda', 'events', 'fila', 'filho_content', 'membership'],
   content: ['news', 'faq', 'gallery', 'institutional', 'filho_content', 'membership'],
   atendimento: ['messages', 'consulentes', 'filho_content', 'membership'],
