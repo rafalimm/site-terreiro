@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import { apiLimiter } from './middleware/security';
 
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
@@ -25,6 +27,13 @@ import preRegistrationsRoutes from './routes/pre-registrations.routes';
 import { uploadsRouter, imagesRouter } from './routes/uploads.routes';
 
 const app = express();
+
+// Railway/Vercel ficam atrás de proxy. Isso permite que os limitadores usem o IP real.
+app.set('trust proxy', 1);
+
+// Cabeçalhos HTTP de segurança (CSP não é forçada aqui para não quebrar imagens/recursos externos existentes).
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(apiLimiter);
 
 // A lista de domínios liberados vem de uma variável de ambiente.
 // Isso é o que permite trocar de domínio/hospedagem no futuro sem tocar no código:
