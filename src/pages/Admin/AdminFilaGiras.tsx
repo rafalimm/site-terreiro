@@ -451,7 +451,7 @@ export const AdminFilaGiras: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>          </div>
+          </div>
         </>
       )}
     </div>
