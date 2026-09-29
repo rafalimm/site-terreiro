@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { hasPermission } from '../utils/permissions';
@@ -17,17 +18,34 @@ router.post('/events/:id/confirmation', async (req, res) => {
     const canView = event.isPublic || hasPermission(req.user!.role, 'filho_content') || hasPermission(req.user!.role, 'events');
     if (!canView) return res.status(403).json({ error: 'Você não tem acesso a esta gira.' });
 
+    const now = new Date().toISOString();
     const confirmation = await prisma.eventConfirmation.upsert({
       where: { eventId_userId: { eventId: event.id, userId: req.user!.id } },
       create: {
         eventId: event.id,
         userId: req.user!.id,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
       },
       update: {},
     });
 
-    res.status(201).json({ confirmed: true, confirmation });
+    const attendance = await prisma.giraAttendance.upsert({
+      where: { eventId_userId: { eventId: event.id, userId: req.user!.id } },
+      create: {
+        eventId: event.id,
+        userId: req.user!.id,
+        qrToken: randomUUID(),
+        status: 'confirmed',
+        confirmedAt: now,
+        updatedAt: now,
+      },
+      update: {
+        status: 'confirmed',
+        updatedAt: now,
+      },
+    });
+
+    res.status(201).json({ confirmed: true, confirmation, attendance });
   } catch (error) {
     console.error('Erro ao confirmar presença:', error);
     res.status(500).json({ error: 'Não foi possível confirmar sua presença.' });
@@ -36,9 +54,19 @@ router.post('/events/:id/confirmation', async (req, res) => {
 
 router.delete('/events/:id/confirmation', async (req, res) => {
   try {
+    const attendance = await prisma.giraAttendance.findUnique({
+      where: { eventId_userId: { eventId: req.params.id, userId: req.user!.id } },
+    });
+    if (attendance && attendance.status !== 'confirmed') {
+      return res.status(400).json({ error: 'A presença já entrou no fluxo da fila e não pode mais ser cancelada.' });
+    }
+
     await prisma.eventConfirmation.delete({
       where: { eventId_userId: { eventId: req.params.id, userId: req.user!.id } },
     });
+    if (attendance) {
+      await prisma.giraAttendance.delete({ where: { id: attendance.id } });
+    }
     res.status(204).send();
   } catch {
     res.status(404).json({ error: 'Confirmação não encontrada.' });
