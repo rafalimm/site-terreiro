@@ -32,6 +32,7 @@ model User {
   whatsapp  String?
   active    Boolean  @default(true)
   cpfCnpj   String?
+  profilePhoto String? @db.Text
   createdAt String // mantido como string ISO para bater com o front-end existente
 
   confirmations EventConfirmation[]
