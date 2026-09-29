@@ -52,6 +52,7 @@ export interface GiraAttendance {
   attendedAt?: string | null;
   updatedAt: string;
   event?: Pick<GiraEvent, 'id' | 'title' | 'date' | 'time' | 'type'>;
+  entity?: { id: string; name: string; line?: string; active?: boolean };
   user?: { id: string; name: string; email?: string; whatsapp?: string; role: UserRole };
 }
 
