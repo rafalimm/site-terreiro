@@ -26,6 +26,7 @@ const emptyEvent: Omit<GiraEvent, 'id' | 'createdAt' | 'createdBy'> = {
   requiresScheduling: false,
   observations: '',
   entityIds: [],
+  firstVisitEntityIds: [],
 };
 
 export const AdminAgenda: React.FC = () => {
@@ -66,6 +67,7 @@ export const AdminAgenda: React.FC = () => {
       isPublic: ev.isPublic, requiresScheduling: ev.requiresScheduling,
       observations: ev.observations,
       entityIds: ev.entityIds || [],
+      firstVisitEntityIds: ev.firstVisitEntityIds || [],
     });
     setShowModal(true);
   };
@@ -256,6 +258,35 @@ export const AdminAgenda: React.FC = () => {
                             }}
                             className="w-4 h-4 accent-[#c9a84c]"
                           />
+                          <span className="min-w-0">
+                            <span className="block font-inter text-[#f5f0e8] text-sm">{entity.name}</span>
+                            <span className="block font-inter text-[rgba(245,240,232,0.4)] text-[11px]">{entity.line || 'Sem linha'}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="form-label">Entidades para primeira vez</label>
+                <p className="font-inter text-[rgba(245,240,232,0.45)] text-xs mb-2">
+                  Estas são as entidades que poderão atender consulentes marcados como primeira vez. Se nenhuma for selecionada, a fila não aplicará restrição especial.
+                </p>
+                {(form.entityIds || []).length === 0 ? (
+                  <div className="p-3 rounded border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-200/70">
+                    Primeiro selecione as entidades que trabalham nesta gira acima.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
+                    {entities.filter(entity => entity.active && (form.entityIds || []).includes(entity.id)).map(entity => {
+                      const selected = (form.firstVisitEntityIds || []).includes(entity.id);
+                      return (
+                        <label key={entity.id} className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${selected ? 'border-[#c9a84c]/50 bg-[#c9a84c]/10' : 'border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)]'}`}>
+                          <input type="checkbox" checked={selected} onChange={e => {
+                            const current = form.firstVisitEntityIds || [];
+                            setForm({...form, firstVisitEntityIds: e.target.checked ? [...current, entity.id] : current.filter(id => id !== entity.id)});
+                          }} className="w-4 h-4 accent-[#c9a84c]" />
                           <span className="min-w-0">
                             <span className="block font-inter text-[#f5f0e8] text-sm">{entity.name}</span>
                             <span className="block font-inter text-[rgba(245,240,232,0.4)] text-[11px]">{entity.line || 'Sem linha'}</span>
