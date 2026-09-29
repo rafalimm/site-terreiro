@@ -312,6 +312,13 @@ export const MinhaConta: React.FC = () => {
                             {statusLabel[attendance.status] || attendance.status}
                           </span>
                         </div>
+                        {attendance.entity && (
+                          <div className="mt-3 rounded-lg border border-[#c9a84c]/20 bg-[#c9a84c]/5 px-4 py-3">
+                            <p className="text-[10px] uppercase tracking-wider text-[#c9a84c]/70 font-cinzel">Entidade do atendimento</p>
+                            <p className="font-cinzel font-bold text-[#f5f0e8] text-base mt-1">{attendance.entity.name}</p>
+                            {attendance.entity.line && <p className="text-[11px] text-[rgba(245,240,232,0.45)] mt-0.5">{attendance.entity.line}</p>}
+                          </div>
+                        )}
                         {attendance.queueNumber && (
                           <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
                             <p className="text-[10px] uppercase tracking-wider text-green-300/70 font-cinzel">Sua senha na fila</p>
