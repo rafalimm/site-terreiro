@@ -243,6 +243,7 @@ model EntityLine {
   sortOrder   Int      @default(0)
   active      Boolean  @default(true)
   entities    Entity[]
+  members     Entity[] @relation("EntityLineMembers")
 
   @@index([sortOrder])
   @@map("entity_lines")
@@ -254,6 +255,7 @@ model Entity {
   line            String
   lineId          String?
   lineCategory    EntityLine? @relation(fields: [lineId], references: [id], onDelete: SetNull)
+  lineGroups      EntityLine[] @relation("EntityLineMembers")
   description     String      @db.Text
   image           String?     @db.Text
   history         String      @db.Text
