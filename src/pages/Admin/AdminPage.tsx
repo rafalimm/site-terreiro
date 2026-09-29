@@ -57,7 +57,7 @@ export const AdminPage: React.FC = () => {
       case 'configuracoes': return <AdminConfiguracoes />;
       case 'mensalidades': return <AdminMensalidades />;
       case 'compras': return <AdminCompras />;
-      case 'fila': return <AdminFilaGiras />;
+      case 'fila': return <AdminFilaGiras onOpenPreCadastro={() => setSection('pre-cadastro')} />;
       case 'pre-cadastro': return <AdminPreCadastro />;
       default: return <Dashboard />;
     }
