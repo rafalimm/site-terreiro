@@ -31,7 +31,7 @@ export interface GiraEvent {
   isPublic: boolean;
   requiresScheduling: boolean;
   observations: string;
-  entityIds: string[];
+  entityIds?: string[];
   createdBy: string;
   createdAt: string;
 }
