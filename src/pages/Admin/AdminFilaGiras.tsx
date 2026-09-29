@@ -402,26 +402,47 @@ export const AdminFilaGiras: React.FC = () => {
           <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
             <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
               <h3 className="font-cinzel text-[#c9a84c]">Fila da gira</h3>
+              <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">A primeira vez fica separada visualmente para facilitar a chamada e o encaminhamento.</p>
             </div>
             <div className="divide-y divide-[rgba(201,168,76,0.07)]">
-              {queue.attendances.length === 0 ? (
-                <p className="p-6 text-sm text-[rgba(245,240,232,0.4)]">Nenhuma confirmação registrada.</p>
-              ) : queue.attendances.map(attendance => (
+              <div className="p-4 bg-emerald-500/5">
+                <p className="font-cinzel text-emerald-300 text-sm">Primeira vez ({firstVisitQueue.length})</p>
+              </div>
+              {firstVisitQueue.length === 0 ? (
+                <p className="p-4 text-xs text-[rgba(245,240,232,0.35)]">Nenhum consulente de primeira vez aguardando ou em atendimento.</p>
+              ) : firstVisitQueue.map(attendance => (
                 <div key={attendance.id} className="p-4 flex flex-col md:flex-row md:items-center gap-3 justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full border border-[#c9a84c]/30 flex items-center justify-center font-cinzel text-[#c9a84c] font-bold">
-                      {attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}
-                    </div>
+                    <div className="w-12 h-12 rounded-full border border-emerald-400/40 flex items-center justify-center font-cinzel text-emerald-300 font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
                     <div>
                       <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
-                      <p className="text-xs text-[rgba(245,240,232,0.4)]">{attendance.user?.role}</p>
-                      {attendance.isFirstVisit && <span className="inline-flex mt-1 px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-semibold">PRIMEIRA VEZ</span>}
+                      <span className="inline-flex mt-1 px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-semibold">PRIMEIRA VEZ</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={(statusClass[attendance.status] || '') + ' px-2.5 py-1 rounded border text-xs'}>
-                      {statusLabel[attendance.status] || attendance.status}
-                    </span>
+                    <span className={(statusClass[attendance.status] || '') + ' px-2.5 py-1 rounded border text-xs'}>{statusLabel[attendance.status] || attendance.status}</span>
+                    {attendance.status === 'arrived' && <button onClick={() => openCallDialog(attendance.id)} className="btn-outline-gold text-xs"><PhoneCall size={13}/> Chamar</button>}
+                    {attendance.status === 'called' && <button onClick={() => action(attendance.id, 'start')} className="btn-outline-gold text-xs"><Play size={13}/> Iniciar</button>}
+                    {attendance.status === 'in_service' && <button onClick={() => action(attendance.id, 'complete')} className="btn-gold text-xs"><CheckCircle2 size={13}/> Finalizar</button>}
+                  </div>
+                </div>
+              ))}
+              <div className="p-4 bg-[rgba(201,168,76,0.03)]">
+                <p className="font-cinzel text-[#c9a84c] text-sm">Retornantes ({returningQueue.length})</p>
+              </div>
+              {returningQueue.length === 0 ? (
+                <p className="p-4 text-xs text-[rgba(245,240,232,0.35)]">Nenhum consulente retornante aguardando ou em atendimento.</p>
+              ) : returningQueue.map(attendance => (
+                <div key={attendance.id} className="p-4 flex flex-col md:flex-row md:items-center gap-3 justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full border border-[#c9a84c]/30 flex items-center justify-center font-cinzel text-[#c9a84c] font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
+                    <div>
+                      <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
+                      <p className="text-xs text-[rgba(245,240,232,0.4)]">{attendance.user?.role}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={(statusClass[attendance.status] || '') + ' px-2.5 py-1 rounded border text-xs'}>{statusLabel[attendance.status] || attendance.status}</span>
                     {attendance.status === 'arrived' && <button onClick={() => openCallDialog(attendance.id)} className="btn-outline-gold text-xs"><PhoneCall size={13}/> Chamar</button>}
                     {attendance.status === 'called' && <button onClick={() => action(attendance.id, 'start')} className="btn-outline-gold text-xs"><Play size={13}/> Iniciar</button>}
                     {attendance.status === 'in_service' && <button onClick={() => action(attendance.id, 'complete')} className="btn-gold text-xs"><CheckCircle2 size={13}/> Finalizar</button>}
@@ -429,7 +450,7 @@ export const AdminFilaGiras: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div>          </div>
         </>
       )}
     </div>
