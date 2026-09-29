@@ -25,10 +25,11 @@ const emptyEvent: Omit<GiraEvent, 'id' | 'createdAt' | 'createdBy'> = {
   isPublic: true,
   requiresScheduling: false,
   observations: '',
+  entityIds: [],
 };
 
 export const AdminAgenda: React.FC = () => {
-  const { events, addEvent, updateEvent, deleteEvent, currentUser } = useApp();
+  const { events, addEvent, updateEvent, deleteEvent, currentUser, entities } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<GiraEvent | null>(null);
   const [form, setForm] = useState(emptyEvent);
@@ -64,6 +65,7 @@ export const AdminAgenda: React.FC = () => {
       description: ev.description, orientation: ev.orientation,
       isPublic: ev.isPublic, requiresScheduling: ev.requiresScheduling,
       observations: ev.observations,
+      entityIds: ev.entityIds || [],
     });
     setShowModal(true);
   };
@@ -223,6 +225,45 @@ export const AdminAgenda: React.FC = () => {
                   <p className="font-inter text-amber-300/70 text-xs mt-2">
                     Exclusiva para usuários com o cargo Filho. Consulentes não terão acesso a esta gira.
                   </p>
+                )}
+              </div>
+              <div>
+                <label className="form-label">Entidades que trabalham nesta gira</label>
+                <p className="font-inter text-[rgba(245,240,232,0.45)] text-xs mb-2">
+                  Selecione somente as entidades desta gira. Na fila, o responsável verá apenas as selecionadas e poderá escolher uma que esteja livre.
+                </p>
+                {entities.filter(entity => entity.active).length === 0 ? (
+                  <div className="p-3 rounded border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-200/70">
+                    Nenhuma entidade ativa cadastrada. Cadastre as entidades em “Linhas & Entidades” antes de configurar a gira.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                    {entities.filter(entity => entity.active).map(entity => {
+                      const selected = (form.entityIds || []).includes(entity.id);
+                      return (
+                        <label key={entity.id} className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${selected ? 'border-[#c9a84c]/50 bg-[#c9a84c]/10' : 'border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)]'}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={e => {
+                              const current = form.entityIds || [];
+                              setForm({
+                                ...form,
+                                entityIds: e.target.checked
+                                  ? [...current, entity.id]
+                                  : current.filter(id => id !== entity.id),
+                              });
+                            }}
+                            className="w-4 h-4 accent-[#c9a84c]"
+                          />
+                          <span className="min-w-0">
+                            <span className="block font-inter text-[#f5f0e8] text-sm">{entity.name}</span>
+                            <span className="block font-inter text-[rgba(245,240,232,0.4)] text-[11px]">{entity.line || 'Sem linha'}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
               <div>
