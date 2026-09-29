@@ -46,12 +46,47 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events'), a
   const event = await prisma.giraEvent.findUnique({ where: { id: req.params.eventId } });
   if (!event) return res.status(404).json({ error: 'Gira não encontrada.' });
 
+  const configuredEntityIds = Array.isArray(event.entityIds)
+    ? event.entityIds.filter((id): id is string => typeof id === 'string')
+    : [];
+
+  const entities = configuredEntityIds.length
+    ? await prisma.entity.findMany({
+        where: { id: { in: configuredEntityIds }, active: true },
+        orderBy: { name: 'asc' },
+      })
+    : [];
+
   const attendances = await prisma.giraAttendance.findMany({
     where: { eventId: event.id },
     orderBy: [{ queueNumber: 'asc' }, { confirmedAt: 'asc' }],
     include: {
       user: { select: { id: true, name: true, email: true, whatsapp: true, role: true } },
+      entity: { select: { id: true, name: true, line: true, active: true } },
     },
+  });
+
+  const busyEntityIds = new Set(
+    attendances
+      .filter(a => ACTIVE_STATUSES.includes(a.status) && a.entityId)
+      .map(a => a.entityId as string)
+  );
+
+  const availableEntities = entities.filter(entity => !busyEntityIds.has(entity.id));
+
+  const entityHistory = entities.map(entity => {
+    const records = attendances.filter(a => a.entityId === entity.id && a.status === 'attended');
+    return {
+      entity,
+      attendedCount: records.length,
+      consulentes: records.map(a => ({
+        attendanceId: a.id,
+        userId: a.user.id,
+        name: a.user.name,
+        queueNumber: a.queueNumber,
+        attendedAt: a.attendedAt,
+      })),
+    };
   });
 
   const counts = {
@@ -62,7 +97,7 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events'), a
     attended: attendances.filter(a => a.status === 'attended').length,
   };
 
-  res.json({ event, counts, attendances });
+  res.json({ event, counts, attendances, entities, availableEntities, entityHistory });
 });
 
 router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'events'), async (req, res) => {
@@ -111,14 +146,62 @@ router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'e
 
 router.post('/admin/events/:eventId/attendance/:attendanceId/call', authorize('agenda', 'events'), async (req, res) => {
   try {
-    const current = await prisma.giraAttendance.findUnique({ where: { id: req.params.attendanceId } });
+    const current = await prisma.giraAttendance.findUnique({
+      where: { id: req.params.attendanceId },
+      include: { event: true },
+    });
     if (!current || current.eventId !== req.params.eventId) return res.status(404).json({ error: 'Pessoa não encontrada na fila.' });
     if (current.status !== 'arrived') return res.status(400).json({ error: 'Somente pessoas aguardando podem ser chamadas.' });
 
+    const entityId = typeof req.body.entityId === 'string' && req.body.entityId.trim()
+      ? req.body.entityId.trim()
+      : null;
+
+    const configuredEntityIds = Array.isArray(current.event.entityIds)
+      ? current.event.entityIds.filter((id): id is string => typeof id === 'string')
+      : [];
+
+    if (configuredEntityIds.length > 0 && !entityId) {
+      return res.status(400).json({ error: 'Selecione uma entidade disponível antes de chamar.' });
+    }
+
+    if (entityId && !configuredEntityIds.includes(entityId)) {
+      return res.status(400).json({ error: 'A entidade selecionada não pertence a esta gira.' });
+    }
+
+    if (entityId) {
+      const entity = await prisma.entity.findUnique({ where: { id: entityId } });
+      if (!entity || !entity.active) {
+        return res.status(400).json({ error: 'A entidade selecionada está indisponível.' });
+      }
+
+      const busy = await prisma.giraAttendance.findFirst({
+        where: {
+          eventId: current.eventId,
+          entityId,
+          status: { in: ACTIVE_STATUSES },
+          id: { not: current.id },
+        },
+        select: { id: true },
+      });
+
+      if (busy) {
+        return res.status(409).json({ error: 'Esta entidade já está em atendimento. Escolha outra entidade disponível.' });
+      }
+    }
+
     const updated = await prisma.giraAttendance.update({
       where: { id: current.id },
-      data: { status: 'called', calledAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      include: { user: { select: { id: true, name: true, role: true } } },
+      data: {
+        status: 'called',
+        entityId,
+        calledAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      include: {
+        user: { select: { id: true, name: true, role: true } },
+        entity: { select: { id: true, name: true, line: true, active: true } },
+      },
     });
     res.json(updated);
   } catch {
