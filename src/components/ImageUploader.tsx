@@ -12,17 +12,15 @@ interface ImageUploaderProps {
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(img);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('decode'));
+      img.src = String(reader.result);
     };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error('decode'));
-    };
-    img.src = objectUrl;
+    reader.onerror = () => reject(new Error('decode'));
+    reader.readAsDataURL(file);
   });
 }
 
