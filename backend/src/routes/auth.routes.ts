@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
 import { signToken } from '../utils/jwt';
 import { authenticate } from '../middleware/auth';
+import { loginLimiter, registerLimiter, preLookupLimiter, preCompleteLimiter } from '../middleware/security';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ function sanitize(user: any) {
 }
 
 // POST /api/auth/login — login de qualquer usuário (equipe ou consulente)
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body ?? {};
   if (!email || !password) {
     return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
@@ -36,7 +37,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/register — cadastro público de consulente (usado pela página "Entrar / Criar conta")
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   const { name, email, password, whatsapp } = req.body ?? {};
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
@@ -68,9 +69,13 @@ router.post('/register', async (req, res) => {
 
 
 // GET /api/auth/pre-registration/:cpf — consulta pública de um pré-cadastro pendente
-router.get('/pre-registration/:cpf', async (req, res) => {
+router.get('/pre-registration/:cpf/:queueNumber', preLookupLimiter, async (req, res) => {
   const cpf = String(req.params.cpf || '').replace(/\D/g, '');
+  const queueNumber = Number(req.params.queueNumber);
   if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
+  if (!Number.isInteger(queueNumber) || queueNumber < 1 || queueNumber > 99999) {
+    return res.status(400).json({ error: 'Informe uma senha de fila válida.' });
+  }
 
   const user = await prisma.user.findFirst({
     where: { cpfCnpj: cpf, registrationCompleted: false },
@@ -80,7 +85,7 @@ router.get('/pre-registration/:cpf', async (req, res) => {
   if (!user) return res.status(404).json({ error: 'Não encontramos um pré-cadastro pendente para este CPF.' });
 
   const attendance = await prisma.giraAttendance.findFirst({
-    where: { userId: user.id },
+    where: { userId: user.id, queueNumber },
     orderBy: { confirmedAt: 'desc' },
     select: {
       queueNumber: true,
@@ -94,15 +99,17 @@ router.get('/pre-registration/:cpf', async (req, res) => {
 });
 
 // POST /api/auth/pre-registration/complete — conclui o cadastro pelo CPF
-router.post('/pre-registration/complete', async (req, res) => {
+router.post('/pre-registration/complete', preCompleteLimiter, async (req, res) => {
   try {
     const cpf = String(req.body?.cpf || '').replace(/\D/g, '');
+    const queueNumber = Number(req.body?.queueNumber);
     const email = String(req.body?.email || '').trim().toLowerCase();
     const whatsapp = String(req.body?.whatsapp || '').trim();
     const password = String(req.body?.password || '');
 
     if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
-    if (!email || !email.includes('@')) return res.status(400).json({ error: 'Informe um e-mail válido.' });
+    if (!Number.isInteger(queueNumber) || queueNumber < 1 || queueNumber > 99999) return res.status(400).json({ error: 'Informe uma senha de fila válida.' });
+    if (!email || !email.includes('@') || email.length > 254) return res.status(400).json({ error: 'Informe um e-mail válido.' });
     if (password.length < 6) return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
     if (!whatsapp) return res.status(400).json({ error: 'Informe o WhatsApp.' });
 
@@ -110,6 +117,16 @@ router.post('/pre-registration/complete', async (req, res) => {
       where: { cpfCnpj: cpf, registrationCompleted: false },
     });
     if (!user) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou já concluído.' });
+
+    const attendance = await prisma.giraAttendance.findFirst({
+      where: { userId: user.id, event: { id: user.attendances?.[0]?.eventId } },
+    }).catch(() => null);
+
+    const pendingAttendance = await prisma.giraAttendance.findFirst({
+      where: { userId: user.id, queueNumber },
+      select: { id: true },
+    });
+    if (!pendingAttendance) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou senha inválida.' });
 
     const emailInUse = await prisma.user.findFirst({
       where: { email, NOT: { id: user.id } },
