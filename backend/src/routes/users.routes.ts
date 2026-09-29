@@ -61,6 +61,17 @@ router.patch('/:id', requireSuperAdmin, async (req, res) => {
   delete data.id;
   delete data.createdAt;
 
+  if (id === req.user!.id && (data.role !== undefined && data.role !== 'super_admin' || data.active === false)) {
+    return res.status(400).json({ error: 'Você não pode remover ou desativar o próprio acesso de Super Administrador.' });
+  }
+
+  if (data.role !== undefined) {
+    const allowedRoles = ['super_admin', 'admin', 'agenda', 'content', 'atendimento', 'filho', 'consulente', 'compras', 'responsavel_fila'];
+    if (typeof data.role !== 'string' || !allowedRoles.includes(data.role)) {
+      return res.status(400).json({ error: 'Cargo inválido.' });
+    }
+  }
+
   try {
     const updated = await prisma.user.update({ where: { id }, data });
     const isRoleChange = typeof data.role === 'string';
