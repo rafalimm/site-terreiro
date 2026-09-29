@@ -209,6 +209,9 @@ export const AdminFilaGiras: React.FC = () => {
 
   const availableEvents = adminEvents.length ? adminEvents : events;
   const current = queue?.attendances.find(a => a.status === 'in_service') || queue?.attendances.find(a => a.status === 'called');
+  const queueAttendances = queue?.attendances.filter(a => ['arrived', 'called', 'in_service'].includes(a.status)) || [];
+  const firstVisitQueue = queueAttendances.filter(a => a.isFirstVisit);
+  const returningQueue = queueAttendances.filter(a => !a.isFirstVisit);
 
   return (
     <div className="space-y-5">
