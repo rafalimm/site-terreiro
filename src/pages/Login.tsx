@@ -15,7 +15,6 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [preCpf, setPreCpf] = useState('');
-  const [preQueueNumber, setPreQueueNumber] = useState('');
   const [preData, setPreData] = useState<{ name: string; cpfCnpj?: string | null; attendance?: { queueNumber?: number | null; qrToken: string; event?: { title: string; date: string; time: string } } | null } | null>(null);
   const [preEmail, setPreEmail] = useState('');
   const [preWhatsapp, setPreWhatsapp] = useState('');
@@ -42,7 +41,7 @@ export const Login: React.FC = () => {
     setError('');
     try {
       const result = await api.get<{ user: { name: string; cpfCnpj?: string | null }; attendance?: { queueNumber?: number | null; qrToken: string; event?: { title: string; date: string; time: string } } | null }>(
-        '/api/auth/pre-registration/' + preCpf.replace(/\D/g, '') + '/' + preQueueNumber.replace(/\D/g, ''),
+        '/api/auth/pre-registration/' + preCpf.replace(/\D/g, ''),
         false
       );
       setPreData({ ...result.user, attendance: result.attendance });
@@ -66,7 +65,6 @@ export const Login: React.FC = () => {
     try {
       const result = await api.post<{ token: string }>('/api/auth/pre-registration/complete', {
         cpf: preData.cpfCnpj || preCpf,
-        queueNumber: Number(preData.attendance?.queueNumber),
         email: preEmail,
         whatsapp: preWhatsapp,
         password: prePassword,
@@ -152,7 +150,7 @@ export const Login: React.FC = () => {
             <div className="space-y-5">
               <div>
                 <p className="font-cinzel text-[#f5f0e8] font-bold">Já tenho pré-cadastro</p>
-                <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">Informe o CPF e a senha recebida no atendimento para localizar seu pré-cadastro com segurança.</p>
+                <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">Informe o CPF usado no atendimento para localizar seu pré-cadastro.</p>
               </div>
 
               {!preData ? (
@@ -160,10 +158,6 @@ export const Login: React.FC = () => {
                   <div>
                     <label className="form-label">CPF *</label>
                     <input className="form-input" value={preCpf} onChange={e => setPreCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" maxLength={14} required />
-                  </div>
-                  <div>
-                    <label className="form-label">Senha do atendimento *</label>
-                    <input className="form-input" value={preQueueNumber} onChange={e => setPreQueueNumber(e.target.value)} placeholder="Ex.: 001" inputMode="numeric" maxLength={5} required />
                   </div>
                   {error && <div className="p-3 bg-[rgba(139,26,26,0.2)] border border-[rgba(139,26,26,0.4)] rounded"><p className="font-inter text-red-400 text-sm">{error}</p></div>}
                   <button type="submit" disabled={loading} className="btn-gold w-full justify-center">{loading ? 'Consultando...' : 'Encontrar meu pré-cadastro'}</button>
