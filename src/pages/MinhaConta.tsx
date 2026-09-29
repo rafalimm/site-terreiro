@@ -130,7 +130,7 @@ export const MinhaConta: React.FC = () => {
             </p>
             <ImageUploader
               value={profilePhoto}
-              onChange={(url) => {
+              onChange={() => {
                 window.location.reload();
               }}
               uploadPath="/api/auth/profile-photo"
