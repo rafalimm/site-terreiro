@@ -101,6 +101,7 @@ router.post('/membership/me/asaas-payment', authorize('membership'), async (req,
   const cpfCnpj=String(req.body?.cpfCnpj||data.membership.user.cpfCnpj||'').replace(/\D/g,'');
   if(![11,14].includes(cpfCnpj.length)) return res.status(400).json({error:'Informe um CPF ou CNPJ válido para gerar o pagamento Asaas.'});
   const user=await prisma.user.update({where:{id:req.user!.id},data:{cpfCnpj}});
+  if (!user.email) return res.status(400).json({error:'Conclua o cadastro com um e-mail antes de usar o Asaas.'});
   const customerId=await ensureAsaasCustomer(user,data.membership.asaasCustomerId);
   if(customerId!==data.membership.asaasCustomerId) await prisma.membership.update({where:{id:data.membership.id},data:{asaasCustomerId:customerId,updatedAt:new Date().toISOString()}});
   let asaasPaymentId=data.currentPayment.transactionId;
