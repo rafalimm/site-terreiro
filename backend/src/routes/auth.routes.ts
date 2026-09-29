@@ -69,13 +69,9 @@ router.post('/register', registerLimiter, async (req, res) => {
 
 
 // GET /api/auth/pre-registration/:cpf — consulta pública de um pré-cadastro pendente
-router.get('/pre-registration/:cpf/:queueNumber', preLookupLimiter, async (req, res) => {
+router.get('/pre-registration/:cpf', preLookupLimiter, async (req, res) => {
   const cpf = String(req.params.cpf || '').replace(/\D/g, '');
-  const queueNumber = Number(req.params.queueNumber);
   if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
-  if (!Number.isInteger(queueNumber) || queueNumber < 1 || queueNumber > 99999) {
-    return res.status(400).json({ error: 'Informe uma senha de fila válida.' });
-  }
 
   const user = await prisma.user.findFirst({
     where: { cpfCnpj: cpf, registrationCompleted: false },
@@ -85,7 +81,7 @@ router.get('/pre-registration/:cpf/:queueNumber', preLookupLimiter, async (req, 
   if (!user) return res.status(404).json({ error: 'Não encontramos um pré-cadastro pendente para este CPF.' });
 
   const attendance = await prisma.giraAttendance.findFirst({
-    where: { userId: user.id, queueNumber },
+    where: { userId: user.id },
     orderBy: { confirmedAt: 'desc' },
     select: {
       queueNumber: true,
@@ -95,7 +91,7 @@ router.get('/pre-registration/:cpf/:queueNumber', preLookupLimiter, async (req, 
     },
   });
 
-  if (!attendance) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou senha inválida.' });
+  if (!attendance) return res.status(404).json({ error: 'Pré-cadastro encontrado, mas ainda não há atendimento vinculado.' });
   return res.json({ user, attendance });
 });
 
@@ -103,13 +99,11 @@ router.get('/pre-registration/:cpf/:queueNumber', preLookupLimiter, async (req, 
 router.post('/pre-registration/complete', preCompleteLimiter, async (req, res) => {
   try {
     const cpf = String(req.body?.cpf || '').replace(/\D/g, '');
-    const queueNumber = Number(req.body?.queueNumber);
     const email = String(req.body?.email || '').trim().toLowerCase();
     const whatsapp = String(req.body?.whatsapp || '').trim();
     const password = String(req.body?.password || '');
 
     if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
-    if (!Number.isInteger(queueNumber) || queueNumber < 1 || queueNumber > 99999) return res.status(400).json({ error: 'Informe uma senha de fila válida.' });
     if (!email || !email.includes('@') || email.length > 254) return res.status(400).json({ error: 'Informe um e-mail válido.' });
     if (password.length < 6 || password.length > 128) return res.status(400).json({ error: 'A senha deve ter entre 6 e 128 caracteres.' });
     if (!whatsapp) return res.status(400).json({ error: 'Informe o WhatsApp.' });
@@ -118,12 +112,6 @@ router.post('/pre-registration/complete', preCompleteLimiter, async (req, res) =
       where: { cpfCnpj: cpf, registrationCompleted: false },
     });
     if (!user) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou já concluído.' });
-
-    const pendingAttendance = await prisma.giraAttendance.findFirst({
-      where: { userId: user.id, queueNumber },
-      select: { id: true },
-    });
-    if (!pendingAttendance) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou senha inválida.' });
 
     const emailInUse = await prisma.user.findFirst({
       where: { email, NOT: { id: user.id } },
