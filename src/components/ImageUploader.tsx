@@ -7,6 +7,7 @@ interface ImageUploaderProps {
   onChange: (url: string) => void;
   maxSize?: number; // maior lado da imagem, em pixels
   shape?: 'wide' | 'round';
+  uploadPath?: string;
 }
 
 // Lê a foto escolhida, reduz e comprime no próprio navegador (fica leve e rápida
@@ -33,7 +34,7 @@ function fileToCompressedDataUrl(file: File, maxSize: number): Promise<string> {
   });
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, maxSize = 1600, shape = 'wide' }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, maxSize = 1600, shape = 'wide', uploadPath = '/api/admin/uploads' }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -54,7 +55,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange, m
     setUploading(true);
     try {
       const dataUrl = await fileToCompressedDataUrl(file, maxSize);
-      const { url } = await api.post<{ url: string }>('/api/admin/uploads', { dataUrl });
+      const { url } = await api.post<{ url: string }>(uploadPath, { dataUrl });
       onChange(mediaUrl(url));
     } catch (err) {
       setError(err instanceof Error && err.message !== 'decode' && err.message !== 'canvas'
