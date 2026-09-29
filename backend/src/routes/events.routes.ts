@@ -4,14 +4,13 @@ import { authenticate, authorize } from '../middleware/auth';
 import { createLog } from '../utils/log';
 
 const router = Router();
-router.use(authenticate, authorize('events', 'agenda'));
-
-router.get('/', async (_req, res) => {
+router.use(authenticate);
+router.get('/', authorize('events', 'agenda', 'fila'), async (_req, res) => {
   const events = await prisma.giraEvent.findMany({ orderBy: { date: 'asc' } });
   res.json(events);
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authorize('events', 'agenda'), async (req, res) => {
   try {
     const data = {
       title: String(req.body.title || '').trim(),
@@ -49,7 +48,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authorize('events', 'agenda'), async (req, res) => {
   try {
     const data = { ...req.body };
     if (typeof data.date === 'string') data.date = data.date.slice(0, 10);
@@ -65,7 +64,7 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authorize('events', 'agenda'), async (req, res) => {
   try {
     const event = await prisma.giraEvent.delete({ where: { id: req.params.id } });
     await createLog(req.user!.id, req.user!.name, 'Excluiu', 'Gira/Evento', `Excluiu o evento "${event.title}"`);
