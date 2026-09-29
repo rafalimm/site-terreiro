@@ -6,7 +6,7 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-function sanitize(user: { password: string | null; [key: string]: unknown }) {
+function sanitize(user: any) {
   const { password: _password, ...rest } = user;
   return rest;
 
