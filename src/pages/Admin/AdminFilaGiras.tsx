@@ -60,8 +60,8 @@ export const AdminFilaGiras: React.FC = () => {
   useEffect(() => {
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => undefined);
-        scannerRef.current.clear().catch(() => undefined);
+        try { scannerRef.current.stop(); } catch {}
+        try { scannerRef.current.clear(); } catch {}
       }
     };
   }, []);
