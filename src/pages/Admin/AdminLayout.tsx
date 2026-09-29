@@ -21,7 +21,7 @@ interface AdminLayoutProps {
 const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'agenda', label: 'Agenda / Giras', icon: Calendar, perm: 'agenda' },
-  { key: 'fila', label: 'Fila de Atendimento', icon: ListOrdered, perm: 'agenda' },
+  { key: 'fila', label: 'Fila de Atendimento', icon: ListOrdered, perm: 'fila' },
   { key: 'agendamentos', label: 'Agendamentos', icon: CalendarCheck, perm: 'agenda' },
   { key: 'noticias', label: 'Notícias', icon: Newspaper, perm: 'news' },
   { key: 'faq', label: 'FAQ', icon: HelpCircle, perm: 'faq' },
