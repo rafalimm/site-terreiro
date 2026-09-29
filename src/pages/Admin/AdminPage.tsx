@@ -16,8 +16,9 @@ import { AdminLogs } from './AdminLogs';
 import { AdminConsulentes } from './AdminConsulentes';
 import { AdminConfiguracoes } from './AdminConfiguracoes';
 import { AdminMensalidades } from './AdminMensalidades';
+import { AdminCompras } from './AdminCompras';
 
-const ADMIN_ROLES = ['super_admin', 'admin', 'agenda', 'content', 'atendimento'];
+const ADMIN_ROLES = ['super_admin', 'admin', 'agenda', 'content', 'atendimento', 'compras'];
 
 export const AdminPage: React.FC = () => {
   const { currentUser, authReady } = useApp();
@@ -53,6 +54,7 @@ export const AdminPage: React.FC = () => {
       case 'consulentes': return <AdminConsulentes />;
       case 'configuracoes': return <AdminConfiguracoes />;
       case 'mensalidades': return <AdminMensalidades />;
+      case 'compras': return <AdminCompras />;
       default: return <Dashboard />;
     }
   };
