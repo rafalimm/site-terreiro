@@ -35,6 +35,25 @@ export interface GiraEvent {
   createdAt: string;
 }
 
+export type AttendanceStatus = 'confirmed' | 'arrived' | 'called' | 'in_service' | 'attended';
+
+export interface GiraAttendance {
+  id: string;
+  eventId: string;
+  userId: string;
+  qrToken: string;
+  queueNumber?: number | null;
+  status: AttendanceStatus;
+  confirmedAt: string;
+  checkedInAt?: string | null;
+  calledAt?: string | null;
+  serviceStartedAt?: string | null;
+  attendedAt?: string | null;
+  updatedAt: string;
+  event?: Pick<GiraEvent, 'id' | 'title' | 'date' | 'time' | 'type'>;
+  user?: { id: string; name: string; email?: string; whatsapp?: string; role: UserRole };
+}
+
 export interface FAQItem {
   id: string;
   question: string;
@@ -180,6 +199,7 @@ interface AppContextType {
   contactMessages: ContactMessage[];
   appointments: Appointment[];
   confirmedEventIds: string[];
+  myAttendances: GiraAttendance[];
 
   loadingPublicData: boolean;
   authReady: boolean;
@@ -200,6 +220,7 @@ interface AppContextType {
   confirmEvent: (eventId: string) => Promise<boolean>;
   cancelEventConfirmation: (eventId: string) => Promise<boolean>;
   loadMyConfirmations: () => Promise<void>;
+  loadMyAttendances: () => Promise<void>;
 
   addFAQ: (item: Omit<FAQItem, 'id'>) => Promise<void>;
   updateFAQ: (id: string, data: Partial<FAQItem>) => Promise<void>;
@@ -253,6 +274,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [confirmedEventIds, setConfirmedEventIds] = useState<string[]>([]);
+  const [myAttendances, setMyAttendances] = useState<GiraAttendance[]>([]);
 
   const [loadingPublicData, setLoadingPublicData] = useState(true);
   const [authReady, setAuthReady] = useState(false);
@@ -349,16 +371,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [currentUser]);
 
+  const loadMyAttendances = useCallback(async () => {
+    if (!currentUser) {
+      setMyAttendances([]);
+      return;
+    }
+    try {
+      const attendances = await api.get<GiraAttendance[]>('/api/attendance/mine');
+      setMyAttendances(attendances);
+    } catch (err) {
+      handleError(err);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (!authReady) return;
     (async () => {
       await loadPublicData();
       await loadMyConfirmations();
+      await loadMyAttendances();
       if (currentUser && hasPermission('filho_content')) {
         await loadFilhoDevelopmentEvents();
       }
     })();
-  }, [authReady, currentUser, loadPublicData, loadFilhoDevelopmentEvents, loadMyConfirmations]);
+  }, [authReady, currentUser, loadPublicData, loadFilhoDevelopmentEvents, loadMyConfirmations, loadMyAttendances]);
 
   // Tenta retomar a sessão salva (token no localStorage) quando o app carrega
   useEffect(() => {
@@ -444,6 +480,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const confirmEvent = async (eventId: string): Promise<boolean> => {
     try {
       await api.post('/api/events/' + eventId + '/confirmation', {});
+      await loadMyAttendances();
       setConfirmedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
       setLastError(null);
       return true;
@@ -654,11 +691,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{
       currentUser, users, events, faqItems, newsItems, galleryItems, services,
-      entities, activityLogs, siteConfig, contactMessages, appointments, confirmedEventIds,
+      entities, activityLogs, siteConfig, contactMessages, appointments, confirmedEventIds, myAttendances,
       loadingPublicData, authReady, lastError,
       login, register, logout, hasPermission,
       addUser, updateUser, deleteUser,
-      addEvent, updateEvent, deleteEvent, confirmEvent, cancelEventConfirmation, loadMyConfirmations,
+      addEvent, updateEvent, deleteEvent, confirmEvent, cancelEventConfirmation, loadMyConfirmations, loadMyAttendances,
       addFAQ, updateFAQ, deleteFAQ,
       addNews, updateNews, deleteNews,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
