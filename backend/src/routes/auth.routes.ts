@@ -15,7 +15,7 @@ function sanitize(user: any) {
 // POST /api/auth/login — login de qualquer usuário (equipe ou consulente)
 router.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body ?? {};
-  if (!email || !password) {
+  if (!email || !password || String(email).length > 254 || String(password).length > 128) {
     return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
   }
   const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } });
@@ -39,7 +39,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 // POST /api/auth/register — cadastro público de consulente (usado pela página "Entrar / Criar conta")
 router.post('/register', registerLimiter, async (req, res) => {
   const { name, email, password, whatsapp } = req.body ?? {};
-  if (!name || !email || !password) {
+  if (!name || !email || !password || String(name).trim().length > 120 || String(email).length > 254 || String(password).length > 128) {
     return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
   }
   if (String(password).length < 6) {
@@ -53,10 +53,10 @@ router.post('/register', registerLimiter, async (req, res) => {
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
-      name,
+      name: String(name).trim(),
       email: normalizedEmail,
       password: hashed,
-      whatsapp: whatsapp || null,
+      whatsapp: whatsapp ? String(whatsapp).trim().slice(0, 30) : null,
       role: 'consulente',
       active: true,
       createdAt: new Date().toISOString(),
@@ -111,7 +111,7 @@ router.post('/pre-registration/complete', preCompleteLimiter, async (req, res) =
     if (cpf.length !== 11) return res.status(400).json({ error: 'Informe um CPF válido.' });
     if (!Number.isInteger(queueNumber) || queueNumber < 1 || queueNumber > 99999) return res.status(400).json({ error: 'Informe uma senha de fila válida.' });
     if (!email || !email.includes('@') || email.length > 254) return res.status(400).json({ error: 'Informe um e-mail válido.' });
-    if (password.length < 6) return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    if (password.length < 6 || password.length > 128) return res.status(400).json({ error: 'A senha deve ter entre 6 e 128 caracteres.' });
     if (!whatsapp) return res.status(400).json({ error: 'Informe o WhatsApp.' });
 
     const user = await prisma.user.findFirst({
