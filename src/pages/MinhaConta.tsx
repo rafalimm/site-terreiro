@@ -29,8 +29,13 @@ export const MinhaConta: React.FC = () => {
   const [asaasLoading,setAsaasLoading]=React.useState(false);
   const [asaasCpf,setAsaasCpf]=React.useState((currentUser as {cpfCnpj?:string|null})?.cpfCnpj||'');
   const [asaasError,setAsaasError]=React.useState('');
+  const [profilePhoto, setProfilePhoto] = React.useState('');
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
+
+  React.useEffect(() => {
+    setProfilePhoto(currentUser?.profilePhoto ? mediaUrl(currentUser.profilePhoto) : '');
+  }, [currentUser?.profilePhoto]);
 
   React.useEffect(() => {
     if (!currentUser) return;
@@ -86,8 +91,6 @@ export const MinhaConta: React.FC = () => {
     responsavel_fila: 'Responsável de Fila',
   };
 
-  const profilePhoto = currentUser.profilePhoto ? mediaUrl(currentUser.profilePhoto) : '';
-
   return (
     <div className="min-h-screen bg-[#0d0505] pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
@@ -130,8 +133,8 @@ export const MinhaConta: React.FC = () => {
             </p>
             <ImageUploader
               value={profilePhoto}
-              onChange={() => {
-                window.location.reload();
+              onChange={(url) => {
+                setProfilePhoto(url);
               }}
               uploadPath="/api/auth/profile-photo"
               maxSize={600}
