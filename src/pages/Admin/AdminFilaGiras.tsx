@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { CheckCircle2, Clock3, PhoneCall, Play, QrCode, RefreshCw, Users, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, PhoneCall, Play, QrCode, RefreshCw, Users, XCircle, UserPlus } from 'lucide-react';
 import { useApp, GiraAttendance } from '../../store/AppContext';
 import { api } from '../../lib/api';
 
@@ -34,8 +34,12 @@ const statusClass: Record<string, string> = {
   attended: 'text-green-300 border-green-500/30 bg-green-500/10',
 };
 
-export const AdminFilaGiras: React.FC = () => {
-  const { events } = useApp();
+interface AdminFilaGirasProps {
+  onOpenPreCadastro?: () => void;
+}
+
+export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastro }) => {
+  const { events, hasPermission } = useApp();
   const [adminEvents, setAdminEvents] = useState<typeof events>([]);
   const [eventId, setEventId] = useState('');
   const [queue, setQueue] = useState<QueueResponse | null>(null);
@@ -212,6 +216,7 @@ export const AdminFilaGiras: React.FC = () => {
   const queueAttendances = queue?.attendances.filter(a => ['arrived', 'called', 'in_service'].includes(a.status)) || [];
   const firstVisitQueue = queueAttendances.filter(a => a.isFirstVisit);
   const returningQueue = queueAttendances.filter(a => !a.isFirstVisit);
+  const canPreCadastro = hasPermission('pre_cadastro') || hasPermission('*');
 
   return (
     <div className="space-y-5">
@@ -289,6 +294,9 @@ export const AdminFilaGiras: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             <button onClick={callNext} disabled={!queue?.attendances.some(a => a.status === 'arrived')} className="btn-gold text-xs disabled:opacity-50"><PhoneCall size={15}/> Chamar próximo número</button>
             <button onClick={startScanner} disabled={scannerOpen} className="btn-outline-gold text-xs"><QrCode size={15}/> Escanear chegada</button>
+            {canPreCadastro && onOpenPreCadastro && (
+              <button onClick={onOpenPreCadastro} className="btn-outline-gold text-xs"><UserPlus size={15}/> Pré-cadastro</button>
+            )}
             <button onClick={loadQueue} disabled={loading} className="btn-outline-gold text-xs"><RefreshCw size={14}/> {loading ? 'Atualizando...' : 'Atualizar fila'}</button>
           </div>
 
