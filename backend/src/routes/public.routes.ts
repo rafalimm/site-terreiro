@@ -7,16 +7,17 @@ const router = Router();
 // Um único endpoint que devolve tudo o que as páginas públicas do site precisam
 // de uma vez só (evita várias requisições separadas a cada carregamento de página).
 router.get('/bundle', async (_req, res) => {
-  const [events, faqItems, newsItems, galleryItems, services, entities, siteConfig] = await Promise.all([
+  const [events, faqItems, newsItems, galleryItems, services, entities, entityLines, siteConfig] = await Promise.all([
     prisma.giraEvent.findMany({ where: { isPublic: true }, orderBy: { date: 'asc' } }),
     prisma.fAQItem.findMany({ where: { active: true }, orderBy: { order: 'asc' } }),
     prisma.newsItem.findMany({ where: { active: true }, orderBy: { publishedAt: 'desc' } }),
     prisma.galleryItem.findMany({ orderBy: { createdAt: 'desc' } }),
     prisma.serviceInfo.findMany(),
-    prisma.entity.findMany({ where: { active: true } }),
+    prisma.entity.findMany({ where: { active: true }, include: { lineCategory: true } }),
+    prisma.entityLine.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' } }),
     prisma.siteConfig.findUnique({ where: { id: 1 } }),
   ]);
-  res.json({ events, faqItems, newsItems, galleryItems, services, entities, siteConfig });
+  res.json({ events, faqItems, newsItems, galleryItems, services, entities, entityLines, siteConfig });
 });
 
 // Giras de Desenvolvimento são exclusivas para usuários com cargo Filho.
