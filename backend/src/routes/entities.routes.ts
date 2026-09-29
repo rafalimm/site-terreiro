@@ -117,23 +117,50 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const data = { ...req.body };
+    const data: Record<string, any> = { ...(req.body ?? {}) };
     delete data.id;
+
     if ('lineId' in data) {
-      const lineCategory = await prisma.entityLine.findFirst({ where: { id: data.lineId, active: true } });
-      if (!lineCategory) return res.status(400).json({ error: 'Selecione uma linha válida.' });
+      const lineCategory = await prisma.entityLine.findFirst({
+        where: { id: data.lineId, active: true },
+      });
+      if (!lineCategory) {
+        return res.status(400).json({ error: 'Selecione uma linha válida.' });
+      }
       data.lineId = lineCategory.id;
       data.line = lineCategory.name;
     }
-    if ('image' in data) data.image = toRelativeImageUrl(data.image) || null;
-    const before = await prisma.entity.findUnique({ where: { id: req.params.id } });
-    const entity = await prisma.entity.update({ where: { id: req.params.id }, data, include: { lineCategory: true } });
-    // Se a imagem foi trocada ou removida, apaga a antiga enviada pelo painel.
-    if (before && uploadedImageId(before.image) && before.image !== entity.image) await deleteUploadedImage(before.image);
-    await createLog(req.user!.id, req.user!.name, 'Editou', 'Entidade', `Editou a entidade "${entity.name}"`);
-    res.json(entity);
-  } catch {
-    res.status(404).json({ error: 'Entidade não encontrada.' });
+
+    if ('image' in data) {
+      data.image = toRelativeImageUrl(data.image) || null;
+    }
+
+    const before = await prisma.entity.findUnique({
+      where: { id: req.params.id },
+    });
+
+    const entity = await prisma.entity.update({
+      where: { id: req.params.id },
+      data,
+      include: { lineCategory: true },
+    });
+
+    if (before && uploadedImageId(before.image) && before.image !== entity.image) {
+      await deleteUploadedImage(before.image);
+    }
+
+    await createLog(
+      req.user!.id,
+      req.user!.name,
+      'Editou',
+      'Entidade',
+      `Editou a entidade "${entity.name}"`,
+    );
+
+    return res.json(entity);
+  } catch (error) {
+    console.error('Erro ao editar entidade:', error);
+    return res.status(404).json({ error: 'Entidade não encontrada.' });
   }
 });
 
