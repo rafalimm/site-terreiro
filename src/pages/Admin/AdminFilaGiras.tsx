@@ -132,7 +132,9 @@ export const AdminFilaGiras: React.FC = () => {
     }
 
     try {
-      const updated = await api.post<GiraAttendance>(
+      const updated = await api.post<GiraAttendance & {
+        entity?: { id: string; name: string; line?: string; active?: boolean };
+      }>(
         `/api/admin/events/${eventId}/attendance/${callTargetId}/call`,
         { entityId: selectedEntityId || undefined }
       );
