@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ShoppingCart, Plus, Check, Trash2, Edit2, X, PackageCheck,
-  Clock3, AlertTriangle, Search
+  Clock3, Search
 } from 'lucide-react';
 import { api } from '../../lib/api';
 
