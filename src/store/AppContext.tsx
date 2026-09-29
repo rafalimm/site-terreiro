@@ -33,6 +33,7 @@ export interface GiraEvent {
   requiresScheduling: boolean;
   observations: string;
   entityIds?: string[];
+  firstVisitEntityIds?: string[];
   createdBy: string;
   createdAt: string;
 }
@@ -53,6 +54,7 @@ export interface GiraAttendance {
   attendedAt?: string | null;
   updatedAt: string;
   entityId?: string | null;
+  isFirstVisit?: boolean;
   event?: Pick<GiraEvent, 'id' | 'title' | 'date' | 'time' | 'type'>;
   entity?: { id: string; name: string; line?: string; active?: boolean };
   user?: { id: string; name: string; email?: string; whatsapp?: string; role: UserRole };
