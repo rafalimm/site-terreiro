@@ -52,7 +52,7 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events'), a
 
   const entities = configuredEntityIds.length
     ? await prisma.entity.findMany({
-        where: { id: { in: configuredEntityIds }, active: true },
+        where: { id: { in: configuredEntityIds } },
         orderBy: { name: 'asc' },
       })
     : [];
@@ -72,7 +72,7 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events'), a
       .map(a => a.entityId as string)
   );
 
-  const availableEntities = entities.filter(entity => !busyEntityIds.has(entity.id));
+  const availableEntities = entities.filter(entity => entity.active && !busyEntityIds.has(entity.id));
 
   const entityHistory = entities.map(entity => {
     const records = attendances.filter(a => a.entityId === entity.id && a.status === 'attended');
