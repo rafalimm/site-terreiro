@@ -12,7 +12,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
+  password?: string | null;
   role: UserRole;
   whatsapp?: string;
   createdAt: string;
@@ -188,14 +188,14 @@ const emptySiteConfig: SiteConfig = {
 
 const PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ['*'],
-  admin: ['agenda', 'events', 'fila', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership', 'compras'],
+  admin: ['agenda', 'events', 'fila', 'pre_cadastro', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership', 'compras'],
   agenda: ['agenda', 'events', 'fila', 'filho_content', 'membership'],
   content: ['news', 'faq', 'gallery', 'institutional', 'filho_content', 'membership'],
   atendimento: ['messages', 'consulentes', 'filho_content', 'membership'],
   filho: ['own_account', 'filho_content', 'membership'],
   consulente: ['own_account'],
   compras: ['compras'],
-  responsavel_fila: ['fila'],
+  responsavel_fila: ['fila', 'pre_cadastro'],
 };
 
 // ============================================================
