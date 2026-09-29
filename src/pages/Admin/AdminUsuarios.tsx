@@ -27,7 +27,7 @@ const roleColors: Record<UserRole, string> = {
   responsavel_fila: 'text-emerald-300 border-emerald-300/40 bg-emerald-300/10',
 };
 
-const emptyUser: Omit<User, 'id' | 'createdAt'> = {
+type UserForm = {\n  name: string;\n  email: string;\n  password: string;\n  role: UserRole;\n  whatsapp: string;\n  active: boolean;\n};\n\nconst emptyUser: UserForm = {
   name: '',
   email: '',
   password: '',
@@ -40,7 +40,7 @@ export const AdminUsuarios: React.FC = () => {
   const { users, addUser, updateUser, deleteUser, currentUser } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
-  const [form, setForm] = useState(emptyUser);
+  const [form, setForm] = useState<UserForm>(emptyUser);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'todos'>('todos');
@@ -56,7 +56,7 @@ export const AdminUsuarios: React.FC = () => {
 
   const openEdit = (user: User) => {
     setEditing(user);
-    setForm({ name: user.name, email: user.email, password: user.password, role: user.role, whatsapp: user.whatsapp || '', active: user.active });
+    setForm({ name: user.name, email: user.email || '', password: user.password || '', role: user.role, whatsapp: user.whatsapp || '', active: user.active });
     setShowModal(true);
   };
 
@@ -79,7 +79,7 @@ export const AdminUsuarios: React.FC = () => {
     return users.filter(u => {
       const matchesSearch =
         u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase());
+        (u.email || '').toLowerCase().includes(search.toLowerCase());
       const matchesRole = roleFilter === 'todos' || u.role === roleFilter;
       return matchesSearch && matchesRole;
     });
