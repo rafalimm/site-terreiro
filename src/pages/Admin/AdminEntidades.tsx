@@ -3,7 +3,9 @@ import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle, Layers }
 import { useApp, Entity } from '../../store/AppContext';
 import { ImageUploader } from '../../components/ImageUploader';
 
-const emptyEntity: Omit<Entity, 'id'> = {
+type EntityForm = Omit<Entity, 'id' | 'lineId'> & { lineId: string };
+
+const emptyEntity: EntityForm = {
   name: '',
   line: '',
   lineId: '',
