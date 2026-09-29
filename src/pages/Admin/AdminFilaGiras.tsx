@@ -10,6 +10,7 @@ type QueueResponse = {
   attendances: Array<GiraAttendance & { user: { id: string; name: string; email: string; whatsapp?: string; role: string } }>;
   entities: Array<{ id: string; name: string; line: string; active: boolean }>;
   availableEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
+  availableFirstVisitEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
   entityHistory: Array<{
     entity: { id: string; name: string; line: string; active: boolean };
     attendedCount: number;
@@ -44,6 +45,7 @@ export const AdminFilaGiras: React.FC = () => {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [callTargetId, setCallTargetId] = useState<string | null>(null);
   const [selectedEntityId, setSelectedEntityId] = useState('');
+  const [firstVisitPending, setFirstVisitPending] = useState<{ qrToken: string; name: string } | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const loadQueue = async () => {
@@ -125,12 +127,8 @@ export const AdminFilaGiras: React.FC = () => {
           async decodedText => {
             await stopScanner();
             try {
-              const updated = await api.post<GiraAttendance>(
-                `/api/admin/events/${eventId}/attendance/check-in`,
-                { qrToken: decodedText }
-              );
-              setMessage(`Chegada registrada: ${updated.user?.name || 'participante'} — senha ${String(updated.queueNumber).padStart(3, '0')}.`);
-              await loadQueue();
+              const scanned = await api.get<GiraAttendance & { user?: { name: string } }>(`/api/attendance/token/${encodeURIComponent(decodedText)}`);
+              setFirstVisitPending({ qrToken: decodedText, name: scanned.user?.name || 'participante' });
             } catch (error) {
               setMessage(error instanceof Error ? error.message : 'QR Code inválido.');
             }
@@ -142,6 +140,18 @@ export const AdminFilaGiras: React.FC = () => {
         setScannerOpen(false);
       }
     }, 100);
+  };
+
+  const confirmCheckIn = async (isFirstVisit: boolean) => {
+    if (!firstVisitPending) return;
+    try {
+      const updated = await api.post<GiraAttendance>(`/api/admin/events/${eventId}/attendance/check-in`, { qrToken: firstVisitPending.qrToken, isFirstVisit });
+      setFirstVisitPending(null);
+      setMessage(`${isFirstVisit ? 'Primeira vez identificada' : 'Retorno identificado'}: ${updated.user?.name || 'participante'} — senha ${String(updated.queueNumber).padStart(3, '0')}.`);
+      await loadQueue();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível registrar a chegada.');
+    }
   };
 
   const openCallDialog = (attendanceId: string) => {
@@ -189,7 +199,7 @@ export const AdminFilaGiras: React.FC = () => {
   };
 
   const callNext = () => {
-    const next = queue?.attendances.find(a => a.status === 'arrived');
+    const next = queue?.attendances.find(a => a.status === 'arrived' && a.isFirstVisit) || queue?.attendances.find(a => a.status === 'arrived');
     if (!next) {
       setMessage('Não há consulentes aguardando na fila.');
       return;
@@ -279,6 +289,20 @@ export const AdminFilaGiras: React.FC = () => {
             <button onClick={loadQueue} disabled={loading} className="btn-outline-gold text-xs"><RefreshCw size={14}/> {loading ? 'Atualizando...' : 'Atualizar fila'}</button>
           </div>
 
+          {firstVisitPending && (
+            <div className="modal-overlay">
+              <div className="modal-content max-w-md">
+                <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">Identificar chegada</h3>
+                <p className="text-sm text-[#f5f0e8] mt-2">{firstVisitPending.name}</p>
+                <p className="text-xs text-[rgba(245,240,232,0.5)] mt-2">Esta pessoa está vindo pela primeira vez?</p>
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  <button onClick={() => confirmCheckIn(true)} className="btn-gold text-xs justify-center">Sim, primeira vez</button>
+                  <button onClick={() => confirmCheckIn(false)} className="btn-outline-gold text-xs justify-center">Não, já frequenta</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {callTargetId && (
             <div className="modal-overlay">
               <div className="modal-content max-w-md">
@@ -292,7 +316,11 @@ export const AdminFilaGiras: React.FC = () => {
                   <button onClick={() => setCallTargetId(null)} className="text-[rgba(245,240,232,0.4)] hover:text-white"><XCircle size={20}/></button>
                 </div>
 
-                {queue?.availableEntities.length ? (
+                {(() => {
+                  const target = queue?.attendances.find(a => a.id === callTargetId);
+                  const entitiesForCall = target?.isFirstVisit && queue?.availableFirstVisitEntities?.length ? queue.availableFirstVisitEntities : queue?.availableEntities || [];
+                  return entitiesForCall.length ? (
+
                   <div className="space-y-2">
                     <label className="form-label">Escolha a entidade disponível</label>
                     {queue.availableEntities.map(entity => (
@@ -308,13 +336,14 @@ export const AdminFilaGiras: React.FC = () => {
                   </div>
                 ) : queue?.entities.length ? (
                   <div className="p-3 rounded border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-200/70">
-                    Todas as entidades desta gira estão ocupadas no momento. Aguarde uma ser liberada.
+                    Todas as entidades permitidas para este atendimento estão ocupadas no momento. Aguarde uma ser liberada.
                   </div>
                 ) : (
                   <div className="p-3 rounded border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-200/70">
                     Esta gira ainda não possui entidades vinculadas. O atendimento continuará funcionando sem vinculação de entidade.
                   </div>
-                )}
+                )
+                })()}
 
                 <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
                   <button onClick={() => setCallTargetId(null)} className="btn-outline-gold text-xs flex-1 justify-center">Cancelar</button>
@@ -386,6 +415,7 @@ export const AdminFilaGiras: React.FC = () => {
                     <div>
                       <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
                       <p className="text-xs text-[rgba(245,240,232,0.4)]">{attendance.user?.role}</p>
+                      {attendance.isFirstVisit && <span className="inline-flex mt-1 px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-semibold">PRIMEIRA VEZ</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
