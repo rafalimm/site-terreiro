@@ -20,24 +20,36 @@ router.post('/lines', async (req, res) => {
   try {
     const { name, description = '', entityIds = [] } = req.body ?? {};
     if (!name?.trim()) return res.status(400).json({ error: 'Informe o nome da linha.' });
-    const ids = Array.isArray(entityIds) ? entityIds.filter(Boolean) : [];
+    const ids = Array.isArray(entityIds) ? [...new Set(entityIds.filter(Boolean))] : [];
+    const lineId = `linha-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // Cria a categoria primeiro. As entidades são vinculadas depois, permitindo
+    // misturar entidades de várias linhas (ex.: Caboclos + Baianos + Boiadeiros).
     const line = await prisma.entityLine.create({
       data: {
-        id: `linha-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: lineId,
         name: name.trim(),
         description: String(description),
         sortOrder: 1000,
-        members: { connect: ids.map((id: string) => ({ id })) },
       },
+    });
+    if (ids.length > 0) {
+      await prisma.entityLine.update({
+        where: { id: line.id },
+        data: { members: { connect: ids.map((id: string) => ({ id })) } },
+      });
+    }
+    const savedLine = await prisma.entityLine.findUnique({
+      where: { id: line.id },
       include: { members: { include: { lineCategory: true } } },
     });
+    if (!savedLine) throw new Error('Linha criada, mas não foi possível carregá-la.');
     // A criação da linha não deve falhar caso o registro de auditoria tenha algum problema.
     try {
-      await createLog(req.user!.id, req.user!.name, 'Criou', 'Linha', `Criou a linha "${line.name}"`);
+      await createLog(req.user!.id, req.user!.name, 'Criou', 'Linha', `Criou a linha "${savedLine.name}"`);
     } catch (logError) {
       console.error('Linha criada, mas não foi possível registrar o log:', logError);
     }
-    res.status(201).json(line);
+    res.status(201).json(savedLine);
   } catch (error: any) {
     console.error('Erro ao criar linha:', error);
     const message = error?.code === 'P2002'
