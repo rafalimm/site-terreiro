@@ -9,6 +9,7 @@ const router = Router();
 function sanitize(user: any) {
   const { password: _password, ...rest } = user;
   return rest;
+}
 
 // POST /api/auth/login — login de qualquer usuário (equipe ou consulente)
 router.post('/login', async (req, res) => {
