@@ -229,7 +229,7 @@ export const AdminEntidades: React.FC = () => {
                   <label className="form-label">Linha *</label>
                   <select
                     className="form-input"
-                    value={form.lineId}
+                    value={form.lineId || ''}
                     onChange={e => setForm({ ...form, lineId: e.target.value, line: entityLines.find(line => line.id === e.target.value)?.name || '' })}
                   >
                     <option value="">Selecione uma linha</option>
