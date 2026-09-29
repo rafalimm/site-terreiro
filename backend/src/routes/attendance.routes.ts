@@ -53,7 +53,7 @@ router.get('/attendance/token/:token', authorize('agenda', 'events', 'fila'), as
   res.json(attendance);
 });
 
-router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events'), async (req, res) => {
+router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events', 'fila'), async (req, res) => {
   const event = await prisma.giraEvent.findUnique({ where: { id: req.params.eventId } });
   if (!event) return res.status(404).json({ error: 'Gira não encontrada.' });
 
@@ -111,7 +111,7 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events'), a
   res.json({ event, counts, attendances, entities, availableEntities, entityHistory });
 });
 
-router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'events'), async (req, res) => {
+router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'events', 'fila'), async (req, res) => {
   try {
     const attendance = await prisma.giraAttendance.findUnique({
       where: { qrToken: String(req.body.qrToken || '') },
@@ -155,7 +155,7 @@ router.post('/admin/events/:eventId/attendance/check-in', authorize('agenda', 'e
   }
 });
 
-router.post('/admin/events/:eventId/attendance/:attendanceId/call', authorize('agenda', 'events'), async (req, res) => {
+router.post('/admin/events/:eventId/attendance/:attendanceId/call', authorize('agenda', 'events', 'fila'), async (req, res) => {
   try {
     const current = await prisma.giraAttendance.findUnique({
       where: { id: req.params.attendanceId },
@@ -220,7 +220,7 @@ router.post('/admin/events/:eventId/attendance/:attendanceId/call', authorize('a
   }
 });
 
-router.post('/admin/events/:eventId/attendance/:attendanceId/start', authorize('agenda', 'events'), async (req, res) => {
+router.post('/admin/events/:eventId/attendance/:attendanceId/start', authorize('agenda', 'events', 'fila'), async (req, res) => {
   try {
     const current = await prisma.giraAttendance.findUnique({ where: { id: req.params.attendanceId } });
     if (!current || current.eventId !== req.params.eventId) return res.status(404).json({ error: 'Pessoa não encontrada na fila.' });
@@ -237,7 +237,7 @@ router.post('/admin/events/:eventId/attendance/:attendanceId/start', authorize('
   }
 });
 
-router.post('/admin/events/:eventId/attendance/:attendanceId/complete', authorize('agenda', 'events'), async (req, res) => {
+router.post('/admin/events/:eventId/attendance/:attendanceId/complete', authorize('agenda', 'events', 'fila'), async (req, res) => {
   try {
     const current = await prisma.giraAttendance.findUnique({ where: { id: req.params.attendanceId } });
     if (!current || current.eventId !== req.params.eventId) return res.status(404).json({ error: 'Pessoa não encontrada na fila.' });
