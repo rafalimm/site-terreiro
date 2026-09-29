@@ -39,10 +39,7 @@ router.post('/events/:id/confirmation', async (req, res) => {
         confirmedAt: now,
         updatedAt: now,
       },
-      update: {
-        status: 'confirmed',
-        updatedAt: now,
-      },
+      update: {},
     });
 
     res.status(201).json({ confirmed: true, confirmation, attendance });
