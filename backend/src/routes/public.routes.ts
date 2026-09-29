@@ -14,7 +14,7 @@ router.get('/bundle', async (_req, res) => {
     prisma.galleryItem.findMany({ orderBy: { createdAt: 'desc' } }),
     prisma.serviceInfo.findMany(),
     prisma.entity.findMany({ where: { active: true }, include: { lineCategory: true } }),
-    prisma.entityLine.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' } }),
+    prisma.entityLine.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' }, include: { members: { where: { active: true }, include: { lineCategory: true } } } }),
     prisma.siteConfig.findUnique({ where: { id: 1 } }),
   ]);
   res.json({ events, faqItems, newsItems, galleryItems, services, entities, entityLines, siteConfig });
