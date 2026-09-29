@@ -239,15 +239,15 @@ export const AdminUsuarios: React.FC = () => {
               </div>
               <div>
                 <label className="form-label">E-mail *</label>
-                <input type="email" className="form-input" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                <input type="email" className="form-input" value={form.email || ''} onChange={e => setForm({...form, email: e.target.value})} />
               </div>
               <div>
                 <label className="form-label">WhatsApp</label>
-                <input className="form-input" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} />
+                <input className="form-input" value={form.whatsapp || ''} onChange={e => setForm({...form, whatsapp: e.target.value})} />
               </div>
               <div>
                 <label className="form-label">Senha {!editing && '*'}</label>
-                <input type="password" className="form-input" placeholder={editing ? 'Deixe em branco para manter' : 'Mínimo 6 caracteres'} value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+                <input type="password" className="form-input" placeholder={editing ? 'Deixe em branco para manter' : 'Mínimo 6 caracteres'} value={form.password || ''} onChange={e => setForm({...form, password: e.target.value})} />
               </div>
               <div>
                 <label className="form-label">Cargo</label>
