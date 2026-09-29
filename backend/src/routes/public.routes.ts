@@ -33,16 +33,24 @@ router.get('/filho/desenvolvimento', authenticate, authorize('filho_content'), a
 // POST /api/public/contact — formulário de contato do site, sem necessidade de login
 router.post('/contact', contactLimiter, async (req, res) => {
   const { name, whatsapp, email, subject, message } = req.body ?? {};
-  if (!name || !email || !message) {
+  const cleanName = String(name || '').trim();
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanWhatsapp = String(whatsapp || '').trim();
+  const cleanSubject = String(subject || '').trim();
+  const cleanMessage = String(message || '').trim();
+  if (!cleanName || !cleanEmail || !cleanMessage) {
     return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
+  }
+  if (cleanName.length > 120 || cleanEmail.length > 254 || cleanWhatsapp.length > 30 || cleanSubject.length > 120 || cleanMessage.length > 4000) {
+    return res.status(400).json({ error: 'Um ou mais campos excedem o tamanho permitido.' });
   }
   const msg = await prisma.contactMessage.create({
     data: {
-      name,
-      whatsapp: whatsapp || '',
-      email,
-      subject: subject || '',
-      message,
+      name: cleanName,
+      whatsapp: cleanWhatsapp,
+      email: cleanEmail,
+      subject: cleanSubject,
+      message: cleanMessage,
       receivedAt: new Date().toISOString(),
       read: false,
     },
@@ -53,19 +61,27 @@ router.post('/contact', contactLimiter, async (req, res) => {
 // POST /api/public/appointments — pedido de agendamento (búzios, cartas ou consulta), sem login
 router.post('/appointments', appointmentLimiter, async (req, res) => {
   const { name, whatsapp, email, type, preferredDate, preferredTime, notes } = req.body ?? {};
-  if (!name || !whatsapp || !type || !preferredDate || !preferredTime) {
+  const cleanName = String(name || '').trim();
+  const cleanWhatsapp = String(whatsapp || '').trim();
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanType = String(type || '').trim();
+  const cleanNotes = String(notes || '').trim();
+  if (!cleanName || !cleanWhatsapp || !cleanType || !preferredDate || !preferredTime) {
     return res.status(400).json({ error: 'Preencha os campos obrigatórios.' });
+  }
+  if (cleanName.length > 120 || cleanWhatsapp.length > 30 || cleanEmail.length > 254 || cleanType.length > 60 || cleanNotes.length > 2000) {
+    return res.status(400).json({ error: 'Um ou mais campos excedem o tamanho permitido.' });
   }
   try {
     const appointment = await prisma.appointment.create({
       data: {
-        name,
-        whatsapp,
-        email: email || null,
-        type,
+        name: cleanName,
+        whatsapp: cleanWhatsapp,
+        email: cleanEmail || null,
+        type: cleanType,
         preferredDate: String(preferredDate).slice(0, 10),
-        preferredTime,
-        notes: notes || '',
+        preferredTime: String(preferredTime).slice(0, 20),
+        notes: cleanNotes,
         status: 'pendente',
         createdAt: new Date().toISOString(),
       },
