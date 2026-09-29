@@ -86,14 +86,10 @@ router.post('/profile-photo', authenticate, async (req, res) => {
   }
 
   try {
-    const image = await prisma.uploadedImage.create({
-      data: {
-        mimeType,
-        data: buffer,
-        createdAt: new Date().toISOString(),
-      },
-    });
-    const profilePhoto = `/api/images/${image.id}`;
+    // A foto já chega comprimida pelo frontend. Salvamos o próprio data URL
+    // no usuário para que ela continue disponível após recarregar a conta,
+    // sem depender de uma segunda requisição para /api/images.
+    const profilePhoto = dataUrl;
     const user = await prisma.user.update({
       where: { id: req.user!.id },
       data: { profilePhoto },
