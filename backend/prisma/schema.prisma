@@ -236,18 +236,33 @@ model ServiceInfo {
   @@map("services")
 }
 
+model EntityLine {
+  id          String   @id
+  name        String   @unique
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  entities    Entity[]
+
+  @@index([sortOrder])
+  @@map("entity_lines")
+}
+
 model Entity {
-  id              String  @id @default(cuid())
+  id              String      @id @default(cuid())
   name            String
   line            String
-  description     String  @db.Text
-  image           String? @db.Text
-  history         String  @db.Text
-  characteristics String  @db.Text
-  additionalInfo  String  @db.Text
-  active          Boolean          @default(true)
+  lineId          String?
+  lineCategory    EntityLine? @relation(fields: [lineId], references: [id], onDelete: SetNull)
+  description     String      @db.Text
+  image           String?     @db.Text
+  history         String      @db.Text
+  characteristics String      @db.Text
+  additionalInfo  String      @db.Text
+  active          Boolean     @default(true)
   attendances     GiraAttendance[]
 
+  @@index([lineId])
   @@map("entities")
 }
 
