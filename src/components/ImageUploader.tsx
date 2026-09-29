@@ -314,8 +314,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       {error && <p className="font-inter text-red-400 text-xs mt-2">{error}</p>}
 
       {cropImage && cropFile && (
-        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-xl border border-[rgba(201,168,76,0.25)] bg-[#160909] p-5 shadow-2xl">
+        <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="w-full max-w-md max-h-[calc(100vh-24px)] overflow-y-auto rounded-xl border border-[rgba(201,168,76,0.25)] bg-[#160909] p-4 sm:p-5 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-cinzel font-bold text-[#c9a84c]">Ajustar foto de perfil</h3>
@@ -327,19 +327,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             </div>
 
             <div
-              className="relative w-[280px] h-[280px] mx-auto rounded-full overflow-hidden border-2 border-[#c9a84c] bg-black touch-none cursor-grab active:cursor-grabbing"
+              className="relative w-[min(280px,70vw)] h-[min(280px,70vw)] mx-auto rounded-full overflow-hidden border-2 border-[#c9a84c] bg-black touch-none cursor-grab active:cursor-grabbing"
               onPointerDown={startDrag}
               onPointerMove={moveDrag}
               onPointerUp={() => { dragRef.current = null; }}
               onPointerCancel={() => { dragRef.current = null; }}
             >
               {(() => {
+                const previewSide = Math.min(280, Math.round(window.innerWidth * 0.7));
                 const sourceSide = Math.min(cropImage.naturalWidth, cropImage.naturalHeight) / cropZoom;
-                const scale = 280 / sourceSide;
+                const scale = previewSide / sourceSide;
                 const width = cropImage.naturalWidth * scale;
                 const height = cropImage.naturalHeight * scale;
-                const left = (280 - width) / 2 + cropOffset.x;
-                const top = (280 - height) / 2 + cropOffset.y;
+                const left = (previewSide - width) / 2 + cropOffset.x;
+                const top = (previewSide - height) / 2 + cropOffset.y;
                 return (
                   <img
                     src={cropImage.src}
