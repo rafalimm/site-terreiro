@@ -31,7 +31,17 @@ router.get('/attendance/mine', async (req, res) => {
   }
 });
 
-router.get('/attendance/token/:token', authorize('agenda', 'events'), async (req, res) => {
+router.get('/attendance/queue-events', async (_req, res) => {
+  try {
+    const events = await prisma.giraEvent.findMany({ orderBy: { date: 'asc' } });
+    res.json(events);
+  } catch (error) {
+    console.error('Erro ao carregar giras da fila:', error);
+    res.status(500).json({ error: 'Não foi possível carregar as giras da fila.' });
+  }
+});
+
+router.get('/attendance/token/:token', authorize('agenda', 'events', 'fila'), async (req, res) => {
   const attendance = await prisma.giraAttendance.findUnique({
     where: { qrToken: req.params.token },
     include: {
