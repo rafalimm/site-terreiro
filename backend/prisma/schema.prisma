@@ -56,6 +56,7 @@ model GiraEvent {
   createdBy          String
   createdAt          String
   entityIds          Json     @default("[]")
+  firstVisitEntityIds Json    @default("[]")
   confirmations      EventConfirmation[]
   attendances        GiraAttendance[]
 
@@ -90,6 +91,7 @@ model GiraAttendance {
   attendedAt        String?
   updatedAt         String
   entityId          String?
+  isFirstVisit      Boolean  @default(false)
   event             GiraEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   entity            Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
