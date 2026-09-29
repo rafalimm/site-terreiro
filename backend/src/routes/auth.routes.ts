@@ -95,6 +95,7 @@ router.get('/pre-registration/:cpf/:queueNumber', preLookupLimiter, async (req, 
     },
   });
 
+  if (!attendance) return res.status(404).json({ error: 'Pré-cadastro não encontrado ou senha inválida.' });
   return res.json({ user, attendance });
 });
 
