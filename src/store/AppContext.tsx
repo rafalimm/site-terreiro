@@ -6,7 +6,7 @@ import { api, setToken, getToken, ApiError, mediaUrl } from '../lib/api';
 // (mesmos tipos de antes — nada muda para quem importa daqui)
 // ============================================================
 
-export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendimento' | 'filho' | 'consulente';
+export type UserRole = 'super_admin' | 'admin' | 'agenda' | 'content' | 'atendimento' | 'filho' | 'consulente' | 'compras';
 
 export interface User {
   id: string;
@@ -153,12 +153,13 @@ const emptySiteConfig: SiteConfig = {
 
 const PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ['*'],
-  admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership'],
+  admin: ['agenda', 'events', 'news', 'gallery', 'faq', 'messages', 'services', 'entities', 'consulentes', 'filho_content', 'membership', 'compras'],
   agenda: ['agenda', 'events', 'filho_content', 'membership'],
   content: ['news', 'faq', 'gallery', 'institutional', 'filho_content', 'membership'],
   atendimento: ['messages', 'consulentes', 'filho_content', 'membership'],
   filho: ['own_account', 'filho_content', 'membership'],
   consulente: ['own_account'],
+  compras: ['compras'],
 };
 
 // ============================================================
