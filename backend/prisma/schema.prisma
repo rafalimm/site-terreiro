@@ -53,6 +53,7 @@ model GiraEvent {
   observations       String   @db.Text
   createdBy          String
   createdAt          String
+  entityIds          Json     @default("[]")
   confirmations      EventConfirmation[]
   attendances        GiraAttendance[]
 
@@ -86,14 +87,17 @@ model GiraAttendance {
   serviceStartedAt  String?
   attendedAt        String?
   updatedAt         String
+  entityId          String?
   event             GiraEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity            Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
 
   @@unique([eventId, userId])
   @@unique([eventId, queueNumber])
   @@index([eventId])
   @@index([userId])
   @@index([status])
+  @@index([entityId])
   @@map("gira_attendance")
 }
 
