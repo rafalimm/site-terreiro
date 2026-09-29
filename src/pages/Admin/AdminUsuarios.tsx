@@ -11,6 +11,7 @@ const roleLabels: Record<UserRole, string> = {
   atendimento: 'Atendimento',
   filho: 'Filho',
   consulente: 'Consulente',
+  compras: 'Responsável por Compras',
 };
 
 const roleColors: Record<UserRole, string> = {
@@ -21,6 +22,7 @@ const roleColors: Record<UserRole, string> = {
   atendimento: 'text-green-400 border-green-400/40 bg-green-400/10',
   filho: 'text-amber-300 border-amber-300/40 bg-amber-300/10',
   consulente: 'text-[rgba(245,240,232,0.5)] border-[rgba(245,240,232,0.2)] bg-[rgba(255,255,255,0.05)]',
+  compras: 'text-cyan-300 border-cyan-300/40 bg-cyan-300/10',
 };
 
 const emptyUser: Omit<User, 'id' | 'createdAt'> = {
