@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Star, LogIn, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, Star, LogIn, UserPlus, QrCode, ArrowLeft } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { api, setToken } from '../lib/api';
 import { useApp } from '../store/AppContext';
 
 export const Login: React.FC = () => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'pre'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -12,6 +14,11 @@ export const Login: React.FC = () => {
   const [whatsapp, setWhatsapp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [preCpf, setPreCpf] = useState('');
+  const [preData, setPreData] = useState<{ name: string; cpfCnpj?: string | null; attendance?: { queueNumber?: number | null; qrToken: string; event?: { title: string; date: string; time: string } } | null } | null>(null);
+  const [preEmail, setPreEmail] = useState('');
+  const [preWhatsapp, setPreWhatsapp] = useState('');
+  const [prePassword, setPrePassword] = useState('');
   const { login, register } = useApp();
   const navigate = useNavigate();
 
@@ -26,6 +33,49 @@ export const Login: React.FC = () => {
       setError('E-mail ou senha incorretos. Verifique seus dados e tente novamente.');
     }
     setLoading(false);
+  };
+
+  const handlePreLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const result = await api.get<{ user: { name: string; cpfCnpj?: string | null }; attendance?: { queueNumber?: number | null; qrToken: string; event?: { title: string; date: string; time: string } } | null }>(
+        '/api/auth/pre-registration/' + preCpf.replace(/\D/g, ''),
+        false
+      );
+      setPreData({ ...result.user, attendance: result.attendance });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Pré-cadastro não encontrado.');
+      setPreData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreComplete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!preData) return;
+    if (!preEmail || !preWhatsapp || prePassword.length < 6) {
+      setError('Preencha WhatsApp, e-mail e uma senha de pelo menos 6 caracteres.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const result = await api.post<{ token: string }>('/api/auth/pre-registration/complete', {
+        cpf: preData.cpfCnpj || preCpf,
+        email: preEmail,
+        whatsapp: preWhatsapp,
+        password: prePassword,
+      }, false);
+      setToken(result.token);
+      window.location.href = '/minha-conta';
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível concluir o cadastro.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -96,6 +146,50 @@ export const Login: React.FC = () => {
           </div>
 
           {/* Login Form */}
+          {mode === 'pre' && (
+            <div className="space-y-5">
+              <div>
+                <p className="font-cinzel text-[#f5f0e8] font-bold">Já tenho pré-cadastro</p>
+                <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">Informe o CPF usado no atendimento para localizar seu pré-cadastro.</p>
+              </div>
+
+              {!preData ? (
+                <form onSubmit={handlePreLookup} className="space-y-5">
+                  <div>
+                    <label className="form-label">CPF *</label>
+                    <input className="form-input" value={preCpf} onChange={e => setPreCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" maxLength={14} required />
+                  </div>
+                  {error && <div className="p-3 bg-[rgba(139,26,26,0.2)] border border-[rgba(139,26,26,0.4)] rounded"><p className="font-inter text-red-400 text-sm">{error}</p></div>}
+                  <button type="submit" disabled={loading} className="btn-gold w-full justify-center">{loading ? 'Consultando...' : 'Encontrar meu pré-cadastro'}</button>
+                </form>
+              ) : (
+                <form onSubmit={handlePreComplete} className="space-y-5">
+                  <div className="p-4 rounded border border-[rgba(201,168,76,0.15)] bg-[rgba(201,168,76,0.05)]">
+                    <p className="text-xs text-[#c9a84c] uppercase tracking-wider">Pré-cadastro encontrado</p>
+                    <p className="font-cinzel text-white text-lg mt-1">{preData.name}</p>
+                    {preData.attendance?.event && <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">{preData.attendance.event.title} — {preData.attendance.event.date} às {preData.attendance.event.time}</p>}
+                  </div>
+
+                  {preData.attendance && (
+                    <div className="flex items-center gap-4 p-4 rounded border border-[rgba(201,168,76,0.12)]">
+                      <div className="bg-white p-2 rounded"><QRCodeSVG value={preData.attendance.qrToken} size={90} /></div>
+                      <div><p className="text-xs text-[rgba(245,240,232,0.45)]">Sua senha</p><p className="font-cinzel text-[#c9a84c] text-4xl font-black">{preData.attendance.queueNumber ? String(preData.attendance.queueNumber).padStart(3, '0') : '—'}</p><p className="text-xs text-[rgba(245,240,232,0.45)] mt-1"><QrCode size={12} className="inline mr-1" />QR da fila</p></div>
+                    </div>
+                  )}
+
+                  <div><label className="form-label">WhatsApp *</label><input type="tel" className="form-input" value={preWhatsapp} onChange={e => setPreWhatsapp(e.target.value)} placeholder="(11) 99999-9999" required /></div>
+                  <div><label className="form-label">E-mail *</label><input type="email" className="form-input" value={preEmail} onChange={e => setPreEmail(e.target.value)} placeholder="seu@email.com" required /></div>
+                  <div><label className="form-label">Crie sua senha *</label><input type="password" className="form-input" value={prePassword} onChange={e => setPrePassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} required /></div>
+
+                  {error && <div className="p-3 bg-[rgba(139,26,26,0.2)] border border-[rgba(139,26,26,0.4)] rounded"><p className="font-inter text-red-400 text-sm">{error}</p></div>}
+
+                  <button type="submit" disabled={loading} className="btn-gold w-full justify-center">{loading ? 'Concluindo...' : 'Concluir meu cadastro'}</button>
+                  <button type="button" onClick={() => { setPreData(null); setError(''); }} className="w-full flex items-center justify-center gap-2 text-xs text-[rgba(245,240,232,0.45)] hover:text-[#c9a84c]"><ArrowLeft size={13} /> Usar outro CPF</button>
+                </form>
+              )}
+            </div>
+          )}
+
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
@@ -229,6 +323,12 @@ export const Login: React.FC = () => {
             </form>
           )}
         </div>
+
+          <div className="mt-6 text-center text-xs text-[rgba(245,240,232,0.4)]">
+            <button type="button" onClick={() => { setMode('pre'); setError(''); }} className="text-[#c9a84c] hover:underline">
+              Já tenho pré-cadastro
+            </button>
+          </div>
 
         <div className="text-center mt-6">
           <Link to="/" className="font-inter text-[rgba(245,240,232,0.35)] text-xs hover:text-[#c9a84c] transition-colors">
