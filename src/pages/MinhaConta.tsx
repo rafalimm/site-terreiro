@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User, Calendar, Newspaper, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check } from 'lucide-react';
+import { User, Calendar, Newspaper, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, Camera } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
@@ -8,6 +8,8 @@ import { ptBR } from 'date-fns/locale';
 import { generatePixPayload } from '../utils/pix';
 import { dateOnlyTimestamp, todayDateOnly, parseDateOnly } from '../utils/date';
 import { QRCodeSVG } from 'qrcode.react';
+import { ImageUploader } from '../components/ImageUploader';
+import { mediaUrl } from '../lib/api';
 import type { PixPaymentConfig } from '../utils/pix';
 
 export const MinhaConta: React.FC = () => {
@@ -81,7 +83,10 @@ export const MinhaConta: React.FC = () => {
     filho: 'Filho',
     consulente: 'Consulente',
     compras: 'Responsável por Compras',
+    responsavel_fila: 'Responsável de Fila',
   };
+
+  const profilePhoto = currentUser.profilePhoto ? mediaUrl(currentUser.profilePhoto) : '';
 
   return (
     <div className="min-h-screen bg-[#0d0505] pt-24 pb-16 px-4">
@@ -89,8 +94,12 @@ export const MinhaConta: React.FC = () => {
         {/* Profile */}
         <div className="card-spiritual p-8 mb-6">
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="w-20 h-20 rounded-full border-2 border-[#c9a84c] bg-[rgba(201,168,76,0.1)] flex items-center justify-center flex-shrink-0">
-              <User size={32} className="text-[#c9a84c]" />
+            <div className="w-20 h-20 rounded-full border-2 border-[#c9a84c] bg-[rgba(201,168,76,0.1)] flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {profilePhoto ? (
+                <img src={profilePhoto} alt={`Foto de perfil de ${currentUser.name}`} className="w-full h-full object-cover" />
+              ) : (
+                <User size={32} className="text-[#c9a84c]" />
+              )}
             </div>
             <div className="flex-1">
               <h2 className="font-cinzel font-bold text-white text-2xl">{currentUser.name}</h2>
@@ -110,6 +119,24 @@ export const MinhaConta: React.FC = () => {
                 Painel Admin
               </Link>
             )}
+          </div>
+          <div className="mt-6 pt-5 border-t border-[rgba(201,168,76,0.1)]">
+            <div className="flex items-center gap-2 mb-3">
+              <Camera size={15} className="text-[#c9a84c]" />
+              <h3 className="font-cinzel font-bold text-[#c9a84c] text-sm">Foto de perfil</h3>
+            </div>
+            <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">
+              Escolha uma foto para aparecer no seu perfil.
+            </p>
+            <ImageUploader
+              value={profilePhoto}
+              onChange={(url) => {
+                window.location.reload();
+              }}
+              uploadPath="/api/auth/profile-photo"
+              maxSize={600}
+              shape="round"
+            />
           </div>
         </div>
 
