@@ -11,7 +11,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { PixPaymentConfig } from '../utils/pix';
 
 export const MinhaConta: React.FC = () => {
-  const { currentUser, events, newsItems, siteConfig, authReady, myAttendances } = useApp();
+  const { currentUser, events, newsItems, siteConfig, authReady, myAttendances, loadMyAttendances } = useApp();
   const [membership, setMembership] = React.useState<{
     membership: { id: string; monthlyAmountCents: number; dueDay: number; active: boolean };
     currentPayment: { id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
