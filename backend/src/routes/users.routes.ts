@@ -10,6 +10,7 @@ router.use(authenticate);
 function sanitize(user: any) {
   const { password: _password, ...rest } = user;
   return rest;
+}
 
 // Listar usuários: qualquer cargo com permissão 'consulentes' (admin, atendimento, super_admin)
 // consegue ver a lista — é o que alimenta as telas "Usuários & Permissões" e "Consulentes".
