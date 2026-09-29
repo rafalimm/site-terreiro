@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle, Layers } from 'lucide-react';
 import { useApp, Entity } from '../../store/AppContext';
 import { ImageUploader } from '../../components/ImageUploader';
 
@@ -16,16 +16,52 @@ const emptyEntity: Omit<Entity, 'id'> = {
 };
 
 export const AdminEntidades: React.FC = () => {
-  const { entities, entityLines, addEntity, updateEntity, deleteEntity } = useApp();
+  const { entities, entityLines, addEntity, updateEntity, deleteEntity, addEntityLine, updateEntityLine, deleteEntityLine } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Entity | null>(null);
   const [form, setForm] = useState(emptyEntity);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [showLineModal, setShowLineModal] = useState(false);
+  const [editingLine, setEditingLine] = useState<string | null>(null);
+  const [lineForm, setLineForm] = useState({ name: '', description: '', entityIds: [] as string[] });
+  const [lineSaving, setLineSaving] = useState(false);
 
   const openCreate = () => { setEditing(null); setForm(emptyEntity); setError(''); setShowModal(true); };
   const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, lineId: e.lineId || entityLines.find(line => line.name === e.line)?.id || '', description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active }); setError(''); setShowModal(true); };
+
+
+  const openCreateLine = () => {
+    setEditingLine(null);
+    setLineForm({ name: '', description: '', entityIds: [] });
+    setShowLineModal(true);
+  };
+
+  const openEditLine = (line: typeof entityLines[number]) => {
+    setEditingLine(line.id);
+    setLineForm({ name: line.name, description: line.description || '', entityIds: (line.members || []).map(entity => entity.id) });
+    setShowLineModal(true);
+  };
+
+  const toggleLineEntity = (entityId: string) => {
+    setLineForm(prev => ({
+      ...prev,
+      entityIds: prev.entityIds.includes(entityId)
+        ? prev.entityIds.filter(id => id !== entityId)
+        : [...prev.entityIds, entityId],
+    }));
+  };
+
+  const handleSaveLine = async () => {
+    if (!lineForm.name.trim()) return;
+    setLineSaving(true);
+    const success = editingLine
+      ? await updateEntityLine(editingLine, lineForm)
+      : await addEntityLine(lineForm);
+    setLineSaving(false);
+    if (success) setShowLineModal(false);
+  };
 
   const handleSave = async () => {
     if (!form.name) {
@@ -58,6 +94,33 @@ export const AdminEntidades: React.FC = () => {
           <Plus size={14} />
           Nova Entidade
         </button>
+      </div>
+
+      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-cinzel font-bold text-[#c9a84c] text-sm flex items-center gap-2"><Layers size={15} /> Linhas e Grupos Personalizados</h3>
+            <p className="font-inter text-[rgba(245,240,232,0.4)] text-xs mt-1">Crie grupos próprios e coloque várias entidades dentro da mesma linha.</p>
+          </div>
+          <button onClick={openCreateLine} className="btn-outline-gold text-xs py-2 px-3"><Plus size={13} /> Nova Linha</button>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {entityLines.map(line => (
+            <div key={line.id} className="border border-[rgba(201,168,76,0.1)] rounded p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-cinzel text-[#f5f0e8] text-sm">{line.name}</p>
+                  <p className="font-inter text-[rgba(245,240,232,0.4)] text-xs mt-1">{line.members?.length || 0} entidade(s) no grupo</p>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => openEditLine(line)} className="p-1.5 text-[rgba(245,240,232,0.4)] hover:text-[#c9a84c]"><Edit2 size={12} /></button>
+                  <button onClick={() => deleteEntityLine(line.id)} className="p-1.5 text-[rgba(245,240,232,0.4)] hover:text-red-400"><Trash2 size={12} /></button>
+                </div>
+              </div>
+              {line.description && <p className="font-crimson text-[rgba(245,240,232,0.45)] text-sm mt-2">{line.description}</p>}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="p-4 bg-[rgba(201,168,76,0.05)] border border-[rgba(201,168,76,0.15)] rounded">
@@ -111,6 +174,39 @@ export const AdminEntidades: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showLineModal && (
+        <div className="modal-overlay">
+          <div className="modal-content max-w-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">{editingLine ? 'Editar Linha Personalizada' : 'Nova Linha Personalizada'}</h3>
+              <button onClick={() => setShowLineModal(false)} className="text-[rgba(245,240,232,0.4)] hover:text-white"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <div><label className="form-label">Nome da linha *</label><input className="form-input" value={lineForm.name} onChange={e => setLineForm({ ...lineForm, name: e.target.value })} placeholder="Ex: Caboclos, Baianos e Boiadeiros" /></div>
+              <div><label className="form-label">Descrição</label><textarea rows={2} className="form-input resize-none" value={lineForm.description} onChange={e => setLineForm({ ...lineForm, description: e.target.value })} /></div>
+              <div>
+                <label className="form-label">Entidades pertencentes a esta linha</label>
+                <div className="max-h-64 overflow-y-auto space-y-1 border border-[rgba(201,168,76,0.1)] rounded p-2">
+                  {entities.length === 0 ? <p className="text-sm text-[rgba(245,240,232,0.4)] p-2">Cadastre entidades primeiro.</p> : entities.map(entity => (
+                    <label key={entity.id} className="flex items-center gap-3 p-2 rounded hover:bg-[rgba(201,168,76,0.05)] cursor-pointer">
+                      <input type="checkbox" checked={lineForm.entityIds.includes(entity.id)} onChange={() => toggleLineEntity(entity.id)} className="w-4 h-4 accent-[#c9a84c]" />
+                      <span className="font-inter text-sm text-[rgba(245,240,232,0.75)]">{entity.name}</span>
+                      <span className="ml-auto text-xs text-[#c9a84c]">{entity.line}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
+              <button onClick={handleSaveLine} disabled={lineSaving || !lineForm.name.trim()} className="btn-gold text-xs flex-1 justify-center disabled:opacity-60">
+                {lineSaving ? 'Salvando...' : 'Salvar Linha'}
+              </button>
+              <button onClick={() => setShowLineModal(false)} className="btn-outline-gold text-xs px-6">Cancelar</button>
+            </div>
+          </div>
         </div>
       )}
 
