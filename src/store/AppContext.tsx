@@ -97,10 +97,19 @@ export interface ServiceInfo {
   requiresScheduling: boolean;
 }
 
+export interface EntityLine {
+  id: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  active: boolean;
+}
+
 export interface Entity {
   id: string;
   name: string;
   line: string;
+  lineId?: string | null;
   description: string;
   image?: string;
   history: string;
@@ -198,6 +207,7 @@ interface AppContextType {
   galleryItems: GalleryItem[];
   services: ServiceInfo[];
   entities: Entity[];
+  entityLines: EntityLine[];
   activityLogs: ActivityLog[];
   siteConfig: SiteConfig;
   contactMessages: ContactMessage[];
@@ -273,6 +283,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [services, setServices] = useState<ServiceInfo[]>([]);
   const [entities, setEntities] = useState<Entity[]>([]);
+  const [entityLines, setEntityLines] = useState<EntityLine[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(emptySiteConfig);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
@@ -295,7 +306,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const bundle = await api.get<{
         events: GiraEvent[]; faqItems: FAQItem[]; newsItems: NewsItem[];
-        galleryItems: GalleryItem[]; services: ServiceInfo[]; entities: Entity[]; siteConfig: SiteConfig | null;
+        galleryItems: GalleryItem[]; services: ServiceInfo[]; entities: Entity[]; entityLines: EntityLine[]; siteConfig: SiteConfig | null;
       }>('/api/public/bundle', false);
 
       // Primeiro carregamos somente o conteúdo público.
@@ -305,6 +316,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setGalleryItems(bundle.galleryItems.map(withGalleryMedia));
       setServices(bundle.services);
       setEntities(bundle.entities.map(withEntityMedia));
+      setEntityLines(bundle.entityLines || []);
       if (bundle.siteConfig) setSiteConfig(bundle.siteConfig);
 
       // Usuários com acesso administrativo à agenda precisam receber também
@@ -695,7 +707,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{
       currentUser, users, events, faqItems, newsItems, galleryItems, services,
-      entities, activityLogs, siteConfig, contactMessages, appointments, confirmedEventIds, myAttendances,
+      entities, entityLines, activityLogs, siteConfig, contactMessages, appointments, confirmedEventIds, myAttendances,
       loadingPublicData, authReady, lastError,
       login, register, logout, hasPermission,
       addUser, updateUser, deleteUser,
