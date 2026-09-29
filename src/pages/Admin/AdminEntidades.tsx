@@ -6,6 +6,7 @@ import { ImageUploader } from '../../components/ImageUploader';
 const emptyEntity: Omit<Entity, 'id'> = {
   name: '',
   line: '',
+  lineId: '',
   description: '',
   image: '',
   history: '',
@@ -15,7 +16,7 @@ const emptyEntity: Omit<Entity, 'id'> = {
 };
 
 export const AdminEntidades: React.FC = () => {
-  const { entities, addEntity, updateEntity, deleteEntity } = useApp();
+  const { entities, entityLines, addEntity, updateEntity, deleteEntity } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Entity | null>(null);
   const [form, setForm] = useState(emptyEntity);
@@ -24,11 +25,15 @@ export const AdminEntidades: React.FC = () => {
   const [error, setError] = useState('');
 
   const openCreate = () => { setEditing(null); setForm(emptyEntity); setError(''); setShowModal(true); };
-  const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active }); setError(''); setShowModal(true); };
+  const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, lineId: e.lineId || entityLines.find(line => line.name === e.line)?.id || '', description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active }); setError(''); setShowModal(true); };
 
   const handleSave = async () => {
     if (!form.name) {
       setError('Informe ao menos o nome da entidade.');
+      return;
+    }
+    if (!form.lineId) {
+      setError('Selecione uma linha para a entidade.');
       return;
     }
     setSaving(true);
@@ -125,8 +130,15 @@ export const AdminEntidades: React.FC = () => {
                   <input className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                 </div>
                 <div>
-                  <label className="form-label">Linha</label>
-                  <input className="form-input" placeholder="Ex: Caboclos" value={form.line} onChange={e => setForm({...form, line: e.target.value})} />
+                  <label className="form-label">Linha *</label>
+                  <select
+                    className="form-input"
+                    value={form.lineId}
+                    onChange={e => setForm({ ...form, lineId: e.target.value, line: entityLines.find(line => line.id === e.target.value)?.name || '' })}
+                  >
+                    <option value="">Selecione uma linha</option>
+                    {entityLines.map(line => <option key={line.id} value={line.id}>{line.name}</option>)}
+                  </select>
                 </div>
               </div>
               <div>
