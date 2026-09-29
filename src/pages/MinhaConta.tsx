@@ -6,10 +6,11 @@ import { api } from '../lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { generatePixPayload } from '../utils/pix';
+import { QRCodeSVG } from 'qrcode.react';
 import type { PixPaymentConfig } from '../utils/pix';
 
 export const MinhaConta: React.FC = () => {
-  const { currentUser, events, newsItems, siteConfig, authReady } = useApp();
+  const { currentUser, events, newsItems, siteConfig, authReady, myAttendances } = useApp();
   const [membership, setMembership] = React.useState<{
     membership: { id: string; monthlyAmountCents: number; dueDay: number; active: boolean };
     currentPayment: { id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
@@ -62,6 +63,7 @@ export const MinhaConta: React.FC = () => {
     atendimento: 'Atendimento',
     filho: 'Filho',
     consulente: 'Consulente',
+    compras: 'Responsável por Compras',
   };
 
   return (
@@ -252,6 +254,69 @@ export const MinhaConta: React.FC = () => {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {/* QR Codes e senhas das giras confirmadas */}
+        {myAttendances.length > 0 && (
+          <div className="card-spiritual p-6 mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar size={16} className="text-[#c9a84c]" />
+              <h3 className="font-cinzel font-bold text-[#c9a84c] text-base">Minhas Giras Confirmadas</h3>
+            </div>
+            <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">
+              Apresente o QR Code abaixo na chegada. A senha será gerada no momento do check-in.
+            </p>
+            <div className="space-y-3">
+              {myAttendances.filter(a => {
+                const event = events.find(e => e.id === a.eventId);
+                return event && !event.isPublic ? currentUser.role !== 'consulente' : true;
+              }).map(attendance => {
+                const event = attendance.event || events.find(e => e.id === attendance.eventId);
+                if (!event) return null;
+                const statusLabel: Record<string, string> = {
+                  confirmed: 'Confirmado',
+                  arrived: 'Na fila',
+                  called: 'Chamado',
+                  in_service: 'Em atendimento',
+                  attended: 'Atendido',
+                };
+                return (
+                  <div key={attendance.id} className="p-4 rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                      <div className="bg-white rounded-lg p-3 flex-shrink-0">
+                        <QRCodeSVG value={attendance.qrToken} size={150} level="M" includeMargin />
+                      </div>
+                      <div className="flex-1 w-full">
+                        <p className="font-cinzel font-bold text-[#f5f0e8]">{event.title}</p>
+                        <p className="font-inter text-xs text-[rgba(245,240,232,0.5)] mt-1">{event.date} às {event.time}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          <span className="px-2.5 py-1 rounded border border-[#c9a84c]/30 text-[#c9a84c] text-xs">
+                            {statusLabel[attendance.status] || attendance.status}
+                          </span>
+                          {attendance.queueNumber && (
+                            <span className="px-2.5 py-1 rounded border border-green-500/30 text-green-300 text-xs font-bold">
+                              Senha {String(attendance.queueNumber).padStart(3, '0')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[rgba(245,240,232,0.4)] mt-3">
+                          {attendance.status === 'confirmed'
+                            ? 'Sua senha será definida quando o responsável escanear este QR Code.'
+                            : attendance.status === 'arrived'
+                              ? 'Você está aguardando ser chamado.'
+                              : attendance.status === 'called'
+                                ? 'Você foi chamado. Dirija-se ao atendimento.'
+                                : attendance.status === 'in_service'
+                                  ? 'Seu atendimento está em andamento.'
+                                  : 'Atendimento concluído.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
