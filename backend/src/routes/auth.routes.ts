@@ -6,10 +6,9 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-function sanitize<T extends { password?: string | null }>(user: T) {
-  const { password, ...rest } = user;
+function sanitize(user: { password: string | null; [key: string]: unknown }) {
+  const { password: _password, ...rest } = user;
   return rest;
-}
 
 // POST /api/auth/login — login de qualquer usuário (equipe ou consulente)
 router.post('/login', async (req, res) => {
@@ -24,9 +23,10 @@ router.post('/login', async (req, res) => {
   if (!user.password || user.registrationCompleted === false) {
     return res.status(401).json({ error: 'Este cadastro ainda não foi concluído. Use a opção de pré-cadastro.' });
   }
-  const storedPassword = user.password;
-  if (!storedPassword) return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
-  const valid = await bcrypt.compare(String(password), storedPassword);
+  if (typeof user.password !== 'string' || user.password.length === 0) {
+    return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+  }
+  const valid = await bcrypt.compare(String(password), user.password);
   if (!valid) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
