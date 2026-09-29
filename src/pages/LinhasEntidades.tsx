@@ -6,10 +6,17 @@ export const LinhasEntidades: React.FC = () => {
   const { entities, entityLines, siteConfig } = useApp();
   const activeEntities = entities.filter(e => e.active);
   const [selectedLineId, setSelectedLineId] = useState('all');
-  const visibleEntities = useMemo(() => selectedLineId === 'all'
-    ? activeEntities
-    : activeEntities.filter(entity => entity.lineId === selectedLineId || entityLines.find(line => line.id === selectedLineId)?.name === entity.line),
-    [activeEntities, selectedLineId, entityLines]);
+  const visibleEntities = useMemo(() => {
+    if (selectedLineId === 'all') return activeEntities;
+    const selectedLine = entityLines.find(line => line.id === selectedLineId);
+    if (!selectedLine) return [];
+    const memberIds = new Set((selectedLine.members || []).map(entity => entity.id));
+    return activeEntities.filter(entity =>
+      memberIds.has(entity.id) ||
+      entity.lineId === selectedLineId ||
+      entity.line === selectedLine.name
+    );
+  }, [activeEntities, selectedLineId, entityLines]);
 
   return (
     <div className="min-h-screen bg-[#0d0505]">
