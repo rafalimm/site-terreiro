@@ -91,16 +91,27 @@ export const Home: React.FC = () => {
             <span className="font-inter text-[rgba(245,240,232,0.7)] text-xs">5,0 — 30 avaliações</span>
           </div>
 
-          {/* Logo principal */}
-          <div className="mb-8 flex justify-center animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
-            <div className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-[rgba(201,168,76,0.75)] shadow-[0_0_45px_rgba(201,168,76,0.28)] bg-[#0a0404]">
-              <img
-                src="/logo-terreiro.svg?v=2"
-                alt="Centro de Umbanda Zé do Laço"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+          {/* Title */}
+          <h1
+            className="font-cinzel font-black text-white mb-4 leading-tight tracking-widest animate-fadeInUp"
+            style={{ fontSize: 'clamp(1.8rem, 6vw, 4rem)', animationDelay: '0.1s', textShadow: '0 0 60px rgba(201,168,76,0.3)' }}
+          >
+            CENTRO DE UMBANDA
+          </h1>
+          <h1
+            className="font-cinzel font-black mb-6 leading-tight tracking-widest animate-fadeInUp"
+            style={{
+              fontSize: 'clamp(2.5rem, 9vw, 6rem)',
+              animationDelay: '0.2s',
+              background: 'linear-gradient(135deg, #a07c30, #e8c97a, #c9a84c, #a07c30)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textShadow: 'none',
+            }}
+          >
+            ZÉ DO LAÇO
+          </h1>
 
           <p className="font-crimson text-[rgba(245,240,232,0.8)] text-xl md:text-2xl italic mb-2 animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
             Terreiro • Templo • Jogo de Cartas e Búzios
