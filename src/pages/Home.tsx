@@ -95,7 +95,7 @@ export const Home: React.FC = () => {
           <div className="mb-8 flex justify-center animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
             <div className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-[rgba(201,168,76,0.75)] shadow-[0_0_45px_rgba(201,168,76,0.28)] bg-[#0a0404]">
               <img
-                src="/favicon.svg"
+                src="/logo-terreiro.svg?v=2"
                 alt="Centro de Umbanda Zé do Laço"
                 className="w-full h-full object-cover"
               />
