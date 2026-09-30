@@ -59,7 +59,7 @@ export const Navbar: React.FC = () => {
           <Link to="/" className="flex items-center gap-3 group">
             <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-[#c9a84c] bg-[#0d0505] shadow-[0_0_12px_rgba(201,168,76,0.25)]">
               <img
-                src="/logo-terreiro-home.jpg?v=1"
+                src="/favicon.svg?v=2"
                 alt="Centro de Umbanda Zé do Laço"
                 className="w-full h-full object-cover"
               />
