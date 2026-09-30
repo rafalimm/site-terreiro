@@ -171,7 +171,7 @@ export const Home: React.FC = () => {
                   alt="Altar do Centro de Umbanda Zé do Laço"
                   className="relative w-full h-auto max-h-[28rem] object-contain rounded-sm border border-[rgba(201,168,76,0.2)] bg-[#0a0404]"
                 />
-                <div className="absolute bottom-4 left-4 right-4 bg-[rgba(13,5,5,0.9)] border border-[rgba(201,168,76,0.2)] rounded p-3">
+                <div className="relative md:absolute md:bottom-4 md:left-4 md:right-4 mt-2 md:mt-0 bg-[rgba(13,5,5,0.9)] border border-[rgba(201,168,76,0.2)] rounded p-3">
                   <p className="font-cinzel text-[#c9a84c] text-xs tracking-wider text-center">
                     Centro de Umbanda Zé do Laço
                   </p>
