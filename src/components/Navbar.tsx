@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, Star } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
 const navLinks = [
@@ -57,11 +57,13 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full border-2 border-[#c9a84c] flex items-center justify-center bg-[rgba(201,168,76,0.1)]">
-                <Star size={16} className="text-[#c9a84c] animate-candle" fill="currentColor" />
-              </div>
-              <div className="absolute inset-0 rounded-full bg-[rgba(201,168,76,0.1)] animate-glow" />
+            <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-[#c9a84c] bg-[#0d0505] shadow-[0_0_12px_rgba(201,168,76,0.25)]">
+              <img
+                src="/logo-terreiro-home.jpg?v=1"
+                alt="Centro de Umbanda Zé do Laço"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 rounded-full bg-[rgba(201,168,76,0.06)] animate-glow pointer-events-none" />
             </div>
             <div>
               <div
