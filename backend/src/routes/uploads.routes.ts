@@ -155,8 +155,8 @@ async function serveStoredFile(req: any, res: any) {
     if (!file) return res.status(404).json({ error: 'Arquivo não encontrado.' });
 
     if (file.storagePath) {
-      const rawBase = (process.env.SUPABASE_URL || '').trim().replace(/\\/+$/, '');
-      const base = /^https?:\\/\\//i.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : '';
+      const rawBase = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+      const base = /^https?:\/\//i.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : '';
       const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'filho-content';
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (!base || !serviceKey) return res.status(500).json({ error: 'Armazenamento não configurado.' });
