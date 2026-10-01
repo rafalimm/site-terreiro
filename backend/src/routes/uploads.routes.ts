@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
+import { uploadToSupabaseStorage } from '../storage/supabaseStorage';
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB por imagem (o painel já reduz antes de enviar)
 
@@ -134,8 +135,9 @@ contentFilesRouter.post('/', async (req, res) => {
   }
 
   try {
+    const stored = await uploadToSupabaseStorage(buffer, mimeType, originalName);
     const file = await prisma.uploadedFile.create({
-      data: { mimeType, originalName, size: buffer.length, data: buffer },
+      data: { mimeType, originalName, size: buffer.length, storagePath: stored.path },
     });
     return res.status(201).json({ url: `/api/files/${file.id}`, name: originalName, size: file.size, mimeType });
   } catch (error) {
