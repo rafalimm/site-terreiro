@@ -36,6 +36,8 @@ export interface GiraEvent {
   observations: string;
   entityIds?: string[];
   firstVisitEntityIds?: string[];
+  completed?: boolean;
+  completedAt?: string | null;
   createdBy: string;
   createdAt: string;
 }
