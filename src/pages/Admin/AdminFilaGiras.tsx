@@ -213,6 +213,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
   const availableEvents = adminEvents.length ? adminEvents : events;
   const current = queue?.attendances.find(a => a.status === 'in_service') || queue?.attendances.find(a => a.status === 'called');
+  const nextWaiting = queue?.attendances.find(a => a.status === 'arrived' && a.isFirstVisit) || queue?.attendances.find(a => a.status === 'arrived');
   const queueAttendances = queue?.attendances.filter(a => ['arrived', 'called', 'in_service'].includes(a.status)) || [];
   const firstVisitQueue = queueAttendances.filter(a => a.isFirstVisit);
   const returningQueue = queueAttendances.filter(a => !a.isFirstVisit);
@@ -261,7 +262,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
       {queue && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             {[
               { label: 'Confirmados', count: queue.counts.confirmed, Icon: Users },
               { label: 'Aguardando', count: queue.counts.arrived, Icon: Clock3 },
@@ -277,19 +278,56 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
             ))}
           </div>
 
-          {current && (
-            <div className="bg-[rgba(201,168,76,0.06)] border border-[#c9a84c]/30 rounded p-5">
-              <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Em destaque</p>
-              <div className="flex items-center justify-between gap-4 mt-2 flex-wrap">
+          <div className="grid lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-2 bg-[rgba(201,168,76,0.06)] border border-[#c9a84c]/30 rounded p-5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <p className="font-cinzel text-white text-lg">{current.user?.name}</p>
-                  <p className="text-xs text-[rgba(245,240,232,0.45)]">Senha {current.queueNumber ? String(current.queueNumber).padStart(3, '0') : '—'}</p>
+                  <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Em atendimento agora</p>
+                  {current ? (
+                    <>
+                      <p className="font-cinzel text-white text-xl mt-2">{current.user?.name}</p>
+                      <p className="text-sm text-[rgba(245,240,232,0.5)] mt-1">
+                        Senha <span className="text-[#c9a84c] font-bold">{current.queueNumber ? String(current.queueNumber).padStart(3, '0') : '—'}</span>
+                        {' · '}{current.status === 'in_service' ? 'Atendimento em andamento' : 'Aguardando início'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-cinzel text-white text-xl mt-2">Nenhum atendimento ativo</p>
+                      <p className="text-sm text-[rgba(245,240,232,0.45)] mt-1">A fila está pronta para a próxima chamada.</p>
+                    </>
+                  )}
                 </div>
-                {current.status === 'called' && <button onClick={() => action(current.id, 'start')} className="btn-gold text-xs"><Play size={14}/> Iniciar atendimento</button>}
-                {current.status === 'in_service' && <button onClick={() => action(current.id, 'complete')} className="btn-gold text-xs"><CheckCircle2 size={14}/> Finalizar atendimento</button>}
+                {current?.status === 'called' && <button onClick={() => action(current.id, 'start')} className="btn-gold text-xs"><Play size={14}/> Iniciar atendimento</button>}
+                {current?.status === 'in_service' && <button onClick={() => action(current.id, 'complete')} className="btn-gold text-xs"><CheckCircle2 size={14}/> Finalizar atendimento</button>}
               </div>
             </div>
-          )}
+
+            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-5">
+              <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Próximo da fila</p>
+              {nextWaiting ? (
+                <div className="mt-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full border border-[#c9a84c]/40 flex items-center justify-center font-cinzel text-[#c9a84c] font-bold">
+                      {nextWaiting.queueNumber ? String(nextWaiting.queueNumber).padStart(3, '0') : '—'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-inter text-[#f5f0e8] font-semibold truncate">{nextWaiting.user?.name}</p>
+                      <p className="text-xs text-[rgba(245,240,232,0.4)]">{nextWaiting.isFirstVisit ? 'Primeira vez' : 'Retornante'}</p>
+                    </div>
+                  </div>
+                  <button onClick={callNext} className="btn-gold text-xs w-full justify-center mt-4">
+                    <PhoneCall size={14}/> Chamar próximo
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <p className="text-sm text-[rgba(245,240,232,0.45)]">Nenhuma pessoa aguardando.</p>
+                  <p className="text-xs text-[rgba(245,240,232,0.3)] mt-1">A fila está vazia no momento.</p>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex flex-wrap gap-2">
             <button onClick={callNext} disabled={!queue?.attendances.some(a => a.status === 'arrived')} className="btn-gold text-xs disabled:opacity-50"><PhoneCall size={15}/> Chamar próximo número</button>
