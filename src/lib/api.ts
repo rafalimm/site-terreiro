@@ -7,13 +7,9 @@ const isProductionBrowser =
   typeof window !== 'undefined' &&
   window.location.hostname !== 'localhost' &&
   window.location.hostname !== '127.0.0.1';
-const isLocalConfiguredApi =
-  !configuredApiUrl ||
-  /^(https?:\/\/)?localhost(?::\d+)?$/i.test(configuredApiUrl.replace(/^https?:\/\//, '')) ||
-  configuredApiUrl.includes('127.0.0.1');
 
 export const API_URL =
-  isProductionBrowser && isLocalConfiguredApi
+  isProductionBrowser
     ? 'https://site-terreiro-production.up.railway.app'
     : configuredApiUrl || 'http://localhost:3333';
 
