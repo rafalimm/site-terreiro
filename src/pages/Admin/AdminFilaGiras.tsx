@@ -8,9 +8,9 @@ type QueueResponse = {
   event: { id: string; title: string; date: string; time: string; type: string; firstVisitEntityIds?: string[] };
   counts: { confirmed: number; arrived: number; called: number; inService: number; attended: number };
   attendances: Array<GiraAttendance & { user: { id: string; name: string; email: string; whatsapp?: string; role: string } }>;
-  entities: Array<{ id: string; name: string; line: string; active: boolean }>;
-  availableEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
-  availableFirstVisitEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
+  entities: Array<{ id: string; name: string; line: string; active: boolean; owner?: { id: string; name: string; role: string; active: boolean } | null }>;
+  availableEntities: Array<{ id: string; name: string; line: string; active: boolean; owner?: { id: string; name: string; role: string; active: boolean } | null }>;
+  availableFirstVisitEntities: Array<{ id: string; name: string; line: string; active: boolean; owner?: { id: string; name: string; role: string; active: boolean } | null }>;
   entityHistory: Array<{
     entity: { id: string; name: string; line: string; active: boolean; owner?: { id: string; name: string; role: string; active: boolean } | null };
     attendedCount: number;
