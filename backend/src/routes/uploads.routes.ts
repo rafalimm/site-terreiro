@@ -67,7 +67,7 @@ imagesRouter.get('/:id', async (req, res) => {
 });
 
 
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 const ALLOWED_FILE_TYPES: Record<string, string[]> = {
   'application/pdf': ['pdf'],
@@ -119,7 +119,7 @@ contentFilesRouter.post('/', async (req, res) => {
   const buffer = Buffer.from(dataUrl.slice(comma + 1), 'base64');
 
   if (buffer.length === 0 || buffer.length > MAX_FILE_BYTES) {
-    return res.status(413).json({ error: 'O arquivo é muito grande. O limite é de 20 MB.' });
+    return res.status(413).json({ error: 'O arquivo é muito grande. O limite é de 50 MB.' });
   }
 
   const detectedMime = detectFileMime(buffer);
