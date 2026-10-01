@@ -196,7 +196,23 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
     try {
       await api.post(`/api/admin/events/${eventId}/attendance/${attendanceId}/${endpoint}`, {});
       await loadQueue();
-      setMessage(endpoint === 'start' ? 'Atendimento iniciado.' : 'Atendimento finalizado.');
+
+      if (endpoint === 'complete') {
+        const fresh = await api.get<QueueResponse>(`/api/admin/events/${eventId}/attendance`);
+        setQueue(fresh);
+        const next = fresh.attendances.find(a => a.status === 'arrived' && a.isFirstVisit)
+          || fresh.attendances.find(a => a.status === 'arrived');
+
+        if (next) {
+          setCallTargetId(next.id);
+          setSelectedEntityId('');
+          setMessage(`Atendimento finalizado. Próximo: senha ${next.queueNumber ? String(next.queueNumber).padStart(3, '0') : '—'} — ${next.user?.name || 'consulente'}.`);
+        } else {
+          setMessage('Atendimento finalizado. Não há mais pessoas aguardando na fila.');
+        }
+      } else {
+        setMessage('Atendimento iniciado.');
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a fila.');
     }
@@ -342,8 +358,16 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                     </>
                   )}
                 </div>
-                {current?.status === 'called' && <button onClick={() => action(current.id, 'start')} className="btn-gold text-xs"><Play size={14}/> Iniciar atendimento</button>}
-                {current?.status === 'in_service' && <button onClick={() => action(current.id, 'complete')} className="btn-gold text-xs"><CheckCircle2 size={14}/> Finalizar atendimento</button>}
+                {current?.status === 'called' && (
+                  <button onClick={() => action(current.id, 'start')} className="btn-gold text-xs">
+                    <Play size={14}/> Iniciar atendimento
+                  </button>
+                )}
+                {current?.status === 'in_service' && (
+                  <button onClick={() => action(current.id, 'complete')} className="btn-gold text-xs">
+                    <CheckCircle2 size={14}/> Finalizar e chamar próximo
+                  </button>
+                )}
               </div>
             </div>
 
