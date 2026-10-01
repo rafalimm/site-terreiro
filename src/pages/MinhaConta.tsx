@@ -1,7 +1,7 @@
 // Vercel deploy sync: histórico das entidades
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, BarChart3 } from 'lucide-react';
+import { Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, BarChart3, Bell, BellRing, Volume2, VolumeX } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
@@ -51,6 +51,13 @@ export const MinhaConta: React.FC = () => {
   const [profilePhoto, setProfilePhoto] = React.useState('');
   const [entityHistory, setEntityHistory] = React.useState<EntityHistoryResponse | null>(null);
   const [entityHistoryLoading, setEntityHistoryLoading] = React.useState(false);
+  const [queueNotice, setQueueNotice] = React.useState<'next' | 'called' | null>(null);
+  const [notificationPermission, setNotificationPermission] = React.useState<NotificationPermission | 'unsupported'>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported'
+  );
+  const [soundEnabled, setSoundEnabled] = React.useState(false);
+  const previousQueueStateRef = React.useRef<Record<string, string>>({});
+  const audioContextRef = React.useRef<AudioContext | null>(null);
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
@@ -72,6 +79,136 @@ export const MinhaConta: React.FC = () => {
 
     return () => window.clearInterval(interval);
   }, [currentUser, myAttendances, loadMyAttendances]);
+
+  const playQueueAlert = React.useCallback(() => {
+    if (!soundEnabled || typeof window === 'undefined') return;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = audioContextRef.current || new AudioContextClass();
+      audioContextRef.current = ctx;
+      if (ctx.state === 'suspended') void ctx.resume();
+
+      const now = ctx.currentTime;
+      [0, 0.18, 0.36].forEach((offset, index) => {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = index === 1 ? 880 : 660;
+        gain.gain.setValueAtTime(0.0001, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.14);
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.start(now + offset);
+        oscillator.stop(now + offset + 0.16);
+      });
+    } catch {
+      // Alguns navegadores bloqueiam áudio até uma interação do usuário.
+    }
+  }, [soundEnabled]);
+
+  const enableQueueNotifications = React.useCallback(async () => {
+    if (typeof window === 'undefined') return;
+
+    if ('Notification' in window) {
+      try {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+      } catch {
+        setNotificationPermission(Notification.permission);
+      }
+    } else {
+      setNotificationPermission('unsupported');
+    }
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass) {
+        const ctx = audioContextRef.current || new AudioContextClass();
+        audioContextRef.current = ctx;
+        if (ctx.state === 'suspended') await ctx.resume();
+        setSoundEnabled(true);
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0001;
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.start();
+        oscillator.stop(ctx.currentTime + 0.02);
+      }
+    } catch {
+      setSoundEnabled(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!currentUser) return;
+
+    const activeQueueAttendances = myAttendances.filter(a =>
+      a.queueNumber && (a.status === 'arrived' || a.status === 'called' || a.status === 'in_service')
+    );
+
+    const nextState: Record<string, string> = {};
+    activeQueueAttendances.forEach(attendance => {
+      nextState[attendance.id] = attendance.status + ':' + (attendance.isNext ? 'next' : 'waiting');
+    });
+
+    const previous = previousQueueStateRef.current;
+
+    if (Object.keys(previous).length > 0) {
+      activeQueueAttendances.forEach(attendance => {
+        const previousState = previous[attendance.id];
+        const currentState = nextState[attendance.id];
+
+        if (attendance.status === 'called' && previousState && previousState !== currentState) {
+          setQueueNotice('called');
+          playQueueAlert();
+
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate?.([250, 120, 250, 120, 400]);
+          }
+
+          if (notificationPermission === 'granted' && typeof Notification !== 'undefined') {
+            try {
+              new Notification('Sua vez chegou', {
+                body: 'Senha ' + String(attendance.queueNumber).padStart(3, '0') + ' — dirija-se ao atendimento.',
+                tag: 'fila-' + attendance.id,
+                renotify: true,
+              });
+            } catch {
+              // A notificação pode ser bloqueada pelo navegador/sistema.
+            }
+          }
+        }
+
+        if (attendance.status === 'arrived' && attendance.isNext && previousState && !previousState.endsWith(':next')) {
+          setQueueNotice('next');
+          playQueueAlert();
+
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate?.([180, 100, 180]);
+          }
+
+          if (notificationPermission === 'granted' && typeof Notification !== 'undefined') {
+            try {
+              new Notification('Você é o próximo', {
+                body: 'Senha ' + String(attendance.queueNumber).padStart(3, '0') + ' — fique próximo ao atendimento.',
+                tag: 'fila-next-' + attendance.id,
+                renotify: true,
+              });
+            } catch {
+              // A notificação pode ser bloqueada pelo navegador/sistema.
+            }
+          }
+        }
+      });
+    }
+
+    previousQueueStateRef.current = nextState;
+  }, [myAttendances, notificationPermission, playQueueAlert, currentUser]);
 
   React.useEffect(() => {
     if (!currentUser || currentUser.role === 'consulente') {
@@ -214,6 +351,53 @@ export const MinhaConta: React.FC = () => {
 
         {activeAttendance && (
           <div className="card-spiritual p-5 mb-6 border border-green-500/25 bg-green-500/[0.03]">
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                {queueNotice === 'called' ? <BellRing size={17} className="text-green-300" /> : <Bell size={17} className="text-[#c9a84c]" />}
+                <div>
+                  <p className="font-cinzel text-sm text-[#c9a84c]">Avisos da fila</p>
+                  <p className="text-[10px] text-[rgba(245,240,232,0.4)]">
+                    {notificationPermission === 'granted' ? 'Notificações do navegador ativadas.' : 'Ative os avisos para ser alertado quando chegar sua vez.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {soundEnabled ? <Volume2 size={14} className="text-green-300" /> : <VolumeX size={14} className="text-[rgba(245,240,232,0.35)]" />}
+                {notificationPermission !== 'granted' && notificationPermission !== 'unsupported' && (
+                  <button onClick={enableQueueNotifications} className="btn-outline-gold text-[11px] py-2">
+                    <Bell size={13} /> Ativar avisos
+                  </button>
+                )}
+                {notificationPermission === 'unsupported' && (
+                  <span className="text-[10px] text-[rgba(245,240,232,0.35)]">Navegador sem suporte a notificações</span>
+                )}
+              </div>
+            </div>
+
+            {queueNotice === 'called' && (
+              <div className="mb-4 rounded-xl border border-green-400/40 bg-green-500/10 px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-full bg-green-400/15 p-2"><BellRing size={18} className="text-green-300" /></div>
+                  <div>
+                    <p className="font-cinzel font-bold text-green-200">Sua vez chegou!</p>
+                    <p className="font-inter text-xs text-green-100/75 mt-1">Senha {String(activeAttendance.queueNumber).padStart(3, '0')} — dirija-se ao atendimento.</p>
+                  </div>
+                  <button type="button" onClick={() => setQueueNotice(null)} className="ml-auto text-green-100/50 hover:text-white" aria-label="Fechar aviso">×</button>
+                </div>
+              </div>
+            )}
+
+            {queueNotice === 'next' && activeAttendance.status === 'arrived' && (
+              <div className="mb-4 rounded-xl border border-yellow-400/30 bg-yellow-500/5 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Clock3 size={17} className="text-yellow-300" />
+                  <div>
+                    <p className="font-cinzel font-bold text-yellow-200">Você é o próximo!</p>
+                    <p className="font-inter text-xs text-yellow-100/70 mt-1">Senha {String(activeAttendance.queueNumber).padStart(3, '0')} — fique próximo ao atendimento.</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-4">
               <div><p className="text-[10px] uppercase tracking-[0.18em] text-green-300/70 font-cinzel">Minha fila</p><h3 className="font-cinzel font-bold text-white text-lg mt-1">{activeAttendance.status === 'called' ? 'Você foi chamado' : activeAttendance.status === 'in_service' ? 'Atendimento em andamento' : 'Você está na fila'}</h3><p className="font-inter text-xs text-green-100/60 mt-1">{activeAttendance.event?.title || 'Gira em atendimento'}</p></div>
               <div className="text-center min-w-[86px]"><p className="text-[9px] uppercase tracking-wider text-green-300/60">Senha</p><p className="font-cinzel font-bold text-green-300 text-3xl">{String(activeAttendance.queueNumber).padStart(3, '0')}</p></div>
