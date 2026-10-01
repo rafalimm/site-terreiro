@@ -90,22 +90,32 @@ router.delete('/lines/:id', async (req, res) => {
 });
 
 router.get('/', async (_req, res) => {
-  res.json(await prisma.entity.findMany({ include: { lineCategory: true } }));
+  res.json(await prisma.entity.findMany({
+    include: {
+      lineCategory: true,
+      owner: { select: { id: true, name: true, role: true, active: true } },
+    },
+  }));
 });
 
 router.post('/', async (req, res) => {
   try {
-    const { lineId, ...rest } = req.body ?? {};
+    const { lineId, ownerId, ...rest } = req.body ?? {};
     const lineCategory = await prisma.entityLine.findFirst({ where: { id: lineId, active: true } });
     if (!lineCategory) return res.status(400).json({ error: 'Selecione uma linha válida.' });
+    if (ownerId) {
+      const owner = await prisma.user.findUnique({ where: { id: String(ownerId) }, select: { id: true, role: true } });
+      if (!owner || owner.role === 'consulente') return res.status(400).json({ error: 'Somente usuários com cargo acima de consulente podem ser responsáveis por uma entidade.' });
+    }
     const entity = await prisma.entity.create({
       data: {
         ...rest,
+        ownerId: ownerId || null,
         line: lineCategory.name,
         lineId: lineCategory.id,
         image: toRelativeImageUrl(req.body.image) || null,
       },
-      include: { lineCategory: true },
+      include: { lineCategory: true, owner: { select: { id: true, name: true, role: true, active: true } } },
     });
     await createLog(req.user!.id, req.user!.name, 'Criou', 'Entidade', `Criou a entidade "${entity.name}"`);
     res.status(201).json(entity);
@@ -119,6 +129,14 @@ router.patch('/:id', async (req, res) => {
   try {
     const data: Record<string, any> = { ...(req.body ?? {}) };
     delete data.id;
+
+    if ('ownerId' in data) {
+      if (data.ownerId) {
+        const owner = await prisma.user.findUnique({ where: { id: String(data.ownerId) }, select: { id: true, role: true } });
+        if (!owner || owner.role === 'consulente') return res.status(400).json({ error: 'Somente usuários com cargo acima de consulente podem ser responsáveis por uma entidade.' });
+        data.ownerId = owner.id;
+      } else data.ownerId = null;
+    }
 
     if ('lineId' in data) {
       const lineCategory = await prisma.entityLine.findFirst({
@@ -142,7 +160,7 @@ router.patch('/:id', async (req, res) => {
     const entity = await prisma.entity.update({
       where: { id: req.params.id },
       data,
-      include: { lineCategory: true },
+      include: { lineCategory: true, owner: { select: { id: true, name: true, role: true, active: true } } },
     });
 
     if (before && uploadedImageId(before.image) && before.image !== entity.image) {
