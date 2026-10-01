@@ -50,6 +50,10 @@ export interface GiraAttendance {
   userId: string;
   qrToken: string;
   queueNumber?: number | null;
+  queuePosition?: number | null;
+  peopleAhead?: number;
+  peopleWaiting?: number;
+  isNext?: boolean;
   status: AttendanceStatus;
   confirmedAt: string;
   checkedInAt?: string | null;
