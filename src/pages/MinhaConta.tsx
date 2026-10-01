@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User, Calendar, Newspaper, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, Camera } from 'lucide-react';
+import { User, Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, Camera } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
@@ -13,7 +13,7 @@ import { mediaUrl } from '../lib/api';
 import type { PixPaymentConfig } from '../utils/pix';
 
 export const MinhaConta: React.FC = () => {
-  const { currentUser, events, newsItems, siteConfig, authReady, myAttendances, loadMyAttendances } = useApp();
+  const { currentUser, events, siteConfig, authReady, myAttendances, loadMyAttendances } = useApp();
   const [membership, setMembership] = React.useState<{
     membership: { id: string; monthlyAmountCents: number; dueDay: number; active: boolean };
     currentPayment: { id: string; referenceMonth: string; amountCents: number; dueDate: string; status: string; paidAt?: string | null; method?: string | null };
@@ -80,7 +80,6 @@ export const MinhaConta: React.FC = () => {
     .sort((a, b) => dateOnlyTimestamp(a.date) - dateOnlyTimestamp(b.date) || a.time.localeCompare(b.time))
     .slice(0, currentUser.role === 'consulente' ? 1 : 5);
 
-  const latestNews = newsItems.filter(n => n.active).slice(0, 3);
 
   const roleLabels: Record<string, string> = {
     super_admin: 'Super Administrador',
