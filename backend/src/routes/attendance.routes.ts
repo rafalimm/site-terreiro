@@ -55,13 +55,25 @@ router.get('/attendance/mine', async (req, res) => {
       }
 
       const queue = queuesByEvent.get(attendance.eventId) || [];
+      const peopleWaiting = queue.filter(row => row.status === 'arrived').length;
+
+      // Depois de chamado, a pessoa deixa de ocupar uma posição de espera.
+      if (attendance.status !== 'arrived') {
+        return {
+          ...attendance,
+          queuePosition: null,
+          peopleAhead: 0,
+          peopleWaiting,
+          isNext: false,
+        };
+      }
+
       const peopleAhead = queue.filter(row =>
         row.queueNumber !== null &&
         row.queueNumber < attendance.queueNumber! &&
         row.status === 'arrived'
       ).length;
-      const peopleWaiting = queue.filter(row => row.status === 'arrived').length;
-      const isNext = attendance.status === 'arrived' && peopleAhead === 0;
+      const isNext = peopleAhead === 0;
 
       return {
         ...attendance,
