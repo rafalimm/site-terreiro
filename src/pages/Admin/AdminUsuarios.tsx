@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Shield, Search, ShieldCheck } from 'lucide-react';
 import { useApp, User, UserRole } from '../../store/AppContext';
+import { api } from '../../lib/api';
 import { format } from 'date-fns';
 
 const roleLabels: Record<UserRole, string> = {
@@ -34,6 +35,7 @@ type UserForm = {
   role: UserRole;
   whatsapp: string;
   active: boolean;
+  degreeId: string;
 };
 
 const emptyUser: UserForm = {
@@ -43,6 +45,7 @@ const emptyUser: UserForm = {
   role: 'consulente',
   whatsapp: '',
   active: true,
+  degreeId: '',
 };
 
 export const AdminUsuarios: React.FC = () => {
@@ -54,8 +57,16 @@ export const AdminUsuarios: React.FC = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'todos'>('todos');
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [degrees, setDegrees] = useState<Array<{id:string;name:string;sortOrder:number}>>([]);
 
   const isSuperAdmin = currentUser?.role === 'super_admin';
+
+  React.useEffect(() => {
+    if (!isSuperAdmin) return;
+    api.get<Array<{id:string;name:string;sortOrder:number}>>('/api/filho-content/admin')
+      .then(data => setDegrees(data.map(d => ({ id:d.id, name:d.name, sortOrder:d.sortOrder }))))
+      .catch(() => setDegrees([]));
+  }, [isSuperAdmin]);
 
   const openCreate = () => {
     setEditing(null);
@@ -65,13 +76,14 @@ export const AdminUsuarios: React.FC = () => {
 
   const openEdit = (user: User) => {
     setEditing(user);
-    setForm({ name: user.name, email: user.email || '', password: user.password || '', role: user.role, whatsapp: user.whatsapp || '', active: user.active });
+    setForm({ name: user.name, email: user.email || '', password: user.password || '', role: user.role, whatsapp: user.whatsapp || '', active: user.active, degreeId: user.degreeId || user.degree?.id || '' });
     setShowModal(true);
   };
 
   const handleSave = () => {
     if (!form.name || !form.email) return;
-    if (editing) updateUser(editing.id, form);
+    const payload = { ...form, degreeId: form.role === 'consulente' ? null : (form.degreeId || null) };
+    if (editing) updateUser(editing.id, payload);
     else addUser(form);
     setShowModal(false);
   };
@@ -79,7 +91,7 @@ export const AdminUsuarios: React.FC = () => {
   // Troca rápida de cargo direto na listagem, sem precisar abrir o modal de edição
   const handleQuickRoleChange = (user: User, newRole: UserRole) => {
     if (newRole === user.role) return;
-    updateUser(user.id, { role: newRole });
+    updateUser(user.id, { role: newRole, ...(newRole === 'consulente' ? { degreeId: null } : {}) });
     setSavedId(user.id);
     setTimeout(() => setSavedId(prev => (prev === user.id ? null : prev)), 2000);
   };
@@ -172,6 +184,7 @@ export const AdminUsuarios: React.FC = () => {
                       </div>
                       <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs">{user.email}</p>
                       {user.whatsapp && <p className="font-inter text-[rgba(245,240,232,0.25)] text-xs">{user.whatsapp}</p>}
+                      {user.role !== 'consulente' && user.degree && <p className="font-inter text-[#c9a84c] text-xs">Grau {user.degree.sortOrder} · {user.degree.name}</p>}
                     </div>
                   </div>
 
@@ -266,6 +279,18 @@ export const AdminUsuarios: React.FC = () => {
                   ))}
                 </select>
               </div>
+              {form.role !== 'consulente' && form.role !== 'compras' && form.role !== 'responsavel_fila' && (
+                <div>
+                  <label className="form-label">Grau do Filho</label>
+                  <select className="form-input" value={form.degreeId} onChange={e => setForm({...form, degreeId: e.target.value})}>
+                    <option value="">Sem grau definido</option>
+                    {degrees.sort((a,b) => a.sortOrder-b.sortOrder).map(degree => (
+                      <option key={degree.id} value={degree.id}>{degree.sortOrder}. {degree.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-[rgba(245,240,232,0.35)] mt-1">Consulentes não possuem grau e não acessam a Área do Filho.</p>
+                </div>
+              )}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.active} onChange={e => setForm({...form, active: e.target.checked})} className="w-4 h-4 accent-[#c9a84c]" />
                 <span className="font-inter text-[rgba(245,240,232,0.7)] text-sm">Usuário ativo</span>
