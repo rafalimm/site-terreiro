@@ -156,6 +156,18 @@ export const MinhaConta: React.FC = () => {
           </div>
         </div>
 
+        {canViewDevelopment && (
+          <Link to="/area-do-filho" className="card-spiritual p-6 mb-6 block border border-[rgba(201,168,76,0.2)] hover:border-[rgba(201,168,76,0.45)] transition-all">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-cinzel font-bold text-[#c9a84c] text-base">📚 Área do Filho</h3>
+                <p className="font-inter text-xs text-[rgba(245,240,232,0.45)] mt-1">Acesse seus conteúdos de estudo, materiais e módulos liberados para o seu grau.</p>
+              </div>
+              <span className="text-[#c9a84c] text-sm">Acessar →</span>
+            </div>
+          </Link>
+        )}
+
         {canUseMembership && (
           <div className="card-spiritual p-6 mb-6 border border-[rgba(201,168,76,0.2)]">
             <div className="flex items-center justify-between gap-4 mb-4">
