@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import {
   BookOpen, CheckCircle2, PlayCircle, Headphones, FileText, FileDown, Image,
   Link2, ChevronDown, ChevronUp, Search, GraduationCap, Clock3, X, ExternalLink,
-  Sparkles, CirclePlay, Award
+  Sparkles, CirclePlay, Award, Download
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api, mediaUrl } from '../lib/api';
@@ -246,6 +246,13 @@ const ContentViewer:React.FC<{content:Content;done:boolean;toggle:()=>void;close
         {content.type==='audio' && url && <div className="rounded-lg border border-white/10 p-6"><Headphones className="text-[#c9a84c] mb-4" size={28}/><audio controls className="w-full" src={url}/></div>}
         {content.type==='image' && url && <img src={url} alt={content.title} className="w-full max-h-[65vh] rounded-lg object-contain bg-black/20"/>}
         {content.type==='pdf' && url && <iframe title={content.title} src={url} className="w-full h-[65vh] rounded-lg border border-white/10 bg-white"/>}
+        {['video','audio','image','pdf'].includes(content.type) && url && (
+          <div className="mt-4 flex justify-end">
+            <a href={url} download target="_blank" rel="noreferrer" className="btn-outline-gold text-xs">
+              <Download size={15}/> Baixar arquivo
+            </a>
+          </div>
+        )}
         {content.type==='link' && url && <a href={url} target="_blank" rel="noreferrer" className="btn-gold">Abrir material <ExternalLink size={15}/></a>}
         {content.type==='gallery' && gallery.length>0 && <div className="grid sm:grid-cols-2 gap-3">{gallery.map((src,i)=><img key={i} src={mediaUrl(src)} alt={content.title+' '+(i+1)} className="w-full max-h-80 rounded-lg object-cover border border-white/10"/>)}</div>}
         {content.type!=='text' && content.body && <div className="mt-5 rounded-lg border border-white/10 bg-black/10 p-4 text-sm text-white/60 whitespace-pre-wrap">{content.body}</div>}
