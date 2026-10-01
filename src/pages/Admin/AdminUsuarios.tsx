@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Check, Shield, Search, ShieldCheck } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Shield, Search, ShieldCheck, Users, UserCheck, UserX, Crown } from 'lucide-react';
 import { useApp, User, UserRole } from '../../store/AppContext';
 import { api } from '../../lib/api';
 import { format } from 'date-fns';
@@ -56,6 +56,8 @@ export const AdminUsuarios: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | 'todos'>('todos');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'inativos'>('todos');
+  const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [degrees, setDegrees] = useState<Array<{id:string;name:string;sortOrder:number}>>([]);
 
@@ -76,16 +78,22 @@ export const AdminUsuarios: React.FC = () => {
 
   const openEdit = (user: User) => {
     setEditing(user);
-    setForm({ name: user.name, email: user.email || '', password: user.password || '', role: user.role, whatsapp: user.whatsapp || '', active: user.active, degreeId: user.degreeId || user.degree?.id || '' });
+    setForm({ name: user.name, email: user.email || '', password: '', role: user.role, whatsapp: user.whatsapp || '', active: user.active, degreeId: user.degreeId || user.degree?.id || '' });
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (!form.name || !form.email) return;
-    const payload = { ...form, degreeId: form.role === 'consulente' ? null : (form.degreeId || null) };
-    if (editing) updateUser(editing.id, payload);
-    else addUser(form);
-    setShowModal(false);
+  const handleSave = async () => {
+    if (!form.name || !form.email || saving) return;
+    if (!editing && !form.password) return;
+    setSaving(true);
+    try {
+      const payload = { ...form, degreeId: form.role === 'consulente' ? null : (form.degreeId || null) };
+      if (editing) await updateUser(editing.id, payload);
+      else await addUser(form);
+      setShowModal(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Troca rápida de cargo direto na listagem, sem precisar abrir o modal de edição
@@ -102,9 +110,15 @@ export const AdminUsuarios: React.FC = () => {
         u.name.toLowerCase().includes(search.toLowerCase()) ||
         (u.email || '').toLowerCase().includes(search.toLowerCase());
       const matchesRole = roleFilter === 'todos' || u.role === roleFilter;
-      return matchesSearch && matchesRole;
+      const matchesStatus = statusFilter === 'todos' || (statusFilter === 'ativos' ? u.active : !u.active);
+      return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [users, search, roleFilter]);
+  }, [users, search, roleFilter, statusFilter]);
+
+  const activeUsers = users.filter(u => u.active).length;
+  const inactiveUsers = users.length - activeUsers;
+  const filhoUsers = users.filter(u => u.role === 'filho').length;
+  const privilegedUsers = users.filter(u => u.role !== 'consulente').length;
 
   return (
     <div className="space-y-4">
@@ -121,6 +135,29 @@ export const AdminUsuarios: React.FC = () => {
             Novo Usuário
           </button>
         )}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <div className="flex items-center justify-between"><span className="text-xs text-[rgba(245,240,232,0.45)]">Total</span><Users size={16} className="text-[#c9a84c]" /></div>
+          <p className="font-cinzel font-bold text-[#f5f0e8] text-xl mt-2">{users.length}</p>
+          <p className="text-[11px] text-[rgba(245,240,232,0.3)]">cadastros</p>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <div className="flex items-center justify-between"><span className="text-xs text-[rgba(245,240,232,0.45)]">Ativos</span><UserCheck size={16} className="text-green-400" /></div>
+          <p className="font-cinzel font-bold text-green-400 text-xl mt-2">{activeUsers}</p>
+          <p className="text-[11px] text-[rgba(245,240,232,0.3)]">acesso liberado</p>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <div className="flex items-center justify-between"><span className="text-xs text-[rgba(245,240,232,0.45)]">Filhos</span><Crown size={16} className="text-amber-300" /></div>
+          <p className="font-cinzel font-bold text-amber-300 text-xl mt-2">{filhoUsers}</p>
+          <p className="text-[11px] text-[rgba(245,240,232,0.3)]">membros com acesso</p>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <div className="flex items-center justify-between"><span className="text-xs text-[rgba(245,240,232,0.45)]">Equipe</span><ShieldCheck size={16} className="text-blue-400" /></div>
+          <p className="font-cinzel font-bold text-blue-400 text-xl mt-2">{privilegedUsers}</p>
+          <p className="text-[11px] text-[rgba(245,240,232,0.3)]">cargos acima de consulente</p>
+        </div>
       </div>
 
       {/* Busca e filtro por cargo */}
@@ -145,6 +182,22 @@ export const AdminUsuarios: React.FC = () => {
             <option key={role} value={role}>{label}</option>
           ))}
         </select>
+        <select
+          className="form-input sm:max-w-[180px]"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value as 'todos' | 'ativos' | 'inativos')}
+        >
+          <option value="todos">Todos os status</option>
+          <option value="ativos">Somente ativos</option>
+          <option value="inativos">Somente inativos</option>
+        </select>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 px-1">
+        <p className="text-xs text-[rgba(245,240,232,0.3)]">Mostrando {filteredUsers.length} usuário(s) com os filtros atuais.</p>
+        {(search || roleFilter !== 'todos' || statusFilter !== 'todos') && (
+          <button onClick={() => { setSearch(''); setRoleFilter('todos'); setStatusFilter('todos'); }} className="text-xs text-[#c9a84c] hover:underline">Limpar filtros</button>
+        )}
       </div>
 
       {/* Role Legend */}
@@ -270,6 +323,7 @@ export const AdminUsuarios: React.FC = () => {
               <div>
                 <label className="form-label">Senha {!editing && '*'}</label>
                 <input type="password" className="form-input" placeholder={editing ? 'Deixe em branco para manter' : 'Mínimo 6 caracteres'} value={String(form.password ?? '')} onChange={e => setForm({...form, password: e.target.value})} />
+                {editing && <p className="text-[11px] text-[rgba(245,240,232,0.3)] mt-1">Por segurança, a senha atual nunca é exibida. Preencha somente se quiser alterá-la.</p>}
               </div>
               <div>
                 <label className="form-label">Cargo</label>
@@ -299,7 +353,7 @@ export const AdminUsuarios: React.FC = () => {
             <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
               <button onClick={handleSave} className="btn-gold text-xs flex-1 justify-center">
                 <Check size={14} />
-                {editing ? 'Salvar' : 'Criar'}
+                {saving ? 'Salvando...' : editing ? 'Salvar' : 'Criar'}
               </button>
               <button onClick={() => setShowModal(false)} className="btn-outline-gold text-xs px-6">Cancelar</button>
             </div>
