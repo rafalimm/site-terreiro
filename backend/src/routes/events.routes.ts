@@ -19,6 +19,7 @@ router.get('/history', authorize('events', 'agenda'), async (_req, res) => {
           select: {
             status: true,
             entityId: true,
+            isFirstVisit: true,
             entity: { select: { id: true, name: true, line: true } },
           },
         },
