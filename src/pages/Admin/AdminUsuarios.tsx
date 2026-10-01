@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, Check, Shield, Search, ShieldCheck, Users, UserCheck, Crown } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Shield, Search, ShieldCheck, Users, UserCheck, Crown, Phone, CalendarDays } from 'lucide-react';
 import { useApp, User, UserRole } from '../../store/AppContext';
 import { api, mediaUrl } from '../../lib/api';
 import { format } from 'date-fns';
@@ -249,13 +249,16 @@ export const AdminUsuarios: React.FC = () => {
                         {!user.active && <span className="text-xs px-2 py-0.5 rounded border border-red-500/30 text-red-400">Inativo</span>}
                         {savedId === user.id && (
                           <span className="text-xs px-2 py-0.5 rounded border border-green-500/30 text-green-400 flex items-center gap-1">
-                            <Check size={10} /> Cargo atualizado
+                            <Check size={10} /> Alteração salva
                           </span>
                         )}
                       </div>
                       <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs">{user.email}</p>
                       {user.whatsapp && <p className="font-inter text-[rgba(245,240,232,0.25)] text-xs">{user.whatsapp}</p>}
                       {user.role !== 'consulente' && user.degree && <p className="font-inter text-[#c9a84c] text-xs">Grau {user.degree.sortOrder} · {user.degree.name}</p>}
+                      <p className="font-inter text-[rgba(245,240,232,0.2)] text-[11px] inline-flex items-center gap-1 mt-0.5">
+                        <CalendarDays size={10} /> Cadastro em {format(new Date(user.createdAt), "dd/MM/yyyy")}
+                      </p>
                     </div>
                   </div>
 
@@ -282,10 +285,6 @@ export const AdminUsuarios: React.FC = () => {
                         {roleLabels[user.role]}
                       </span>
                     )}
-
-                    <span className="font-inter text-[rgba(245,240,232,0.2)] text-xs hidden md:block">
-                      {format(new Date(user.createdAt), "dd/MM/yyyy")}
-                    </span>
 
                     {isSuperAdmin && !isSelf && (
                       <>
