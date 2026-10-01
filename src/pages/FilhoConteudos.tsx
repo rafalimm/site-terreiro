@@ -232,6 +232,7 @@ const ContentCard:React.FC<{c:Content;done:boolean;toggle:()=>void;open:()=>void
 };
 
 const ContentViewer:React.FC<{content:Content;done:boolean;toggle:()=>void;close:()=>void}> = ({content,done,toggle,close}) => {
+  const [downloading,setDownloading] = React.useState(false);
   const url=content.mediaUrl?mediaUrl(content.mediaUrl):'';
   const gallery=(content.mediaUrl||'').split(/\n|,/).map(v=>v.trim()).filter(Boolean);
   return (
