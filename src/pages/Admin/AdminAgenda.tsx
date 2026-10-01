@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Calendar, X, Check, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, CalendarClock, X, Check, Users } from 'lucide-react';
 import { useApp, GiraEvent } from '../../store/AppContext';
 import { format } from 'date-fns';
 import { dateOnlyTimestamp, parseDateOnly } from '../../utils/date';
@@ -36,6 +36,13 @@ export const AdminAgenda: React.FC = () => {
   const [form, setForm] = useState(emptyEvent);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [confirmationCounts, setConfirmationCounts] = useState<Record<string, { count: number; users: Array<{ id: string; name: string; role: string }> }>>({});
+  const [history, setHistory] = useState<Array<{
+    id: string; title: string; date: string; time: string; type: string;
+    totalAttendances: number; totalAttended: number;
+    entityStats: Array<{ entityId: string; name: string; line: string; attendedCount: number }>;
+  }>>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyDeleteConfirm, setHistoryDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -52,6 +59,22 @@ export const AdminAgenda: React.FC = () => {
     if (events.length > 0) loadConfirmationCounts();
     return () => { active = false; };
   }, [events]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [events]);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const data = await api.get<typeof history>('/api/admin/events/history');
+      setHistory(data);
+    } catch (err) {
+      console.error('Não foi possível carregar o histórico das giras:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -96,7 +119,10 @@ export const AdminAgenda: React.FC = () => {
     if (saved) setShowModal(false);
   };
 
-  const sortedEvents = [...events].sort((a, b) => dateOnlyTimestamp(b.date) - dateOnlyTimestamp(a.date));
+  const todayTimestamp = dateOnlyTimestamp(new Date().toISOString().slice(0, 10));
+  const upcomingEvents = [...events]
+    .filter(event => dateOnlyTimestamp(event.date) >= todayTimestamp)
+    .sort((a, b) => dateOnlyTimestamp(a.date) - dateOnlyTimestamp(b.date));
 
   return (
     <div className="space-y-4">
@@ -111,15 +137,15 @@ export const AdminAgenda: React.FC = () => {
         </button>
       </div>
 
-      {events.length === 0 ? (
+      {upcomingEvents.length === 0 ? (
         <div className="text-center py-16 bg-[#1a0a0a] rounded border border-[rgba(201,168,76,0.1)]">
           <Calendar size={40} className="text-[rgba(201,168,76,0.3)] mx-auto mb-3" />
-          <p className="font-cinzel text-[#c9a84c] text-base">Nenhuma gira cadastrada</p>
-          <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm mt-1">Clique em "Nova Gira" para começar</p>
+          <p className="font-cinzel text-[#c9a84c] text-base">Nenhuma próxima gira cadastrada</p>
+          <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm mt-1">Clique em "Nova Gira" para cadastrar a próxima gira</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {sortedEvents.map(ev => (
+          {upcomingEvents.map(ev => (
             <div key={ev.id} className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-4 hover:border-[rgba(201,168,76,0.3)] transition-all">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -173,6 +199,74 @@ export const AdminAgenda: React.FC = () => {
           ))}
         </div>
       )}
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2">
+              <CalendarClock size={18} className="text-[#c9a84c]" />
+              <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">Histórico de Giras</h3>
+            </div>
+            <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm mt-1">Dados sincronizados com a fila de atendimento e os atendimentos realizados.</p>
+          </div>
+          <span className="text-xs px-2.5 py-1 rounded border border-[rgba(201,168,76,0.18)] text-[#c9a84c]">{history.length} gira(s)</span>
+        </div>
+
+        {historyLoading ? (
+          <div className="p-5 bg-[#1a0a0a] rounded border border-[rgba(201,168,76,0.1)] text-sm text-[rgba(245,240,232,0.5)]">Carregando histórico...</div>
+        ) : history.length === 0 ? (
+          <div className="p-6 bg-[#1a0a0a] rounded border border-[rgba(201,168,76,0.1)] text-sm text-[rgba(245,240,232,0.45)]">Ainda não existem giras anteriores registradas.</div>
+        ) : (
+          <div className="space-y-3">
+            {history.map(item => (
+              <div key={item.id} className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-cinzel font-bold text-[#f5f0e8]">{item.title}</h4>
+                      <span className="text-xs px-2 py-0.5 rounded border border-[rgba(201,168,76,0.18)] text-[#c9a84c]">Histórico</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[rgba(245,240,232,0.45)] mt-1">
+                      <span>📅 {format(parseDateOnly(item.date), "dd/MM/yyyy")}</span><span>🕐 {item.time}</span><span className="text-[#c9a84c]/70">{item.type}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="px-2.5 py-1 rounded border border-[rgba(201,168,76,0.15)] text-xs text-[#c9a84c]">{item.totalAttendances} registro(s) na fila</span>
+                      <span className="px-2.5 py-1 rounded border border-green-500/20 bg-green-500/5 text-xs text-green-300">{item.totalAttended} atendido(s)</span>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs font-cinzel uppercase tracking-wider text-[rgba(245,240,232,0.55)] mb-2">Atendimentos por entidade</p>
+                      {item.entityStats.length === 0 ? (
+                        <p className="text-xs text-[rgba(245,240,232,0.3)]">Nenhum atendimento finalizado com entidade vinculada.</p>
+                      ) : (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {item.entityStats.map(entity => (
+                            <div key={entity.entityId} className="p-3 rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)]">
+                              <p className="text-sm text-[#f5f0e8] font-inter font-semibold">{entity.name}</p>
+                              <p className="text-[11px] text-[rgba(245,240,232,0.4)]">{entity.line || 'Sem linha'}</p>
+                              <p className="font-cinzel text-[#c9a84c] text-xl font-bold mt-1">{entity.attendedCount}</p>
+                              <p className="text-[10px] text-[rgba(245,240,232,0.35)]">pessoa(s) atendida(s)</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {historyDeleteConfirm === item.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={async () => { await deleteEvent(item.id); setHistoryDeleteConfirm(null); await loadHistory(); }} className="px-2.5 py-2 text-xs text-red-300 border border-red-500/30 rounded hover:bg-red-500/10">Excluir</button>
+                        <button onClick={() => setHistoryDeleteConfirm(null)} className="p-2 text-[rgba(245,240,232,0.4)] border border-[rgba(255,255,255,0.1)] rounded"><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setHistoryDeleteConfirm(item.id)} className="p-2 text-[rgba(245,240,232,0.4)] hover:text-red-400 border border-[rgba(201,168,76,0.1)] hover:border-red-500/30 rounded transition-all" title="Excluir do histórico"><Trash2 size={14} /></button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modal */}
       {showModal && (
