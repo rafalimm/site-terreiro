@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Shield, Search, ShieldCheck, Users, UserCheck, Crown } from 'lucide-react';
 import { useApp, User, UserRole } from '../../store/AppContext';
-import { api } from '../../lib/api';
+import { api, mediaUrl } from '../../lib/api';
 import { format } from 'date-fns';
 
 const roleLabels: Record<UserRole, string> = {
@@ -97,22 +97,37 @@ export const AdminUsuarios: React.FC = () => {
   };
 
   // Troca rápida de cargo direto na listagem, sem precisar abrir o modal de edição
-  const handleQuickRoleChange = (user: User, newRole: UserRole) => {
+  const handleQuickRoleChange = async (user: User, newRole: UserRole) => {
     if (newRole === user.role) return;
-    updateUser(user.id, { role: newRole, ...(newRole === 'consulente' ? { degreeId: null } : {}) });
-    setSavedId(user.id);
-    setTimeout(() => setSavedId(prev => (prev === user.id ? null : prev)), 2000);
+    try {
+      await updateUser(user.id, { role: newRole, ...(newRole === 'consulente' ? { degreeId: null } : {}) });
+      setSavedId(user.id);
+      setTimeout(() => setSavedId(prev => (prev === user.id ? null : prev)), 2000);
+    } catch {
+      // O contexto já informa o erro da API; não exibe sucesso quando a alteração falha.
+    }
+  };
+
+  const handleQuickStatusChange = async (user: User) => {
+    if (user.id === currentUser?.id) return;
+    try {
+      await updateUser(user.id, { active: !user.active });
+      setSavedId(user.id);
+      setTimeout(() => setSavedId(prev => (prev === user.id ? null : prev)), 2000);
+    } catch {
+      // O contexto já informa o erro da API.
+    }
   };
 
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
+    return [...users].filter(u => {
       const matchesSearch =
         u.name.toLowerCase().includes(search.toLowerCase()) ||
         (u.email || '').toLowerCase().includes(search.toLowerCase());
       const matchesRole = roleFilter === 'todos' || u.role === roleFilter;
       const matchesStatus = statusFilter === 'todos' || (statusFilter === 'ativos' ? u.active : !u.active);
       return matchesSearch && matchesRole && matchesStatus;
-    });
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [users, search, roleFilter, statusFilter]);
 
   const activeUsers = users.filter(u => u.active).length;
@@ -221,8 +236,12 @@ export const AdminUsuarios: React.FC = () => {
               <div key={user.id} className={`bg-[#1a0a0a] border rounded p-4 transition-all ${user.active ? 'border-[rgba(201,168,76,0.1)] hover:border-[rgba(201,168,76,0.3)]' : 'border-[rgba(255,255,255,0.05)] opacity-60'}`}>
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                    <div className="w-10 h-10 rounded-full bg-[rgba(201,168,76,0.1)] border border-[rgba(201,168,76,0.2)] flex items-center justify-center flex-shrink-0">
-                      <Shield size={16} className="text-[#c9a84c]" />
+                    <div className="w-10 h-10 rounded-full bg-[rgba(201,168,76,0.1)] border border-[rgba(201,168,76,0.2)] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {user.profilePhoto ? (
+                        <img src={mediaUrl(user.profilePhoto)} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Shield size={16} className="text-[#c9a84c]" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -270,6 +289,13 @@ export const AdminUsuarios: React.FC = () => {
 
                     {isSuperAdmin && !isSelf && (
                       <>
+                        <button
+                          onClick={() => handleQuickStatusChange(user)}
+                          title={user.active ? 'Desativar usuário' : 'Ativar usuário'}
+                          className={`text-xs px-2 py-1 border rounded transition-all ${user.active ? 'text-green-400 border-green-500/20 hover:border-red-500/30 hover:text-red-400' : 'text-red-400 border-red-500/20 hover:border-green-500/30 hover:text-green-400'}`}
+                        >
+                          {user.active ? 'Ativo' : 'Inativo'}
+                        </button>
                         <button onClick={() => openEdit(user)} className="p-1.5 text-[rgba(245,240,232,0.4)] hover:text-[#c9a84c] border border-[rgba(201,168,76,0.1)] rounded transition-all">
                           <Edit2 size={12} />
                         </button>
