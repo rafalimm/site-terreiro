@@ -24,7 +24,55 @@ router.get('/attendance/mine', async (req, res) => {
         entity: { select: { id: true, name: true, line: true, active: true, owner: { select: { id: true, name: true, role: true, active: true } } } },
       },
     });
-    res.json(attendances);
+
+    // Calcula a posição real na fila para cada gira, sem expor dados de outros consulentes.
+    const eventIds = attendances
+      .filter(attendance => attendance.queueNumber && ['arrived', 'called', 'in_service'].includes(attendance.status))
+      .map(attendance => attendance.eventId);
+
+    const queueRows = eventIds.length
+      ? await prisma.giraAttendance.findMany({
+          where: {
+            eventId: { in: [...new Set(eventIds)] },
+            queueNumber: { not: null },
+            status: { in: ['arrived', 'called', 'in_service'] },
+          },
+          select: { eventId: true, queueNumber: true, status: true },
+          orderBy: [{ eventId: 'asc' }, { queueNumber: 'asc' }],
+        })
+      : [];
+
+    const queuesByEvent = new Map<string, typeof queueRows>();
+    for (const row of queueRows) {
+      const rows = queuesByEvent.get(row.eventId) || [];
+      rows.push(row);
+      queuesByEvent.set(row.eventId, rows);
+    }
+
+    const response = attendances.map(attendance => {
+      if (!attendance.queueNumber || !['arrived', 'called', 'in_service'].includes(attendance.status)) {
+        return { ...attendance, queuePosition: null, peopleAhead: 0, peopleWaiting: 0, isNext: false };
+      }
+
+      const queue = queuesByEvent.get(attendance.eventId) || [];
+      const peopleAhead = queue.filter(row =>
+        row.queueNumber !== null &&
+        row.queueNumber < attendance.queueNumber! &&
+        row.status === 'arrived'
+      ).length;
+      const peopleWaiting = queue.filter(row => row.status === 'arrived').length;
+      const isNext = attendance.status === 'arrived' && peopleAhead === 0;
+
+      return {
+        ...attendance,
+        queuePosition: peopleAhead + 1,
+        peopleAhead,
+        peopleWaiting,
+        isNext,
+      };
+    });
+
+    res.json(response);
   } catch (error) {
     console.error('Erro ao carregar filas do usuário:', error);
     res.status(500).json({ error: 'Não foi possível carregar suas filas.' });
