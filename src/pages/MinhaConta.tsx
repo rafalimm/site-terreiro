@@ -176,7 +176,6 @@ export const MinhaConta: React.FC = () => {
               new Notification('Sua vez chegou', {
                 body: 'Senha ' + String(attendance.queueNumber).padStart(3, '0') + ' — dirija-se ao atendimento.',
                 tag: 'fila-' + attendance.id,
-                renotify: true,
               });
             } catch {
               // A notificação pode ser bloqueada pelo navegador/sistema.
@@ -197,7 +196,6 @@ export const MinhaConta: React.FC = () => {
               new Notification('Você é o próximo', {
                 body: 'Senha ' + String(attendance.queueNumber).padStart(3, '0') + ' — fique próximo ao atendimento.',
                 tag: 'fila-next-' + attendance.id,
-                renotify: true,
               });
             } catch {
               // A notificação pode ser bloqueada pelo navegador/sistema.
