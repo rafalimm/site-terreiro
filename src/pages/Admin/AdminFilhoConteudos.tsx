@@ -142,8 +142,8 @@ const ContentModal: React.FC<{
       const uploaded: string[] = [];
       for (const file of selected) {
         const imageUpload = form.type === 'image' || form.type === 'gallery' || kind === 'cover';
-        const maxBytes = imageUpload ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
-        if (file.size > maxBytes) throw new Error(`O arquivo excede o limite de ${imageUpload ? '5' : '20'} MB.`);
+        const maxBytes = imageUpload ? 5 * 1024 * 1024 : 50 * 1024 * 1024;
+        if (file.size > maxBytes) throw new Error(`O arquivo excede o limite de ${imageUpload ? '5' : '50'} MB.`);
         const result = imageUpload ? await uploadImageFile(file) : await uploadContentFile(file);
         uploaded.push(result.url);
       }
@@ -222,7 +222,7 @@ const ContentModal: React.FC<{
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div>
                     <p className="text-sm text-white/75 font-medium">{form.type === 'gallery' ? 'Imagens da galeria' : 'Arquivo principal'}</p>
-                    <p className="text-[11px] text-white/35 mt-1">Envie diretamente pelo computador. Imagens: até 5 MB. Vídeos, áudios e PDFs: até 20 MB por arquivo.</p>
+                    <p className="text-[11px] text-white/35 mt-1">Envie diretamente pelo computador. Imagens: até 5 MB. Vídeos, áudios e PDFs: até 50 MB por arquivo.</p>
                   </div>
                   <label className="btn-gold text-xs cursor-pointer shrink-0">
                     <UploadCloud size={14} />
@@ -263,7 +263,7 @@ const ContentModal: React.FC<{
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm text-white/65">Capa (opcional)</p>
-                      <p className="text-[11px] text-white/30 mt-1">JPG, PNG ou WebP, até 20 MB.</p>
+                      <p className="text-[11px] text-white/30 mt-1">JPG, PNG ou WebP, até 5 MB.</p>
                     </div>
                     <label className="btn-outline-gold text-xs cursor-pointer">
                       <UploadCloud size={14} />
