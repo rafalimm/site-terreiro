@@ -14,7 +14,7 @@ const typeLabels: Record<string,string> = { text:'Texto', video:'Vídeo', audio:
 export const AdminFilhoConteudos: React.FC = () => {
   const [degrees,setDegrees]=React.useState<Degree[]>([]);
   const [loading,setLoading]=React.useState(true);
-  const [degreeModal,setDegreeModal]=React.useState(false);
+  const [degreeModal,setDegreeModal]=React.useState(false); const [editingDegree,setEditingDegree]=React.useState<Degree|null>(null);
   const [moduleModal,setModuleModal]=React.useState<{degreeId:string;module?:Module}|null>(null);
   const [contentModal,setContentModal]=React.useState<{degreeId:string;moduleId?:string;content?:Content}|null>(null);
   const [degreeForm,setDegreeForm]=React.useState({name:'',description:'',sortOrder:1});
@@ -23,7 +23,7 @@ export const AdminFilhoConteudos: React.FC = () => {
   const load=React.useCallback(async()=>{setLoading(true);try{setDegrees(await api.get<Degree[]>('/api/filho-content/admin'));}finally{setLoading(false);}},[]);
   React.useEffect(()=>{void load();},[load]);
 
-  const saveDegree=async()=>{if(!degreeForm.name.trim())return;await api.post('/api/filho-content/admin/degrees',degreeForm);setDegreeModal(false);setDegreeForm({name:'',description:'',sortOrder:degrees.length+1});await load();};
+  const saveDegree=async()=>{if(!degreeForm.name.trim())return;if(editingDegree) await api.patch('/api/filho-content/admin/degrees/'+editingDegree.id,degreeForm); else await api.post('/api/filho-content/admin/degrees',degreeForm);setDegreeModal(false);setEditingDegree(null);setDegreeForm({name:'',description:'',sortOrder:degrees.length+1});await load();};
   const saveModule=async()=>{if(!moduleModal||!moduleForm.name.trim())return;if(moduleModal.module) await api.patch('/api/filho-content/admin/modules/'+moduleModal.module.id,moduleForm); else await api.post('/api/filho-content/admin/modules',{...moduleForm,degreeId:moduleModal.degreeId});setModuleModal(null);await load();};
   const saveContent=async()=>{if(!contentModal||!contentForm.title.trim())return;const payload={...contentForm,degreeId:contentModal.degreeId,moduleId:contentModal.moduleId||contentModal.content?.moduleId||null};if(contentModal.content) await api.patch('/api/filho-content/admin/contents/'+contentModal.content.id,payload); else await api.post('/api/filho-content/admin/contents',payload);setContentModal(null);await load();};
   const del=async(kind:string,id:string)=>{if(!window.confirm('Excluir este item?'))return;await api.delete('/api/filho-content/admin/'+kind+'/'+id);await load();};
@@ -31,10 +31,10 @@ export const AdminFilhoConteudos: React.FC = () => {
   return <div className="space-y-5">
     <div className="flex items-center justify-between gap-3 flex-wrap">
       <div><h2 className="font-cinzel font-bold text-[#c9a84c] text-xl">Conteúdos dos Filhos</h2><p className="font-inter text-sm text-[rgba(245,240,232,0.4)]">Organize graus, módulos e materiais de estudo sem alterar as outras áreas do site.</p></div>
-      <button onClick={()=>{setDegreeForm({name:'',description:'',sortOrder:degrees.length+1});setDegreeModal(true)}} className="btn-gold text-xs"><Plus size={14}/> Novo Grau</button>
+      <button onClick={()=>{setEditingDegree(null);setDegreeForm({name:'',description:'',sortOrder:degrees.length+1});setDegreeModal(true)}} className="btn-gold text-xs"><Plus size={14}/> Novo Grau</button>
     </div>
     {loading?<p className="text-sm text-[rgba(245,240,232,0.4)]">Carregando...</p>:degrees.length===0?<div className="card-spiritual p-8 text-center"><BookOpen className="mx-auto text-[#c9a84c]" size={30}/><p className="mt-3 text-sm text-[rgba(245,240,232,0.5)]">Nenhum grau cadastrado. Crie o primeiro grau para começar.</p></div>:degrees.map(d=><div key={d.id} className="card-spiritual p-5">
-      <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><span className="text-xs px-2 py-1 rounded border border-[#c9a84c]/30 text-[#c9a84c]">Grau {d.sortOrder}</span><h3 className="font-cinzel font-bold text-white">{d.name}</h3></div><p className="text-xs text-[rgba(245,240,232,0.4)] mt-2">{d.description || 'Sem descrição.'}</p></div><button onClick={()=>{setDegreeForm({name:d.name,description:d.description,sortOrder:d.sortOrder});setDegreeModal(true)}} className="p-2 border border-white/10 rounded text-white/50 hover:text-[#c9a84c]"><Edit2 size={14}/></button></div>
+      <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><span className="text-xs px-2 py-1 rounded border border-[#c9a84c]/30 text-[#c9a84c]">Grau {d.sortOrder}</span><h3 className="font-cinzel font-bold text-white">{d.name}</h3></div><p className="text-xs text-[rgba(245,240,232,0.4)] mt-2">{d.description || 'Sem descrição.'}</p></div><button onClick={()=>{setEditingDegree(d);setDegreeForm({name:d.name,description:d.description,sortOrder:d.sortOrder});setDegreeModal(true)}} className="p-2 border border-white/10 rounded text-white/50 hover:text-[#c9a84c]"><Edit2 size={14}/></button></div>
       <div className="mt-5 space-y-3">
         {d.modules.map(m=><div key={m.id} className="rounded border border-white/10 bg-black/10 p-4 ml-0">
           <div className="flex justify-between gap-3"><div><div className="flex items-center gap-2 text-[#f5f0e8] font-cinzel text-sm"><FolderOpen size={15} className="text-[#c9a84c]"/>{m.name}</div><p className="text-xs text-white/35 mt-1">{m.description}</p></div><div className="flex gap-1"><button onClick={()=>{setModuleForm({name:m.name,description:m.description,sortOrder:m.sortOrder});setModuleModal({degreeId:d.id,module:m})}} className="p-1.5 text-white/40 hover:text-[#c9a84c]"><Edit2 size={13}/></button><button onClick={()=>void del('modules',m.id)} className="p-1.5 text-white/40 hover:text-red-400"><Trash2 size={13}/></button></div></div>
