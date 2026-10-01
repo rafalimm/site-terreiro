@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User, Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, Camera } from 'lucide-react';
+import { User, Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
@@ -103,10 +103,15 @@ export const MinhaConta: React.FC = () => {
         <div className="card-spiritual p-6 md:p-8 mb-6 relative overflow-hidden">
           <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-[rgba(201,168,76,0.05)] blur-2xl pointer-events-none" />
           <div className="flex items-start gap-5 flex-wrap relative">
-            <div className="w-24 h-24 rounded-full border-2 border-[#c9a84c] bg-[rgba(201,168,76,0.08)] flex items-center justify-center flex-shrink-0 overflow-hidden shadow-[0_0_24px_rgba(201,168,76,0.08)]">
-              {profilePhoto && !profilePhotoError ? (
-                <img src={profilePhoto} alt={`Foto de perfil de ${currentUser.name}`} className="w-full h-full object-cover" onError={() => setProfilePhotoError(true)} />
-              ) : <User size={36} className="text-[#c9a84c]" />}
+            <div className="w-24 h-24 flex-shrink-0">
+              <ImageUploader
+                value={profilePhoto}
+                onChange={(url) => { setProfilePhoto(url); setProfilePhotoError(false); }}
+                uploadPath="/api/auth/profile-photo"
+                maxSize={600}
+                shape="round"
+                compact
+              />
             </div>
             <div className="flex-1 min-w-[220px]">
               <p className="font-inter text-[10px] uppercase tracking-[0.2em] text-[#c9a84c]/70 mb-1">Minha conta</p>
@@ -121,13 +126,6 @@ export const MinhaConta: React.FC = () => {
               {currentUser.degree?.description && <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-2 max-w-xl">{currentUser.degree.description}</p>}
             </div>
             {(currentUser.role !== 'consulente') && <Link to="/admin" className="btn-gold text-xs w-full sm:w-auto justify-center">Painel Admin</Link>}
-          </div>
-          <div className="mt-6 pt-5 border-t border-[rgba(201,168,76,0.1)]">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2"><Camera size={15} className="text-[#c9a84c]" /><h3 className="font-cinzel font-bold text-[#c9a84c] text-sm">Foto de perfil</h3></div>
-              <span className="text-[10px] text-[rgba(245,240,232,0.3)]">Visível na sua conta</span>
-            </div>
-            <ImageUploader value={profilePhoto} onChange={(url) => { setProfilePhoto(url); setProfilePhotoError(false); }} uploadPath="/api/auth/profile-photo" maxSize={600} shape="round" />
           </div>
         </div>
 
