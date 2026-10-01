@@ -230,6 +230,15 @@ export const MinhaConta: React.FC = () => {
                 </div>
               </div>
             )}
+            {activeAttendance.status === 'arrived' && activeAttendance.estimatedWaitMinutes !== undefined && (
+              <div className="mt-3 rounded-lg border border-[rgba(201,168,76,0.18)] bg-[rgba(201,168,76,0.04)] px-3 py-2 text-xs text-[rgba(245,240,232,0.65)]">
+                <span className="text-[#c9a84c] font-semibold">Estimativa:</span>{' '}
+                {activeAttendance.estimatedWaitMinutes <= 0
+                  ? 'atendimento previsto em breve.'
+                  : 'aproximadamente ' + activeAttendance.estimatedWaitMinutes + ' min de espera.'}
+                <span className="block text-[10px] text-[rgba(245,240,232,0.35)] mt-1">Estimativa baseada no ritmo dos atendimentos desta gira.</span>
+              </div>
+            )}
             {activeAttendance.status === 'arrived' && activeAttendance.isNext && (
               <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2 text-xs text-green-200/80">
                 Você é o próximo da fila. Aguarde a chamada.
