@@ -116,7 +116,6 @@ export const AdminUsuarios: React.FC = () => {
   }, [users, search, roleFilter, statusFilter]);
 
   const activeUsers = users.filter(u => u.active).length;
-  const inactiveUsers = users.length - activeUsers;
   const filhoUsers = users.filter(u => u.role === 'filho').length;
   const privilegedUsers = users.filter(u => u.role !== 'consulente').length;
 
