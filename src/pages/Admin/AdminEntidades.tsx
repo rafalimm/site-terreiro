@@ -1,3 +1,4 @@
+// Vercel deploy sync: painel de entidades
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle, Layers, Search, Users, Link2, Unlink2 } from 'lucide-react';
 import { useApp, Entity } from '../../store/AppContext';
