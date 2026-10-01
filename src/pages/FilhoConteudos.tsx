@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { BookOpen, Lock, CheckCircle2, PlayCircle, Headphones, FileText, FileDown, Image, Link2, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, CheckCircle2, PlayCircle, Headphones, FileText, FileDown, Image, Link2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api, mediaUrl } from '../lib/api';
 
