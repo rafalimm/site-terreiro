@@ -34,6 +34,7 @@ model User {
   cpfCnpj   String?
   profilePhoto String? @db.Text
   degreeId String?
+  entities  Entity[]
   registrationCompleted Boolean @default(true)
   preRegisteredAt String?
   registrationCompletedAt String?
@@ -343,6 +344,8 @@ model Entity {
   characteristics String      @db.Text
   additionalInfo  String      @db.Text
   active          Boolean     @default(true)
+  ownerId         String?
+  owner          User?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   attendances     GiraAttendance[]
 
   @@index([lineId])
