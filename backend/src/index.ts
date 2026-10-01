@@ -104,6 +104,6 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 const PORT = Number(process.env.PORT) || 3333;
-app.listen(PORT, () => {
-  console.log(`API do terreiro rodando na porta ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`API do terreiro rodando na porta ${PORT} em 0.0.0.0`);
 });
