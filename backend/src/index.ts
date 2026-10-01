@@ -39,15 +39,21 @@ app.use(apiLimiter);
 // A lista de domínios liberados vem de uma variável de ambiente.
 // Isso é o que permite trocar de domínio/hospedagem no futuro sem tocar no código:
 // basta atualizar FRONTEND_URL no painel da hospedagem.
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
-  .split(',')
-  .map(origin => origin.trim());
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://site-terreiro-2qpk.vercel.app',
+  ...(process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean),
+]);
 
 app.use(
   cors({
     origin(origin, callback) {
       // Permite chamadas sem "origin" (ex: apps mobile, curl, health checks)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.has(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Origem não autorizada pelo CORS.'));
