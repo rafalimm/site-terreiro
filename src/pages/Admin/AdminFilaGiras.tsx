@@ -252,13 +252,13 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
     : 0;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 pb-6">
       <div>
         <h2 className="font-cinzel font-bold text-[#c9a84c] text-xl">Fila de Atendimento</h2>
         <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm">Controle de chegada, chamada e atendimento de cada gira.</p>
       </div>
 
-      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded-xl p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
         <label className="form-label">Selecione a gira</label>
         <select className="form-input" value={eventId} onChange={e => setEventId(e.target.value)}>
           <option value="">Selecione...</option>
@@ -294,7 +294,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
       {queue && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
               { label: 'Confirmados', count: queue.counts.confirmed, Icon: Users },
               { label: 'Aguardando', count: queue.counts.arrived, Icon: Clock3 },
@@ -302,7 +302,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
               { label: 'Em atendimento', count: queue.counts.inService, Icon: Play },
               { label: 'Atendidos', count: queue.counts.attended, Icon: CheckCircle2 },
             ].map(({ label, count, Icon }) => (
-              <div key={label} className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-4">
+              <div key={label} className="group bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded-xl p-4 transition-all duration-200 hover:border-[rgba(201,168,76,0.24)] hover:bg-[#211010]">
                 <Icon size={17} className="text-[#c9a84c] mb-2" />
                 <p className="text-[rgba(245,240,232,0.4)] text-xs">{label}</p>
                 <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold">{count}</p>
@@ -310,7 +310,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
             ))}
           </div>
 
-          <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-5">
+          <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded-xl p-5 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Painel rápido da fila</p>
@@ -319,17 +319,17 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
               <span className="text-xs text-[rgba(245,240,232,0.4)]">Atualização automática</span>
             </div>
             <div className="grid sm:grid-cols-3 gap-3 mt-4">
-              <div className="rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-3">
+              <div className="rounded-lg border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-4 transition-colors hover:bg-[rgba(255,255,255,0.035)]">
                 <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.4)]">Próxima senha</p>
                 <p className="font-cinzel text-[#c9a84c] text-2xl font-bold mt-1">{nextWaiting?.queueNumber ? String(nextWaiting.queueNumber).padStart(3, '0') : '—'}</p>
                 <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1 truncate">{nextWaiting?.user?.name || 'Ninguém aguardando'}</p>
               </div>
-              <div className="rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-3">
+              <div className="rounded-lg border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-4 transition-colors hover:bg-[rgba(255,255,255,0.035)]">
                 <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.4)]">Pessoas à frente</p>
                 <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{nextWaiting?.peopleAhead ?? 0}</p>
                 <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">{nextWaiting?.estimatedWaitMinutes ? `Espera estimada: ~${nextWaiting.estimatedWaitMinutes} min` : 'Sem espera estimada'}</p>
               </div>
-              <div className="rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-3">
+              <div className="rounded-lg border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-4 transition-colors hover:bg-[rgba(255,255,255,0.035)]">
                 <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.4)]">Entidades livres</p>
                 <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{queue.availableEntities.length}</p>
                 <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">prontas para nova chamada</p>
@@ -348,8 +348,8 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
             )}
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-3">
-            <div className="lg:col-span-2 bg-[rgba(201,168,76,0.06)] border border-[#c9a84c]/30 rounded p-5">
+          <div className="grid lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 bg-gradient-to-br from-[rgba(201,168,76,0.09)] to-[#1a0a0a] border border-[#c9a84c]/25 rounded-xl p-5 md:p-6 shadow-[0_10px_35px_rgba(0,0,0,0.14)]">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Em atendimento agora</p>
@@ -392,7 +392,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
               </div>
             </div>
 
-            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-5">
+            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded-xl p-5 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
               <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Próximo da fila</p>
               {nextWaiting ? (
                 <div className="mt-3">
@@ -429,7 +429,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
           {firstVisitPending && (
             <div className="modal-overlay">
-              <div className="modal-content max-w-md">
+              <div className="modal-content max-w-md rounded-xl border border-[rgba(201,168,76,0.2)] shadow-2xl">
                 <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">Identificar chegada</h3>
                 <p className="text-sm text-[#f5f0e8] mt-2">{firstVisitPending.name}</p>
                 <p className="text-xs text-[rgba(245,240,232,0.5)] mt-2">Esta pessoa está vindo pela primeira vez?</p>
@@ -444,7 +444,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
           {callTargetId && (
             <div className="modal-overlay">
-              <div className="modal-content max-w-md">
+              <div className="modal-content max-w-md rounded-xl border border-[rgba(201,168,76,0.2)] shadow-2xl">
                 <div className="flex items-center justify-between mb-5">
                   <div>
                     <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">Chamar consulente</h3>
@@ -504,7 +504,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
           )}
 
           {scannerOpen && (
-            <div className="bg-[#1a0a0a] border border-[#c9a84c]/30 rounded p-4 max-w-md">
+            <div className="bg-[#1a0a0a] border border-[#c9a84c]/30 rounded-xl p-4 max-w-md shadow-[0_12px_40px_rgba(0,0,0,0.2)]">
               <div className="flex items-center justify-between mb-3">
                 <p className="font-cinzel text-[#c9a84c] text-sm">Escaneie o QR Code do participante</p>
                 <button onClick={stopScanner} className="p-1 text-[rgba(245,240,232,0.5)]"><XCircle size={18}/></button>
@@ -516,17 +516,17 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
           {queue.entities.length > 0 && (
             <>
-            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
-              <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
+            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded-xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+              <div className="p-4 md:p-5 border-b border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.012)]">
                 <h3 className="font-cinzel text-[#c9a84c]">Status das entidades</h3>
                 <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">Veja rapidamente quais entidades estão livres e quais estão em atendimento.</p>
               </div>
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 p-4">
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 p-4 md:p-5">
                 {queue.entities.map(entity => {
                   const activeAttendance = queue.attendances.find(a => a.entity?.id === entity.id && ['called', 'in_service'].includes(a.status));
                   const isFree = !activeAttendance;
                   return (
-                    <div key={entity.id} className={`rounded border p-4 ${isFree ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-orange-500/20 bg-orange-500/5'}`}>
+                    <div key={entity.id} className={`rounded-xl border p-4 transition-all duration-200 ${isFree ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-orange-500/20 bg-orange-500/5'}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-cinzel text-[#f5f0e8] text-sm truncate">{entity.name}</p>
@@ -548,8 +548,8 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
               </div>
             </div>
 
-            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
-              <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
+            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded-xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+              <div className="p-4 md:p-5 border-b border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.012)]">
                 <h3 className="font-cinzel text-[#c9a84c]">Entidades desta gira</h3>
                 <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">Histórico dos consulentes já atendidos por cada entidade.</p>
               </div>
@@ -581,8 +581,8 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
             </>
           )}
 
-          <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
-            <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
+          <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded-xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+            <div className="p-4 md:p-5 border-b border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.012)]">
               <h3 className="font-cinzel text-[#c9a84c]">Fila da gira</h3>
               <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">A primeira vez fica separada visualmente para facilitar a chamada e o encaminhamento.</p>
             </div>
@@ -595,7 +595,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
               ) : firstVisitQueue.map(attendance => (
                 <div key={attendance.id} className="p-4 flex flex-col md:flex-row md:items-center gap-3 justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full border border-emerald-400/40 flex items-center justify-center font-cinzel text-emerald-300 font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
+                    <div className="w-12 h-12 shrink-0 rounded-xl border border-emerald-400/40 bg-emerald-500/5 flex items-center justify-center font-cinzel text-emerald-300 font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
                     <div>
                       <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
                       {attendance.entity && (
@@ -623,7 +623,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
               ) : returningQueue.map(attendance => (
                 <div key={attendance.id} className="p-4 flex flex-col md:flex-row md:items-center gap-3 justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full border border-[#c9a84c]/30 flex items-center justify-center font-cinzel text-[#c9a84c] font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
+                    <div className="w-12 h-12 shrink-0 rounded-xl border border-[#c9a84c]/30 bg-[#c9a84c]/5 flex items-center justify-center font-cinzel text-[#c9a84c] font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
                     <div>
                       <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
                       <p className="text-xs text-[rgba(245,240,232,0.4)]">{attendance.user?.role}</p>
