@@ -387,6 +387,9 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                       >
                         <span className="block text-sm text-[#f5f0e8] font-inter">{entity.name}</span>
                         <span className="block text-xs text-[rgba(245,240,232,0.4)]">{entity.line || 'Sem linha'}</span>
+                        {entity.owner?.name && (
+                          <span className="block text-xs text-[rgba(201,168,76,0.8)] mt-1">Incorporante: {entity.owner.name}</span>
+                        )}
                       </button>
                     ))}
                   </div>
