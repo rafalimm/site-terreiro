@@ -63,7 +63,7 @@ app.use(
 );
 
 // Limite maior no corpo da requisição pois imagens podem ser enviadas em base64.
-app.use(express.json({ limit: '32mb' }));
+app.use(express.json({ limit: '70mb' }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
