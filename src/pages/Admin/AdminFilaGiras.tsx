@@ -49,6 +49,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
   const [eventsLoading, setEventsLoading] = useState(false);
   const [callTargetId, setCallTargetId] = useState<string | null>(null);
   const [selectedEntityId, setSelectedEntityId] = useState('');
+  const [now, setNow] = useState(() => Date.now());
   const [firstVisitPending, setFirstVisitPending] = useState<{ qrToken: string; name: string } | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
@@ -90,6 +91,11 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
   useEffect(() => {
     if (eventId) loadQueue();
   }, [eventId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   // Mantém dois ou mais responsáveis de fila sincronizados em celulares diferentes.
   useEffect(() => {
@@ -160,7 +166,11 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
   const openCallDialog = (attendanceId: string) => {
     setCallTargetId(attendanceId);
-    setSelectedEntityId('');
+    const target = queue?.attendances.find(a => a.id === attendanceId);
+    const entitiesForCall = target?.isFirstVisit && (queue?.event.firstVisitEntityIds?.length || 0) > 0
+      ? (queue?.availableFirstVisitEntities || [])
+      : (queue?.availableEntities || []);
+    setSelectedEntityId(entitiesForCall.length === 1 ? entitiesForCall[0].id : '');
     setMessage('');
   };
 
@@ -205,7 +215,10 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
         if (next) {
           setCallTargetId(next.id);
-          setSelectedEntityId('');
+          const nextEntities = next.isFirstVisit && (fresh.event.firstVisitEntityIds?.length || 0) > 0
+            ? (fresh.availableFirstVisitEntities || [])
+            : (fresh.availableEntities || []);
+          setSelectedEntityId(nextEntities.length === 1 ? nextEntities[0].id : '');
           setMessage(`Atendimento finalizado. Próximo: senha ${next.queueNumber ? String(next.queueNumber).padStart(3, '0') : '—'} — ${next.user?.name || 'consulente'}.`);
         } else {
           setMessage('Atendimento finalizado. Não há mais pessoas aguardando na fila.');
@@ -234,6 +247,9 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
   const firstVisitQueue = queueAttendances.filter(a => a.isFirstVisit);
   const returningQueue = queueAttendances.filter(a => !a.isFirstVisit);
   const canPreCadastro = hasPermission('pre_cadastro') || hasPermission('*');
+  const currentElapsedMinutes = current?.status === 'in_service' && current.serviceStartedAt
+    ? Math.max(0, Math.floor((now - new Date(current.serviceStartedAt).getTime()) / 60000))
+    : 0;
 
   return (
     <div className="space-y-5">
@@ -344,6 +360,11 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                         Senha <span className="text-[#c9a84c] font-bold">{current.queueNumber ? String(current.queueNumber).padStart(3, '0') : '—'}</span>
                         {' · '}{current.status === 'in_service' ? 'Atendimento em andamento' : 'Aguardando início'}
                       </p>
+                      {current.status === 'in_service' && (
+                        <p className="text-xs text-[rgba(245,240,232,0.55)] mt-2">
+                          Tempo de atendimento: <span className="text-[#f5f0e8]">{currentElapsedMinutes < 1 ? 'menos de 1 min' : `${currentElapsedMinutes} min`}</span>
+                        </p>
+                      )}
                       {current.entity && (
                         <p className="text-xs text-[rgba(245,240,232,0.55)] mt-2">
                           Entidade: <span className="text-[#f5f0e8]">{current.entity.name}</span>
@@ -428,7 +449,10 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                   <div>
                     <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">Chamar consulente</h3>
                     <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">
-                      Senha {String(queue?.attendances.find(a => a.id === callTargetId)?.queueNumber || '').padStart(3, '0')}
+                      {(() => {
+                        const target = queue?.attendances.find(a => a.id === callTargetId);
+                        return <>Senha {String(target?.queueNumber || '').padStart(3, '0')} {target?.user?.name ? `· ${target.user.name}` : ''}</>;
+                      })()}
                     </p>
                   </div>
                   <button onClick={() => setCallTargetId(null)} className="text-[rgba(245,240,232,0.4)] hover:text-white"><XCircle size={20}/></button>
@@ -441,6 +465,9 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
                   <div className="space-y-2">
                     <label className="form-label">Escolha a entidade disponível</label>
+                    {entitiesForCall.length === 1 && selectedEntityId === entitiesForCall[0].id && (
+                      <p className="text-[11px] text-[#c9a84c] mb-2">Única entidade disponível — selecionada automaticamente.</p>
+                    )}
                     {entitiesForCall.map(entity => (
                       <button
                         key={entity.id}
