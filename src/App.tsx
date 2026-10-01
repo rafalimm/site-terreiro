@@ -22,6 +22,7 @@ import { LinhasEntidades } from './pages/LinhasEntidades';
 import { Privacidade } from './pages/Privacidade';
 import { Termos } from './pages/Termos';
 import { AdminPage } from './pages/Admin/AdminPage';
+import { FilhoConteudos } from './pages/FilhoConteudos';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -61,6 +62,7 @@ function App() {
             <Route path="/contato" element={<Contato />} />
             <Route path="/entrar" element={<Login />} />
             <Route path="/minha-conta" element={<MinhaConta />} />
+            <Route path="/area-do-filho" element={<FilhoConteudos />} />
             <Route path="/linhas-entidades" element={<LinhasEntidades />} />
             <Route path="/privacidade" element={<Privacidade />} />
             <Route path="/termos" element={<Termos />} />
