@@ -378,10 +378,26 @@ router.post('/admin/events/:eventId/attendance/:attendanceId/start', authorize('
     if (!current || current.eventId !== req.params.eventId) return res.status(404).json({ error: 'Pessoa não encontrada na fila.' });
     if (current.status !== 'called') return res.status(400).json({ error: 'A pessoa precisa ser chamada antes de iniciar o atendimento.' });
 
+    // Evita que dois responsáveis iniciem atendimentos simultaneamente na mesma gira.
+    const activeService = await prisma.giraAttendance.findFirst({
+      where: {
+        eventId: current.eventId,
+        status: 'in_service',
+        id: { not: current.id },
+      },
+      select: { id: true },
+    });
+    if (activeService) {
+      return res.status(409).json({ error: 'Já existe outro atendimento em andamento nesta gira. Finalize-o antes de iniciar o próximo.' });
+    }
+
     const updated = await prisma.giraAttendance.update({
       where: { id: current.id },
       data: { status: 'in_service', serviceStartedAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      include: { user: { select: { id: true, name: true, role: true } } },
+      include: {
+        user: { select: { id: true, name: true, role: true } },
+        entity: { select: { id: true, name: true, line: true, active: true, owner: { select: { id: true, name: true, role: true, active: true } } } },
+      },
     });
     res.json(updated);
   } catch {
@@ -398,8 +414,12 @@ router.post('/admin/events/:eventId/attendance/:attendanceId/complete', authoriz
     const updated = await prisma.giraAttendance.update({
       where: { id: current.id },
       data: { status: 'attended', attendedAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      include: { user: { select: { id: true, name: true, role: true } } },
+      include: {
+        user: { select: { id: true, name: true, role: true } },
+        entity: { select: { id: true, name: true, line: true, active: true, owner: { select: { id: true, name: true, role: true, active: true } } } },
+      },
     });
+    // Ao finalizar, a entidade deixa automaticamente de ocupar a vaga da gira.
     res.json(updated);
   } catch {
     res.status(500).json({ error: 'Não foi possível finalizar o atendimento.' });
