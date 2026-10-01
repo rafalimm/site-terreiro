@@ -55,7 +55,7 @@ export const AdminUsuarios: React.FC = () => {
   const [form, setForm] = useState<UserForm>(emptyUser);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'todos'>('equipe');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'todos' | 'equipe'>('equipe');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'inativos'>('todos');
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -200,7 +200,7 @@ export const AdminUsuarios: React.FC = () => {
         <select
           className="form-input sm:max-w-[220px]"
           value={roleFilter}
-          onChange={e => setRoleFilter(e.target.value as UserRole | 'todos')}
+          onChange={e => setRoleFilter(e.target.value as UserRole | 'todos' | 'equipe')}
         >
           <option value="equipe">Equipe e Filhos</option>\n          <option value="todos">Todos os cargos</option>
           {Object.entries(roleLabels).map(([role, label]) => (
