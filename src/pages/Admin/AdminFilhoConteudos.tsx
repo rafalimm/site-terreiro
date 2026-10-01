@@ -284,7 +284,7 @@ const ContentModal: React.FC<{
 
               <div className="rounded-lg border border-[#c9a84c]/15 bg-[#c9a84c]/5 p-3 text-xs text-white/50 flex gap-2">
                 <BarChart3 size={15} className="text-[#c9a84c] shrink-0" />
-                <span>O arquivo enviado fica armazenado no servidor e recebe um endereço próprio. URLs externas continuam disponíveis como alternativa.</span>
+                <span>O arquivo enviado é salvo no Supabase Storage e fica disponível no site por um endereço próprio. Ele não é gravado dentro do código do site. URLs externas continuam disponíveis como alternativa.</span>
               </div>
             </>
           )}
