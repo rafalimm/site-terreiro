@@ -123,7 +123,7 @@ const ContentModal: React.FC<{
   const set = (patch: Partial<typeof form>) => setForm(v => ({ ...v, ...patch }));
   const url = form.mediaUrl ? mediaUrl(form.mediaUrl) : '';
   const gallery = form.type === 'gallery'
-    ? form.mediaUrl.split(/\\n|,/).map(v => v.trim()).filter(Boolean)
+    ? form.mediaUrl.split(/[\n,]+/).map(v => v.trim()).filter(Boolean)
     : [];
   const acceptedByType: Record<string, string> = {
     image: 'image/jpeg,image/png,image/webp',
