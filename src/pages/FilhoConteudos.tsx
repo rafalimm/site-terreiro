@@ -6,7 +6,7 @@ import {
   Sparkles, CirclePlay, Award, Download
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
-import { api, mediaUrl } from '../lib/api';
+import { api, mediaUrl, downloadContentFile } from '../lib/api';
 
 type Content = {
   id:string; title:string; description:string; type:string; body:string;
@@ -248,9 +248,14 @@ const ContentViewer:React.FC<{content:Content;done:boolean;toggle:()=>void;close
         {content.type==='pdf' && url && <iframe title={content.title} src={url} className="w-full h-[65vh] rounded-lg border border-white/10 bg-white"/>}
         {['video','audio','image','pdf'].includes(content.type) && url && (
           <div className="mt-4 flex justify-end">
-            <a href={url} download target="_blank" rel="noreferrer" className="btn-outline-gold text-xs">
-              <Download size={15}/> Baixar arquivo
-            </a>
+            <button
+              type="button"
+              disabled={downloading}
+              onClick={async()=>{try{setDownloading(true);await downloadContentFile(content.mediaUrl || '', content.title);}catch(error){window.alert(error instanceof Error ? error.message : 'Não foi possível baixar o arquivo.');}finally{setDownloading(false);}}}
+              className="btn-outline-gold text-xs disabled:opacity-50"
+            >
+              <Download size={15}/> {downloading ? 'Baixando...' : 'Baixar arquivo'}
+            </button>
           </div>
         )}
         {content.type==='link' && url && <a href={url} target="_blank" rel="noreferrer" className="btn-gold">Abrir material <ExternalLink size={15}/></a>}
