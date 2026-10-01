@@ -8,6 +8,7 @@ interface ImageUploaderProps {
   maxSize?: number;
   shape?: 'wide' | 'round';
   uploadPath?: string;
+  compact?: boolean;
 }
 
 function loadImage(file: File): Promise<HTMLImageElement> {
@@ -59,6 +60,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   maxSize = 1600,
   shape = 'wide',
   uploadPath = '/api/admin/uploads',
+  compact = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const cropInputRef = useRef<HTMLInputElement>(null);
@@ -266,14 +268,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               </span>
             )}
           </button>
-          <div>
-            <p className="font-inter text-xs text-[rgba(245,240,232,0.5)]">
-              Clique na foto para escolher uma imagem.
-            </p>
-            <p className="font-inter text-[rgba(245,240,232,0.3)] text-[11px] mt-1">
-              Você poderá ajustar o enquadramento antes de salvar.
-            </p>
-          </div>
+          {!compact && (
+            <div>
+              <p className="font-inter text-xs text-[rgba(245,240,232,0.5)]">
+                Clique na foto para escolher uma imagem.
+              </p>
+              <p className="font-inter text-[rgba(245,240,232,0.3)] text-[11px] mt-1">
+                Você poderá ajustar o enquadramento antes de salvar.
+              </p>
+            </div>
+          )}
         </div>
       ) : localValue ? (
         <div className="flex items-center gap-3 flex-wrap">
