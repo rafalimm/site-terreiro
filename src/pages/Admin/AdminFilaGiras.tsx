@@ -515,6 +515,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
           )}
 
           {queue.entities.length > 0 && (
+            <>
             <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
               <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
                 <h3 className="font-cinzel text-[#c9a84c]">Status das entidades</h3>
@@ -577,6 +578,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                 ))}
               </div>
             </div>
+            </>
           )}
 
           <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
