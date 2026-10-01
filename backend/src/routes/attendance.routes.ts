@@ -37,7 +37,7 @@ router.get('/attendance/mine', async (req, res) => {
             queueNumber: { not: null },
             status: { in: ['arrived', 'called', 'in_service'] },
           },
-          select: { eventId: true, queueNumber: true, status: true },
+          select: { eventId: true, queueNumber: true, status: true, serviceStartedAt: true, attendedAt: true },
           orderBy: [{ eventId: 'asc' }, { queueNumber: 'asc' }],
         })
       : [];
@@ -57,6 +57,23 @@ router.get('/attendance/mine', async (req, res) => {
       const queue = queuesByEvent.get(attendance.eventId) || [];
       const peopleWaiting = queue.filter(row => row.status === 'arrived').length;
 
+      // Usa o tempo médio dos atendimentos concluídos desta gira para estimar a espera.
+      const completedDurations = queue
+        .filter(row => row.serviceStartedAt && row.attendedAt)
+        .map(row => new Date(row.attendedAt as string).getTime() - new Date(row.serviceStartedAt as string).getTime())
+        .filter(duration => Number.isFinite(duration) && duration >= 30_000 && duration <= 3_600_000);
+      const averageServiceMinutes = completedDurations.length
+        ? Math.max(1, Math.round(completedDurations.reduce((sum, duration) => sum + duration, 0) / completedDurations.length / 60_000))
+        : 15;
+
+      const currentService = queue.find(row => row.status === 'in_service');
+      const currentElapsedMinutes = currentService?.serviceStartedAt
+        ? Math.max(0, Math.floor((Date.now() - new Date(currentService.serviceStartedAt).getTime()) / 60_000))
+        : 0;
+      const currentRemainingMinutes = currentService
+        ? Math.max(0, averageServiceMinutes - currentElapsedMinutes)
+        : 0;
+
       // Depois de chamado, a pessoa deixa de ocupar uma posição de espera.
       if (attendance.status !== 'arrived') {
         return {
@@ -65,6 +82,8 @@ router.get('/attendance/mine', async (req, res) => {
           peopleAhead: 0,
           peopleWaiting,
           isNext: false,
+          estimatedWaitMinutes: 0,
+          averageServiceMinutes,
         };
       }
 
@@ -74,6 +93,7 @@ router.get('/attendance/mine', async (req, res) => {
         row.status === 'arrived'
       ).length;
       const isNext = peopleAhead === 0;
+      const estimatedWaitMinutes = currentRemainingMinutes + (peopleAhead * averageServiceMinutes);
 
       return {
         ...attendance,
@@ -81,6 +101,8 @@ router.get('/attendance/mine', async (req, res) => {
         peopleAhead,
         peopleWaiting,
         isNext,
+        estimatedWaitMinutes,
+        averageServiceMinutes,
       };
     });
 
