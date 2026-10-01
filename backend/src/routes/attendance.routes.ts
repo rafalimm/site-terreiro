@@ -33,6 +33,7 @@ router.get('/attendance/mine', async (req, res) => {
 
 router.get('/attendance/my-entity-history', async (req, res) => {
   try {
+    if (req.user!.role === 'consulente') return res.status(403).json({ error: 'Acesso restrito aos responsáveis por entidades.' });
     const entities = await prisma.entity.findMany({
       where: { ownerId: req.user!.id },
       orderBy: { name: 'asc' },
