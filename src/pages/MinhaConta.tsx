@@ -97,73 +97,44 @@ export const MinhaConta: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0d0505] pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Profile */}
-        <div className="card-spiritual p-8 mb-6">
-          <div className="flex items-center gap-6 flex-wrap">
-            <div className="w-20 h-20 rounded-full border-2 border-[#c9a84c] bg-[rgba(201,168,76,0.1)] flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {profilePhoto ? (
-                profilePhotoError ? (
-                  <User size={32} className="text-[#c9a84c]" />
-                ) : (
-                  <img
-                    src={profilePhoto}
-                    alt={`Foto de perfil de ${currentUser.name}`}
-                    className="w-full h-full object-cover"
-                    onError={() => setProfilePhotoError(true)}
-                  />
-                )
-              ) : (
-                <User size={32} className="text-[#c9a84c]" />
-              )}
+        {/* Dashboard do usuário */}
+        <div className="card-spiritual p-6 md:p-8 mb-6 relative overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-[rgba(201,168,76,0.05)] blur-2xl pointer-events-none" />
+          <div className="flex items-start gap-5 flex-wrap relative">
+            <div className="w-24 h-24 rounded-full border-2 border-[#c9a84c] bg-[rgba(201,168,76,0.08)] flex items-center justify-center flex-shrink-0 overflow-hidden shadow-[0_0_24px_rgba(201,168,76,0.08)]">
+              {profilePhoto && !profilePhotoError ? (
+                <img src={profilePhoto} alt={`Foto de perfil de ${currentUser.name}`} className="w-full h-full object-cover" onError={() => setProfilePhotoError(true)} />
+              ) : <User size={36} className="text-[#c9a84c]" />}
             </div>
-            <div className="flex-1">
-              <h2 className="font-cinzel font-bold text-white text-2xl">{currentUser.name}</h2>
-              <p className="font-inter text-[rgba(245,240,232,0.5)] text-sm">{currentUser.email}</p>
-              {currentUser.whatsapp && <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm">{currentUser.whatsapp}</p>}
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 bg-[rgba(201,168,76,0.15)] border border-[rgba(201,168,76,0.3)] text-[#c9a84c] text-xs font-cinzel rounded">
-                  {roleLabels[currentUser.role]}
-                </span>
-                <span className="px-2 py-0.5 bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.3)] text-green-400 text-xs font-inter rounded">
-                  ✓ Conta Ativa
-                </span>
-                {currentUser.degree && (
-                  <span className="px-2 py-0.5 bg-[rgba(168,85,247,0.1)] border border-[rgba(168,85,247,0.3)] text-purple-300 text-xs font-inter rounded">
-                    {currentUser.degree.name}
-                  </span>
-                )}
+            <div className="flex-1 min-w-[220px]">
+              <p className="font-inter text-[10px] uppercase tracking-[0.2em] text-[#c9a84c]/70 mb-1">Minha conta</p>
+              <h2 className="font-cinzel font-bold text-white text-2xl md:text-3xl">{currentUser.name}</h2>
+              <p className="font-inter text-[rgba(245,240,232,0.45)] text-sm mt-1">{currentUser.email}</p>
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 bg-[rgba(201,168,76,0.12)] border border-[rgba(201,168,76,0.3)] text-[#c9a84c] text-[11px] font-cinzel rounded-full">{roleLabels[currentUser.role]}</span>
+                <span className="px-2.5 py-1 bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] text-green-400 text-[11px] font-inter rounded-full">✓ Conta ativa</span>
+                {currentUser.degree && <span className="px-2.5 py-1 bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.25)] text-purple-300 text-[11px] font-inter rounded-full">{currentUser.degree.name}</span>}
               </div>
-              {currentUser.degree?.description && (
-                <p className="font-inter text-xs text-[rgba(245,240,232,0.42)] mt-2 max-w-xl">
-                  {currentUser.degree.description}
-                </p>
-              )}
+              {currentUser.whatsapp && <p className="font-inter text-xs text-[rgba(245,240,232,0.38)] mt-3">WhatsApp: {currentUser.whatsapp}</p>}
+              {currentUser.degree?.description && <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-2 max-w-xl">{currentUser.degree.description}</p>}
             </div>
-            {(currentUser.role !== 'consulente') && (
-              <Link to="/admin" className="btn-gold text-xs">
-                Painel Admin
-              </Link>
-            )}
+            {(currentUser.role !== 'consulente') && <Link to="/admin" className="btn-gold text-xs w-full sm:w-auto justify-center">Painel Admin</Link>}
           </div>
           <div className="mt-6 pt-5 border-t border-[rgba(201,168,76,0.1)]">
-            <div className="flex items-center gap-2 mb-3">
-              <Camera size={15} className="text-[#c9a84c]" />
-              <h3 className="font-cinzel font-bold text-[#c9a84c] text-sm">Foto de perfil</h3>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2"><Camera size={15} className="text-[#c9a84c]" /><h3 className="font-cinzel font-bold text-[#c9a84c] text-sm">Foto de perfil</h3></div>
+              <span className="text-[10px] text-[rgba(245,240,232,0.3)]">Visível na sua conta</span>
             </div>
-            <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">
-              Escolha uma foto para aparecer no seu perfil.
-            </p>
-            <ImageUploader
-              value={profilePhoto}
-              onChange={(url) => {
-                setProfilePhoto(url);
-                setProfilePhotoError(false);
-              }}
-              uploadPath="/api/auth/profile-photo"
-              maxSize={600}
-              shape="round"
-            />
+            <ImageUploader value={profilePhoto} onChange={(url) => { setProfilePhoto(url); setProfilePhotoError(false); }} uploadPath="/api/auth/profile-photo" maxSize={600} shape="round" />
           </div>
+        </div>
+
+        {/* Resumo rápido */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Próximas giras</p><p className="font-cinzel text-xl font-bold text-[#f5f0e8] mt-1">{upcomingEvents.length}</p></div>
+          <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Minhas giras</p><p className="font-cinzel text-xl font-bold text-[#f5f0e8] mt-1">{myAttendances.length}</p></div>
+          <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Status</p><p className="font-cinzel text-sm font-bold text-green-400 mt-2">Conta ativa</p></div>
+          <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Acesso</p><p className="font-cinzel text-sm font-bold text-[#c9a84c] mt-2">{canViewDevelopment ? 'Membro' : 'Consulente'}</p></div>
         </div>
 
         {upcomingEvents.length > 0 && (
@@ -452,66 +423,13 @@ export const MinhaConta: React.FC = () => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Upcoming Events */}
-          <div className="card-spiritual p-6">
-            <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-4 flex items-center gap-2">
-              <Calendar size={16} />
-              {canViewDevelopment ? 'Próximas Giras' : 'Próxima Gira Aberta'}
-            </h3>
-            {upcomingEvents.length === 0 ? (
-              <p className="font-crimson text-[rgba(245,240,232,0.4)] text-base italic">Nenhuma gira programada no momento.</p>
-            ) : (
-              <div className="space-y-3">
-                {upcomingEvents.map(ev => (
-                  <div key={ev.id} className="p-3 border border-[rgba(201,168,76,0.1)] rounded">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-cinzel font-bold text-[#f5f0e8] text-sm">{ev.title}</p>
-                      {ev.type === 'Gira de Desenvolvimento' && <span className="text-[10px] px-2 py-0.5 rounded border border-purple-400/30 text-purple-300">Desenvolvimento</span>}
-                    </div>
-                    <p className="font-inter text-[rgba(245,240,232,0.4)] text-xs mt-0.5">
-                      {format(parseDateOnly(ev.date), "dd 'de' MMMM", { locale: ptBR })} às {ev.time}
-                    </p>
-                  </div>
-                ))}
-                <Link to="/agenda" className="block text-center font-cinzel text-[#c9a84c] text-xs hover:text-[#e8c97a] transition-colors pt-2">
-                  Ver agenda completa →
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Latest News */}
-          <div className="card-spiritual p-6">
-            <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-4 flex items-center gap-2">
-              <Newspaper size={16} />
-              Últimas Notícias
-            </h3>
-            {latestNews.length === 0 ? (
-              <p className="font-crimson text-[rgba(245,240,232,0.4)] text-base italic">Nenhuma notícia publicada.</p>
-            ) : (
-              <div className="space-y-3">
-                {latestNews.map(news => (
-                  <div key={news.id} className="p-3 border border-[rgba(201,168,76,0.1)] rounded">
-                    <span className="text-xs text-[#c9a84c] font-cinzel">{news.category}</span>
-                    <p className="font-cinzel font-bold text-[#f5f0e8] text-sm mt-0.5">{news.title}</p>
-                    <p className="font-crimson text-[rgba(245,240,232,0.4)] text-xs line-clamp-2 mt-0.5">{news.content}</p>
-                  </div>
-                ))}
-                <Link to="/noticias" className="block text-center font-cinzel text-[#c9a84c] text-xs hover:text-[#e8c97a] transition-colors pt-2">
-                  Ver todas as notícias →
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Quick Access */}
         <div className="card-spiritual p-6 mt-6">
-          <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-4 flex items-center gap-2">
+          <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-1 flex items-center gap-2">
             <Star size={16} />
             Acesso Rápido
           </h3>
+          <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">Acesse rapidamente as áreas mais utilizadas.</p>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             <Link to="/agenda" className="btn-outline-gold text-xs justify-center">
               <Calendar size={14} />
