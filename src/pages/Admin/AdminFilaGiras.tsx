@@ -278,6 +278,44 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
             ))}
           </div>
 
+          <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs text-[#c9a84c] font-cinzel uppercase tracking-wider">Painel rápido da fila</p>
+                <p className="text-sm text-[rgba(245,240,232,0.45)] mt-1">Visão prática para quem está responsável pelo atendimento.</p>
+              </div>
+              <span className="text-xs text-[rgba(245,240,232,0.4)]">Atualização automática</span>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-3 mt-4">
+              <div className="rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-3">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.4)]">Próxima senha</p>
+                <p className="font-cinzel text-[#c9a84c] text-2xl font-bold mt-1">{nextWaiting?.queueNumber ? String(nextWaiting.queueNumber).padStart(3, '0') : '—'}</p>
+                <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1 truncate">{nextWaiting?.user?.name || 'Ninguém aguardando'}</p>
+              </div>
+              <div className="rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-3">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.4)]">Pessoas à frente</p>
+                <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{nextWaiting?.peopleAhead ?? 0}</p>
+                <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">{nextWaiting?.estimatedWaitMinutes ? `Espera estimada: ~${nextWaiting.estimatedWaitMinutes} min` : 'Sem espera estimada'}</p>
+              </div>
+              <div className="rounded border border-[rgba(201,168,76,0.1)] bg-[rgba(255,255,255,0.02)] p-3">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.4)]">Entidades livres</p>
+                <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{queue.availableEntities.length}</p>
+                <p className="text-xs text-[rgba(245,240,232,0.45)] mt-1">prontas para nova chamada</p>
+              </div>
+            </div>
+            {queueAttendances.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {queueAttendances.slice(0, 8).map(attendance => (
+                  <div key={attendance.id} className="flex items-center gap-2 px-3 py-2 rounded border border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.015)]">
+                    <span className="font-cinzel text-[#c9a84c] text-xs font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</span>
+                    <span className="text-xs text-[rgba(245,240,232,0.65)] max-w-32 truncate">{attendance.user?.name}</span>
+                    <span className={(statusClass[attendance.status] || '') + ' px-1.5 py-0.5 rounded border text-[9px]'}>{statusLabel[attendance.status] || attendance.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid lg:grid-cols-3 gap-3">
             <div className="lg:col-span-2 bg-[rgba(201,168,76,0.06)] border border-[#c9a84c]/30 rounded p-5">
               <div className="flex items-center justify-between gap-3 flex-wrap">
