@@ -12,7 +12,7 @@ type QueueResponse = {
   availableEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
   availableFirstVisitEntities: Array<{ id: string; name: string; line: string; active: boolean }>;
   entityHistory: Array<{
-    entity: { id: string; name: string; line: string; active: boolean };
+    entity: { id: string; name: string; line: string; active: boolean; owner?: { id: string; name: string; role: string; active: boolean } | null };
     attendedCount: number;
     consulentes: Array<{ attendanceId: string; userId: string; name: string; queueNumber?: number | null; attendedAt?: string | null }>;
   }>;
@@ -173,7 +173,7 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
 
     try {
       const updated = await api.post<GiraAttendance & {
-        entity?: { id: string; name: string; line?: string; active?: boolean };
+        entity?: { id: string; name: string; line?: string; active?: boolean; owner?: { id: string; name: string; role: string; active: boolean } | null };
       }>(
         `/api/admin/events/${eventId}/attendance/${callTargetId}/call`,
         { entityId: selectedEntityId || undefined }
@@ -290,6 +290,12 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                         Senha <span className="text-[#c9a84c] font-bold">{current.queueNumber ? String(current.queueNumber).padStart(3, '0') : '—'}</span>
                         {' · '}{current.status === 'in_service' ? 'Atendimento em andamento' : 'Aguardando início'}
                       </p>
+                      {current.entity && (
+                        <p className="text-xs text-[rgba(245,240,232,0.55)] mt-2">
+                          Entidade: <span className="text-[#f5f0e8]">{current.entity.name}</span>
+                          {current.entity.owner?.name && <> · Incorporante: <span className="text-[#c9a84c]">{current.entity.owner.name}</span></>}
+                        </p>
+                      )}
                     </>
                   ) : (
                     <>
@@ -466,6 +472,12 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                     <div className="w-12 h-12 rounded-full border border-emerald-400/40 flex items-center justify-center font-cinzel text-emerald-300 font-bold">{attendance.queueNumber ? String(attendance.queueNumber).padStart(3, '0') : '—'}</div>
                     <div>
                       <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
+                      {attendance.entity && (
+                        <p className="text-xs text-[rgba(245,240,232,0.5)] mt-1">
+                          {attendance.entity.name}
+                          {attendance.entity.owner?.name && <> · <span className="text-[#c9a84c]">Incorporante: {attendance.entity.owner.name}</span></>}
+                        </p>
+                      )}
                       <span className="inline-flex mt-1 px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-semibold">PRIMEIRA VEZ</span>
                     </div>
                   </div>
@@ -489,6 +501,12 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
                     <div>
                       <p className="font-inter text-[#f5f0e8] font-semibold">{attendance.user?.name}</p>
                       <p className="text-xs text-[rgba(245,240,232,0.4)]">{attendance.user?.role}</p>
+                      {attendance.entity && (
+                        <p className="text-xs text-[rgba(245,240,232,0.5)] mt-1">
+                          {attendance.entity.name}
+                          {attendance.entity.owner?.name && <> · <span className="text-[#c9a84c]">Incorporante: {attendance.entity.owner.name}</span></>}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
