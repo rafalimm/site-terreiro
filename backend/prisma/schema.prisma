@@ -417,3 +417,17 @@ model UploadedImage {
 
   @@map("uploaded_images")
 }
+
+// Arquivos de estudo enviados pelo painel de Conteúdos dos Filhos.
+// Ficam protegidos no banco e são servidos publicamente somente pelo ID.
+model UploadedFile {
+  id           String   @id @default(cuid())
+  mimeType     String
+  originalName String
+  size         Int
+  data         Bytes
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("uploaded_files")
+}
