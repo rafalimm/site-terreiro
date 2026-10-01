@@ -60,6 +60,7 @@ export const AdminUsuarios: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [degrees, setDegrees] = useState<Array<{id:string;name:string;sortOrder:number}>>([]);
+  const [formError, setFormError] = useState('');
 
   const isSuperAdmin = currentUser?.role === 'super_admin';
 
@@ -73,18 +74,28 @@ export const AdminUsuarios: React.FC = () => {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyUser);
+    setFormError('');
     setShowModal(true);
   };
 
   const openEdit = (user: User) => {
     setEditing(user);
     setForm({ name: user.name, email: user.email || '', password: '', role: user.role, whatsapp: user.whatsapp || '', active: user.active, degreeId: user.degreeId || user.degree?.id || '' });
+    setFormError('');
     setShowModal(true);
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.email || saving) return;
-    if (!editing && !form.password) return;
+    if (!form.name.trim() || !form.email.trim() || saving) return;
+    if (!editing && !form.password) {
+      setFormError('Informe uma senha para criar o usuário.');
+      return;
+    }
+    if (form.password && form.password.length < 6) {
+      setFormError('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    setFormError('');
     setSaving(true);
     try {
       const payload = { ...form, degreeId: form.role === 'consulente' ? null : (form.degreeId || null) };
@@ -329,7 +340,7 @@ export const AdminUsuarios: React.FC = () => {
               <h3 className="font-cinzel font-bold text-[#c9a84c] text-lg">
                 {editing ? 'Editar Usuário' : 'Novo Usuário'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-[rgba(245,240,232,0.4)] hover:text-white"><X size={20} /></button>
+              <button onClick={() => { setShowModal(false); setFormError(''); }} className="text-[rgba(245,240,232,0.4)] hover:text-white"><X size={20} /></button>
             </div>
             <div className="space-y-4">
               <div>
@@ -351,7 +362,11 @@ export const AdminUsuarios: React.FC = () => {
               </div>
               <div>
                 <label className="form-label">Cargo</label>
-                <select className="form-input" value={form.role} onChange={e => setForm({...form, role: e.target.value as UserRole})}>
+                <select className="form-input" value={form.role} onChange={e => {
+                    const role = e.target.value as UserRole;
+                    setForm({...form, role, degreeId: role === 'consulente' || role === 'compras' || role === 'responsavel_fila' ? '' : form.degreeId});
+                    setFormError('');
+                  }}>
                   {Object.entries(roleLabels).map(([role, label]) => (
                     <option key={role} value={role}>{label}</option>
                   ))}
@@ -374,12 +389,13 @@ export const AdminUsuarios: React.FC = () => {
                 <span className="font-inter text-[rgba(245,240,232,0.7)] text-sm">Usuário ativo</span>
               </label>
             </div>
+            {formError && <p className="text-xs text-red-400 border border-red-500/20 bg-red-500/5 rounded p-3">{formError}</p>}
             <div className="flex gap-3 mt-6 pt-4 border-t border-[rgba(201,168,76,0.1)]">
               <button onClick={handleSave} className="btn-gold text-xs flex-1 justify-center">
                 <Check size={14} />
                 {saving ? 'Salvando...' : editing ? 'Salvar' : 'Criar'}
               </button>
-              <button onClick={() => setShowModal(false)} className="btn-outline-gold text-xs px-6">Cancelar</button>
+              <button onClick={() => { setShowModal(false); setFormError(''); }} className="btn-outline-gold text-xs px-6">Cancelar</button>
             </div>
           </div>
         </div>
