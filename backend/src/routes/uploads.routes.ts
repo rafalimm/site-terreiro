@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
-import { uploadToSupabaseStorage, deleteFromSupabaseStorage } from '../storage/supabaseStorage';
+import { uploadToSupabaseStorage } from '../storage/supabaseStorage';
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB por imagem (o painel já reduz antes de enviar)
 
