@@ -31,6 +31,65 @@ router.get('/attendance/mine', async (req, res) => {
   }
 });
 
+router.get('/attendance/my-entity-history', async (req, res) => {
+  try {
+    const entities = await prisma.entity.findMany({
+      where: { ownerId: req.user!.id },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, line: true, active: true },
+    });
+
+    if (!entities.length) {
+      return res.json({ entities: [], totals: { consultations: 0, entities: 0, uniqueConsulentes: 0, firstVisits: 0, returningVisitors: 0 } });
+    }
+
+    const entityIds = entities.map(entity => entity.id);
+    const attendances = await prisma.giraAttendance.findMany({
+      where: { entityId: { in: entityIds }, status: 'attended' },
+      orderBy: { attendedAt: 'desc' },
+      include: {
+        user: { select: { id: true, name: true } },
+        event: { select: { id: true, title: true, date: true, time: true } },
+        entity: { select: { id: true, name: true, line: true } },
+      },
+    });
+
+    const byEntity = entities.map(entity => {
+      const records = attendances.filter(attendance => attendance.entityId === entity.id);
+      return {
+        entity,
+        total: records.length,
+        firstVisits: records.filter(record => record.isFirstVisit).length,
+        returningVisitors: records.filter(record => !record.isFirstVisit).length,
+        consulentes: records.map(record => ({
+          attendanceId: record.id,
+          userId: record.user.id,
+          name: record.user.name,
+          queueNumber: record.queueNumber,
+          attendedAt: record.attendedAt,
+          event: record.event,
+        })),
+      };
+    });
+
+    const uniqueConsulentes = new Set(attendances.map(attendance => attendance.userId)).size;
+
+    return res.json({
+      entities: byEntity,
+      totals: {
+        consultations: attendances.length,
+        entities: entities.length,
+        uniqueConsulentes,
+        firstVisits: attendances.filter(record => record.isFirstVisit).length,
+        returningVisitors: attendances.filter(record => !record.isFirstVisit).length,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao carregar histórico das entidades do responsável:', error);
+    return res.status(500).json({ error: 'Não foi possível carregar o histórico das suas entidades.' });
+  }
+});
+
 router.get('/attendance/queue-events', async (_req, res) => {
   try {
     const events = await prisma.giraEvent.findMany({ orderBy: { date: 'asc' } });
