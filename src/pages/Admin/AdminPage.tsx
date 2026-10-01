@@ -19,6 +19,7 @@ import { AdminMensalidades } from './AdminMensalidades';
 import { AdminCompras } from './AdminCompras';
 import { AdminFilaGiras } from './AdminFilaGiras';
 import { AdminPreCadastro } from './AdminPreCadastro';
+import { AdminFilhoConteudos } from './AdminFilhoConteudos';
 
 const ADMIN_ROLES = ['super_admin', 'admin', 'agenda', 'content', 'atendimento', 'compras', 'responsavel_fila'];
 
@@ -59,6 +60,7 @@ export const AdminPage: React.FC = () => {
       case 'compras': return <AdminCompras />;
       case 'fila': return <AdminFilaGiras onOpenPreCadastro={() => setSection('pre-cadastro')} />;
       case 'pre-cadastro': return <AdminPreCadastro />;
+      case 'filho-conteudos': return <AdminFilhoConteudos />;
       default: return <Dashboard />;
     }
   };
