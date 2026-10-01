@@ -1,3 +1,4 @@
+// Vercel deploy sync: histórico das entidades
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, BarChart3 } from 'lucide-react';
