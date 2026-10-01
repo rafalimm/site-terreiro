@@ -89,6 +89,38 @@ export const api = {
 };
 
 
+export async function downloadContentFile(url: string, fallbackName = 'arquivo') {
+  const target = mediaUrl(url);
+  const token = getToken();
+  const response = await fetch(target, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!response.ok) {
+    let message = `Não foi possível baixar o arquivo (${response.status}).`;
+    try {
+      const data = await response.json();
+      if (data?.error) message = data.error;
+    } catch {
+      // resposta não JSON
+    }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="([^"]+)"/i);
+  const filename = match?.[1] || fallbackName;
+
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export async function uploadContentFile(file: File): Promise<{ url: string; name: string; size: number; mimeType: string }> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
