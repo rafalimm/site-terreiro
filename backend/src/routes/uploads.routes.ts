@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
-import { uploadToSupabaseStorage } from '../storage/supabaseStorage';
+import { uploadToSupabaseStorage, deleteFromSupabaseStorage } from '../storage/supabaseStorage';
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB por imagem (o painel já reduz antes de enviar)
 
@@ -152,6 +152,26 @@ filesRouter.get('/:id', async (req, res) => {
   try {
     const file = await prisma.uploadedFile.findUnique({ where: { id: req.params.id } });
     if (!file) return res.status(404).json({ error: 'Arquivo não encontrado.' });
+
+    if (file.storagePath) {
+      const base = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+      const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'filho-content';
+      const storageUrl = `${base}/storage/v1/object/public/${bucket}/${file.storagePath.split('/').map(encodeURIComponent).join('/')}`;
+      const upstream = await fetch(storageUrl);
+      if (!upstream.ok) {
+        return res.status(upstream.status === 404 ? 404 : 502).json({ error: 'Arquivo não encontrado no armazenamento.' });
+      }
+      const data = Buffer.from(await upstream.arrayBuffer());
+      res.set({
+        'Content-Type': file.mimeType,
+        'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\r\n]/g, '')}"`,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
+      });
+      return res.send(data);
+    }
+
     res.set({
       'Content-Type': file.mimeType,
       'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\r\n]/g, '')}"`,
@@ -159,7 +179,7 @@ filesRouter.get('/:id', async (req, res) => {
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
     });
-    return res.send(Buffer.from(file.data));
+    return file.data ? res.send(Buffer.from(file.data)) : res.status(404).json({ error: 'Arquivo não encontrado.' });
   } catch (error) {
     console.error('Erro ao ler arquivo:', error);
     return res.status(500).json({ error: 'Erro ao carregar o arquivo.' });
