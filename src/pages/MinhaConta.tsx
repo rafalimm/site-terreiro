@@ -36,7 +36,6 @@ export const MinhaConta: React.FC = () => {
   React.useEffect(() => {
     const nextPhoto = currentUser?.profilePhoto ? mediaUrl(currentUser.profilePhoto) : '';
     setProfilePhoto(nextPhoto);
-    setProfilePhotoError(false);
   }, [currentUser?.profilePhoto]);
 
   React.useEffect(() => {
@@ -222,18 +221,9 @@ export const MinhaConta: React.FC = () => {
             ) : (
               <>
                 <div className="grid sm:grid-cols-3 gap-3">
-                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]">
-                    <p className="text-xs text-[rgba(245,240,232,0.4)]">Valor</p>
-                    <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{(membership.currentPayment.amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                  </div>
-                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]">
-                    <p className="text-xs text-[rgba(245,240,232,0.4)]">Vencimento</p>
-                    <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{new Date(membership.currentPayment.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
-                  </div>
-                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]">
-                    <p className="text-xs text-[rgba(245,240,232,0.4)]">Referência</p>
-                    <p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{membership.currentPayment.referenceMonth}</p>
-                  </div>
+                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]"><p className="text-xs text-[rgba(245,240,232,0.4)]">Valor</p><p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{(membership.currentPayment.amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
+                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]"><p className="text-xs text-[rgba(245,240,232,0.4)]">Vencimento</p><p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{new Date(membership.currentPayment.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}</p></div>
+                  <div className="p-3 rounded border border-[rgba(201,168,76,0.1)]"><p className="text-xs text-[rgba(245,240,232,0.4)]">Referência</p><p className="font-cinzel font-bold text-[#f5f0e8] mt-1">{membership.currentPayment.referenceMonth}</p></div>
                 </div>
                 {membership.currentPayment.status !== 'paid' && membership.asaas?.enabled && (
                   <div className="mt-5 p-4 rounded border border-green-500/20 bg-green-500/5">
@@ -260,85 +250,26 @@ export const MinhaConta: React.FC = () => {
                           <p className="text-[11px] text-[rgba(245,240,232,0.4)]">Chave PIX</p>
                           <div className="flex items-center gap-2 mt-1">
                             <code className="text-sm text-[#f5f0e8] break-all flex-1">{membership.paymentConfig.pixKey}</code>
-                            <button
-                              onClick={async () => {
-                                await navigator.clipboard.writeText(membership.paymentConfig?.pixKey || '');
-                                setPixCopied(true);
-                                window.setTimeout(() => setPixCopied(false), 1800);
-                              }}
-                              className="p-2 border border-[rgba(201,168,76,0.15)] rounded text-[#c9a84c]"
-                              title="Copiar chave PIX"
-                            >
+                            <button onClick={async () => { await navigator.clipboard.writeText(membership.paymentConfig?.pixKey || ''); setPixCopied(true); window.setTimeout(() => setPixCopied(false), 1800); }} className="p-2 border border-[rgba(201,168,76,0.15)] rounded text-[#c9a84c]" title="Copiar chave PIX">
                               {pixCopied ? <Check size={14} /> : <Copy size={14} />}
                             </button>
                           </div>
                         </div>
-
                         <div className="flex flex-wrap gap-2 mt-3">
-                          <button
-                            onClick={() => {
-                              try {
-                                const code = generatePixPayload(
-                                  membership.paymentConfig as PixPaymentConfig,
-                                  membership.currentPayment.amountCents,
-                                  membership.currentPayment.id
-                                );
-                                setPixCode(code);
-                              } catch {
-                                setPixCode('');
-                              }
-                            }}
-                            className="btn-gold text-xs"
-                          >
-                            Gerar código PIX
-                          </button>
-                          {pixCode && (
-                            <button
-                              onClick={async () => {
-                                await navigator.clipboard.writeText(pixCode);
-                                setPixCopied(true);
-                                window.setTimeout(() => setPixCopied(false), 1800);
-                              }}
-                              className="btn-outline-gold text-xs"
-                            >
-                              <Copy size={13} /> Copiar código PIX
-                            </button>
-                          )}
+                          <button onClick={() => { try { const code = generatePixPayload(membership.paymentConfig as PixPaymentConfig, membership.currentPayment.amountCents, membership.currentPayment.id); setPixCode(code); } catch { setPixCode(''); } }} className="btn-gold text-xs">Gerar código PIX</button>
+                          {pixCode && <button onClick={async () => { await navigator.clipboard.writeText(pixCode); setPixCopied(true); window.setTimeout(() => setPixCopied(false), 1800); }} className="btn-outline-gold text-xs"><Copy size={13} /> Copiar código PIX</button>}
                         </div>
-
-                        {pixCode && (
-                          <div className="mt-3">
-                            <p className="text-[11px] text-[rgba(245,240,232,0.4)] mb-1">PIX copia e cola</p>
-                            <textarea readOnly value={pixCode} className="form-input min-h-24 text-[11px] break-all" onFocus={e => e.currentTarget.select()} />
-                          </div>
-                        )}
+                        {pixCode && <div className="mt-3"><p className="text-[11px] text-[rgba(245,240,232,0.4)] mb-1">PIX copia e cola</p><textarea readOnly value={pixCode} className="form-input min-h-24 text-[11px] break-all" onFocus={e => e.currentTarget.select()} /></div>}
                       </>
                     )}
 
-                    {membership.paymentConfig.bankDetails && (
-                      <div className="mt-3">
-                        <p className="text-[11px] text-[rgba(245,240,232,0.4)] mb-1">Dados para transferência</p>
-                        <p className="text-xs text-[rgba(245,240,232,0.7)] whitespace-pre-line">{membership.paymentConfig.bankDetails}</p>
-                      </div>
-                    )}
-                    {membership.paymentConfig.instructions && (
-                      <p className="text-xs text-[rgba(245,240,232,0.55)] mt-3 whitespace-pre-line">{membership.paymentConfig.instructions}</p>
-                    )}
+                    {membership.paymentConfig.bankDetails && <div className="mt-3"><p className="text-[11px] text-[rgba(245,240,232,0.4)] mb-1">Dados para transferência</p><p className="text-xs text-[rgba(245,240,232,0.7)] whitespace-pre-line">{membership.paymentConfig.bankDetails}</p></div>}
+                    {membership.paymentConfig.instructions && <p className="text-xs text-[rgba(245,240,232,0.55)] mt-3 whitespace-pre-line">{membership.paymentConfig.instructions}</p>}
                   </div>
                 )}
 
                 {membership.currentPayment.status !== 'paid' && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await api.post('/api/membership/me/payment-request', {});
-                        setPaymentRequested(true);
-                      } catch { setPaymentRequested(false); }
-                    }}
-                    className="btn-outline-gold text-xs mt-3"
-                  >
-                    Solicitar confirmação / instruções
-                  </button>
+                  <button onClick={async () => { try { await api.post('/api/membership/me/payment-request', {}); setPaymentRequested(true); } catch { setPaymentRequested(false); } }} className="btn-outline-gold text-xs mt-3">Solicitar confirmação / instruções</button>
                 )}
                 {paymentRequested && <p className="text-green-400 text-xs mt-2">Solicitação registrada para a administração.</p>}
                 <div className="mt-5 pt-4 border-t border-[rgba(201,168,76,0.08)]">
@@ -368,66 +299,23 @@ export const MinhaConta: React.FC = () => {
               <Calendar size={16} className="text-[#c9a84c]" />
               <h3 className="font-cinzel font-bold text-[#c9a84c] text-base">Minhas Giras Confirmadas</h3>
             </div>
-            <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">
-              Apresente o QR Code abaixo na chegada. Depois do check-in, sua senha aparecerá aqui automaticamente.
-            </p>
+            <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">Apresente o QR Code abaixo na chegada. Depois do check-in, sua senha aparecerá aqui automaticamente.</p>
             <div className="space-y-3">
-              {myAttendances.filter(a => {
-                const event = events.find(e => e.id === a.eventId);
-                return event && !event.isPublic ? currentUser.role !== 'consulente' : true;
-              }).map(attendance => {
+              {myAttendances.filter(a => { const event = events.find(e => e.id === a.eventId); return event && !event.isPublic ? currentUser.role !== 'consulente' : true; }).map(attendance => {
                 const event = attendance.event || events.find(e => e.id === attendance.eventId);
                 if (!event) return null;
-                const statusLabel: Record<string, string> = {
-                  confirmed: 'Confirmado',
-                  arrived: 'Na fila',
-                  called: 'Chamado',
-                  in_service: 'Em atendimento',
-                  attended: 'Atendido',
-                };
+                const statusLabel: Record<string, string> = { confirmed: 'Confirmado', arrived: 'Na fila', called: 'Chamado', in_service: 'Em atendimento', attended: 'Atendido' };
                 return (
                   <div key={attendance.id} className="p-4 rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                      <div className="bg-white rounded-lg p-3 flex-shrink-0">
-                        <QRCodeSVG value={attendance.qrToken} size={150} level="M" includeMargin />
-                      </div>
+                      <div className="bg-white rounded-lg p-3 flex-shrink-0"><QRCodeSVG value={attendance.qrToken} size={150} level="M" includeMargin /></div>
                       <div className="flex-1 w-full">
                         <p className="font-cinzel font-bold text-[#f5f0e8]">{event.title}</p>
                         <p className="font-inter text-xs text-[rgba(245,240,232,0.5)] mt-1">{event.date} às {event.time}</p>
-                        <div className="flex flex-wrap items-center gap-2 mt-3">
-                          <span className="px-2.5 py-1 rounded border border-[#c9a84c]/30 text-[#c9a84c] text-xs">
-                            {statusLabel[attendance.status] || attendance.status}
-                          </span>
-                        </div>
-                        {attendance.entity && (
-                          <div className="mt-3 rounded-lg border border-[#c9a84c]/20 bg-[#c9a84c]/5 px-4 py-3">
-                            <p className="text-[10px] uppercase tracking-wider text-[#c9a84c]/70 font-cinzel">Entidade do atendimento</p>
-                            <p className="font-cinzel font-bold text-[#f5f0e8] text-base mt-1">{attendance.entity.name}</p>
-                            {attendance.entity.line && <p className="text-[11px] text-[rgba(245,240,232,0.45)] mt-0.5">{attendance.entity.line}</p>}
-                          </div>
-                        )}
-                        {attendance.queueNumber && (
-                          <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
-                            <p className="text-[10px] uppercase tracking-wider text-green-300/70 font-cinzel">Sua senha na fila</p>
-                            <p className="font-cinzel font-bold text-green-300 text-3xl mt-1">
-                              {String(attendance.queueNumber).padStart(3, '0')}
-                            </p>
-                            <p className="text-[11px] text-green-200/70 mt-1">
-                              Aguarde sua chamada. Esta senha foi atribuída no momento da chegada.
-                            </p>
-                          </div>
-                        )}
-                        <p className="text-[11px] text-[rgba(245,240,232,0.4)] mt-3">
-                          {attendance.status === 'confirmed'
-                            ? 'Sua senha será definida quando o responsável escanear este QR Code.'
-                            : attendance.status === 'arrived'
-                              ? 'Você está aguardando ser chamado.'
-                              : attendance.status === 'called'
-                                ? 'Você foi chamado. Dirija-se ao atendimento.'
-                                : attendance.status === 'in_service'
-                                  ? 'Seu atendimento está em andamento.'
-                                  : 'Atendimento concluído.'}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-3"><span className="px-2.5 py-1 rounded border border-[#c9a84c]/30 text-[#c9a84c] text-xs">{statusLabel[attendance.status] || attendance.status}</span></div>
+                        {attendance.entity && <div className="mt-3 rounded-lg border border-[#c9a84c]/20 bg-[#c9a84c]/5 px-4 py-3"><p className="text-[10px] uppercase tracking-wider text-[#c9a84c]/70 font-cinzel">Entidade do atendimento</p><p className="font-cinzel font-bold text-[#f5f0e8] text-base mt-1">{attendance.entity.name}</p>{attendance.entity.line && <p className="text-[11px] text-[rgba(245,240,232,0.45)] mt-0.5">{attendance.entity.line}</p>}</div>}
+                        {attendance.queueNumber && <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3"><p className="text-[10px] uppercase tracking-wider text-green-300/70 font-cinzel">Sua senha na fila</p><p className="font-cinzel font-bold text-green-300 text-3xl mt-1">{String(attendance.queueNumber).padStart(3, '0')}</p><p className="text-[11px] text-green-200/70 mt-1">Aguarde sua chamada. Esta senha foi atribuída no momento da chegada.</p></div>}
+                        <p className="text-[11px] text-[rgba(245,240,232,0.4)] mt-3">{attendance.status === 'confirmed' ? 'Sua senha será definida quando o responsável escanear este QR Code.' : attendance.status === 'arrived' ? 'Você está aguardando ser chamado.' : attendance.status === 'called' ? 'Você foi chamado. Dirija-se ao atendimento.' : attendance.status === 'in_service' ? 'Seu atendimento está em andamento.' : 'Atendimento concluído.'}</p>
                       </div>
                     </div>
                   </div>
@@ -439,31 +327,13 @@ export const MinhaConta: React.FC = () => {
 
         {/* Quick Access */}
         <div className="card-spiritual p-6 mt-6">
-          <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-1 flex items-center gap-2">
-            <Star size={16} />
-            Acesso Rápido
-          </h3>
+          <h3 className="font-cinzel font-bold text-[#c9a84c] text-base mb-1 flex items-center gap-2"><Star size={16} />Acesso Rápido</h3>
           <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mb-4">Acesse rapidamente as áreas mais utilizadas.</p>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <Link to="/agenda" className="btn-outline-gold text-xs justify-center">
-              <Calendar size={14} />
-              Agenda
-            </Link>
-            {canViewDevelopment && (
-              <Link to="/area-do-filho" className="btn-outline-gold text-xs justify-center">
-                📚 Área do Filho
-              </Link>
-            )}
-            <button
-              onClick={() => window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent('Olá! Gostaria de agendar uma consulta.')}`, '_blank')}
-              className="btn-wine text-xs"
-            >
-              <Phone size={14} />
-              Agendar Consulta
-            </button>
-            <Link to="/duvidas" className="btn-outline-gold text-xs justify-center">
-              Tire Dúvidas
-            </Link>
+            <Link to="/agenda" className="btn-outline-gold text-xs justify-center"><Calendar size={14} />Agenda</Link>
+            {canViewDevelopment && <Link to="/area-do-filho" className="btn-outline-gold text-xs justify-center">📚 Área do Filho</Link>}
+            <button onClick={() => window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent('Olá! Gostaria de agendar uma consulta.')}`, '_blank')} className="btn-wine text-xs"><Phone size={14} />Agendar Consulta</button>
+            <Link to="/duvidas" className="btn-outline-gold text-xs justify-center">Tire Dúvidas</Link>
           </div>
         </div>
       </div>
