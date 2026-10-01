@@ -8,7 +8,7 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 // com o endereço da API, então trocar de domínio no futuro não quebra nenhuma foto.
 export function mediaUrl(url?: string | null): string {
   if (!url) return '';
-  if (!url.startsWith('/api/images/')) return url;
+  if (!url.startsWith('/api/images/') && !url.startsWith('/api/files/')) return url;
   return `${API_URL.replace(/\/+$/, '')}${url}`;
 }
 const TOKEN_KEY = 'zedolaco_token';
@@ -76,3 +76,17 @@ export const api = {
   put: <T>(path: string, body?: unknown, auth = true) => apiRequest<T>(path, { method: 'PUT', body, auth }),
   delete: <T>(path: string, auth = true) => apiRequest<T>(path, { method: 'DELETE', auth }),
 };
+
+
+export async function uploadContentFile(file: File): Promise<{ url: string; name: string; size: number; mimeType: string }> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.readAsDataURL(file);
+  });
+  return api.post('/api/admin/content-uploads', {
+    dataUrl,
+    originalName: file.name,
+  });
+}
