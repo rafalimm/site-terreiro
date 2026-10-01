@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { User, Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check } from 'lucide-react';
+import { Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
@@ -30,7 +30,6 @@ export const MinhaConta: React.FC = () => {
   const [asaasCpf,setAsaasCpf]=React.useState((currentUser as {cpfCnpj?:string|null})?.cpfCnpj||'');
   const [asaasError,setAsaasError]=React.useState('');
   const [profilePhoto, setProfilePhoto] = React.useState('');
-  const [profilePhotoError, setProfilePhotoError] = React.useState(false);
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
@@ -106,7 +105,7 @@ export const MinhaConta: React.FC = () => {
             <div className="w-24 h-24 flex-shrink-0">
               <ImageUploader
                 value={profilePhoto}
-                onChange={(url) => { setProfilePhoto(url); setProfilePhotoError(false); }}
+                onChange={(url) => { setProfilePhoto(url); }}
                 uploadPath="/api/auth/profile-photo"
                 maxSize={600}
                 shape="round"
