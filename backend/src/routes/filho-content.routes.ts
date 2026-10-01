@@ -16,6 +16,32 @@ function isManager(role: string) {
   return MANAGER_ROLES.includes(role as typeof MANAGER_ROLES[number]);
 }
 
+function extractUploadedFileIds(value?: string | null): string[] {
+  if (!value) return [];
+  const ids: string[] = [];
+  const regex = /\/api\/files\/([A-Za-z0-9_-]+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(value)) !== null) ids.push(match[1]);
+  return [...new Set(ids)];
+}
+
+async function cleanupUploadedFiles(ids: string[]) {
+  for (const id of [...new Set(ids)]) {
+    const used = await prisma.filhoContent.findFirst({
+      where: {
+        OR: [
+          { mediaUrl: { contains: `/api/files/${id}` } },
+          { coverUrl: { contains: `/api/files/${id}` } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!used) {
+      await prisma.uploadedFile.deleteMany({ where: { id } });
+    }
+  }
+}
+
 router.use(authenticate);
 
 router.get('/', authorize('filho_content'), async (req, res) => {
@@ -120,13 +146,24 @@ router.post('/admin/contents', authorize('filho_content'), async (req, res) => {
 
 router.patch('/admin/contents/:id', authorize('filho_content'), async (req, res) => {
   if (!isManager(req.user!.role)) return res.status(403).json({ error: 'Sem permissão.' });
+  const current = await prisma.filhoContent.findUnique({ where: { id: req.params.id }, select: { mediaUrl: true, coverUrl: true } });
+  if (!current) return res.status(404).json({ error: 'Conteúdo não encontrado.' });
   const data: any = { ...req.body, updatedAt: new Date().toISOString() }; delete data.id; delete data.createdAt;
-  const item = await prisma.filhoContent.update({ where: { id: req.params.id }, data }); res.json(item);
+  const item = await prisma.filhoContent.update({ where: { id: req.params.id }, data });
+  const oldFiles = [...extractUploadedFileIds(current.mediaUrl), ...extractUploadedFileIds(current.coverUrl)];
+  const newFiles = new Set([...extractUploadedFileIds(item.mediaUrl), ...extractUploadedFileIds(item.coverUrl)]);
+  await cleanupUploadedFiles(oldFiles.filter(id => !newFiles.has(id)));
+  res.json(item);
 });
 
 router.delete('/admin/contents/:id', authorize('filho_content'), async (req, res) => {
   if (!isManager(req.user!.role)) return res.status(403).json({ error: 'Sem permissão.' });
-  await prisma.filhoContent.delete({ where: { id: req.params.id } }); res.status(204).send();
+  const content = await prisma.filhoContent.findUnique({ where: { id: req.params.id }, select: { mediaUrl: true, coverUrl: true } });
+  if (!content) return res.status(404).json({ error: 'Conteúdo não encontrado.' });
+  const fileIds = [...extractUploadedFileIds(content.mediaUrl), ...extractUploadedFileIds(content.coverUrl)];
+  await prisma.filhoContent.delete({ where: { id: req.params.id } });
+  await cleanupUploadedFiles(fileIds);
+  res.status(204).send();
 });
 
 export default router;
