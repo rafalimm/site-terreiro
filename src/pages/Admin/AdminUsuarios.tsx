@@ -55,7 +55,7 @@ export const AdminUsuarios: React.FC = () => {
   const [form, setForm] = useState<UserForm>(emptyUser);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'todos'>('todos');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'todos'>('equipe');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'inativos'>('todos');
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export const AdminUsuarios: React.FC = () => {
       const matchesSearch =
         u.name.toLowerCase().includes(search.toLowerCase()) ||
         (u.email || '').toLowerCase().includes(search.toLowerCase());
-      const matchesRole = roleFilter === 'todos' || u.role === roleFilter;
+      const matchesRole = roleFilter === 'todos' ? true : roleFilter === 'equipe' ? u.role !== 'consulente' : u.role === roleFilter;
       const matchesStatus = statusFilter === 'todos' || (statusFilter === 'ativos' ? u.active : !u.active);
       return matchesSearch && matchesRole && matchesStatus;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -202,7 +202,7 @@ export const AdminUsuarios: React.FC = () => {
           value={roleFilter}
           onChange={e => setRoleFilter(e.target.value as UserRole | 'todos')}
         >
-          <option value="todos">Todos os cargos</option>
+          <option value="equipe">Equipe e Filhos</option>\n          <option value="todos">Todos os cargos</option>
           {Object.entries(roleLabels).map(([role, label]) => (
             <option key={role} value={role}>{label}</option>
           ))}
@@ -219,9 +219,9 @@ export const AdminUsuarios: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-between gap-3 px-1">
-        <p className="text-xs text-[rgba(245,240,232,0.3)]">Mostrando {filteredUsers.length} usuário(s) com os filtros atuais.</p>
+        <p className="text-xs text-[rgba(245,240,232,0.3)]">Mostrando {filteredUsers.length} usuário(s). Consulentes ficam ocultos até serem selecionados no filtro.</p>
         {(search || roleFilter !== 'todos' || statusFilter !== 'todos') && (
-          <button onClick={() => { setSearch(''); setRoleFilter('todos'); setStatusFilter('todos'); }} className="text-xs text-[#c9a84c] hover:underline">Limpar filtros</button>
+          <button onClick={() => { setSearch(''); setRoleFilter('equipe'); setStatusFilter('todos'); }} className="text-xs text-[#c9a84c] hover:underline">Limpar filtros</button>
         )}
       </div>
 
