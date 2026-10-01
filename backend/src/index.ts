@@ -24,6 +24,7 @@ import appointmentsRoutes from './routes/appointments.routes';
 import purchasesRoutes from './routes/purchases.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import preRegistrationsRoutes from './routes/pre-registrations.routes';
+import filhoContentRoutes from './routes/filho-content.routes';
 import { uploadsRouter, imagesRouter } from './routes/uploads.routes';
 
 const app = express();
@@ -80,6 +81,7 @@ app.use('/api/admin/appointments', appointmentsRoutes);
 app.use('/api/admin/purchases', purchasesRoutes);
 app.use('/api/admin/pre-registrations', preRegistrationsRoutes);
 app.use('/api', attendanceRoutes);
+app.use('/api/filho-content', filhoContentRoutes);
 app.use('/api/admin/uploads', uploadsRouter);
 app.use('/api/images', imagesRouter);
 
