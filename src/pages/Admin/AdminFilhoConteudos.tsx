@@ -12,12 +12,12 @@ const typeIcons: Record<string, React.ReactNode> = {
 const typeLabels: Record<string,string> = { text:'Texto', video:'Vídeo', audio:'Áudio', image:'Imagem', pdf:'PDF', link:'Link externo', gallery:'Galeria' };
 const typeHelp: Record<string,string> = {
   text:'Use o campo abaixo para escrever o conteúdo da aula.',
-  video:'Cole a URL do vídeo. O aluno poderá reproduzi-lo dentro da Área do Filho.',
-  audio:'Cole a URL do áudio. O aluno terá um player dentro da Área do Filho.',
-  image:'Cole a URL da imagem que será exibida em tamanho ampliado.',
-  pdf:'Cole a URL direta do PDF. Ele será aberto dentro da Área do Filho.',
+  video:'Envie um MP4/WebM pelo computador ou use uma URL pública.',
+  audio:'Envie um MP3/WAV/OGG pelo computador ou use uma URL pública.',
+  image:'Envie uma imagem JPG/PNG/WebP pelo computador ou use uma URL pública.',
+  pdf:'Envie um PDF pelo computador ou use uma URL pública.',
   link:'Cole o endereço completo do material externo.',
-  gallery:'Cole várias URLs de imagens, uma por linha ou separadas por vírgula.'
+  gallery:'Envie várias imagens de uma vez ou informe URLs, uma por linha.'
 };
 
 export const AdminFilhoConteudos: React.FC = () => {
