@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Edit2, Trash2, BookOpen, FolderOpen, FileText, Video, Headphones, Image, FileDown, Link2, X, Check, Search, Eye, EyeOff, ChevronDown, ChevronUp, Layers, BarChart3, UploadCloud, Loader2, FileArchive } from 'lucide-react';
-import { api, mediaUrl, uploadContentFile } from '../../lib/api';
+import { api, mediaUrl, uploadContentFile, uploadImageFile } from '../../lib/api';
 
 type Content = { id:string; degreeId:string; moduleId:string|null; title:string; description:string; type:string; body:string; mediaUrl?:string|null; coverUrl?:string|null; sortOrder:number; published:boolean };
 type Module = { id:string; degreeId:string; name:string; description:string; sortOrder:number; active:boolean; contents:Content[] };
@@ -141,8 +141,10 @@ const ContentModal: React.FC<{
     try {
       const uploaded: string[] = [];
       for (const file of selected) {
-        if (file.size > 20 * 1024 * 1024) throw new Error('O arquivo excede o limite de 20 MB.');
-        const result = await uploadContentFile(file);
+        const imageUpload = form.type === 'image' || form.type === 'gallery' || kind === 'cover';
+        const maxBytes = imageUpload ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+        if (file.size > maxBytes) throw new Error(`O arquivo excede o limite de ${imageUpload ? '5' : '20'} MB.`);
+        const result = imageUpload ? await uploadImageFile(file) : await uploadContentFile(file);
         uploaded.push(result.url);
       }
       if (kind === 'media') set({ mediaUrl: uploaded[0] || '' });
@@ -220,7 +222,7 @@ const ContentModal: React.FC<{
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div>
                     <p className="text-sm text-white/75 font-medium">{form.type === 'gallery' ? 'Imagens da galeria' : 'Arquivo principal'}</p>
-                    <p className="text-[11px] text-white/35 mt-1">Envie diretamente pelo computador. Limite de 20 MB por arquivo.</p>
+                    <p className="text-[11px] text-white/35 mt-1">Envie diretamente pelo computador. Imagens: até 5 MB. Vídeos, áudios e PDFs: até 20 MB por arquivo.</p>
                   </div>
                   <label className="btn-gold text-xs cursor-pointer shrink-0">
                     <UploadCloud size={14} />
