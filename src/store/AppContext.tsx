@@ -54,6 +54,8 @@ export interface GiraAttendance {
   peopleAhead?: number;
   peopleWaiting?: number;
   isNext?: boolean;
+  estimatedWaitMinutes?: number;
+  averageServiceMinutes?: number;
   status: AttendanceStatus;
   confirmedAt: string;
   checkedInAt?: string | null;
