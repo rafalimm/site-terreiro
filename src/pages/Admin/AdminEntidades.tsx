@@ -15,10 +15,11 @@ const emptyEntity: EntityForm = {
   characteristics: '',
   additionalInfo: '',
   active: true,
+  ownerId: '',
 };
 
 export const AdminEntidades: React.FC = () => {
-  const { entities, entityLines, addEntity, updateEntity, deleteEntity, addEntityLine, updateEntityLine, deleteEntityLine } = useApp();
+  const { entities, entityLines, users, addEntity, updateEntity, deleteEntity, addEntityLine, updateEntityLine, deleteEntityLine } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Entity | null>(null);
   const [form, setForm] = useState(emptyEntity);
@@ -33,7 +34,7 @@ export const AdminEntidades: React.FC = () => {
   const [lineModalMode, setLineModalMode] = useState<'create' | 'edit' | 'members'>('create');
 
   const openCreate = () => { setEditing(null); setForm(emptyEntity); setError(''); setShowModal(true); };
-  const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, lineId: e.lineId || entityLines.find(line => line.name === e.line)?.id || '', description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active }); setError(''); setShowModal(true); };
+  const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, lineId: e.lineId || entityLines.find(line => line.name === e.line)?.id || '', description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active, ownerId: e.ownerId || '' }); setError(''); setShowModal(true); };
 
 
   const openCreateLine = () => {
@@ -169,6 +170,7 @@ export const AdminEntidades: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-cinzel font-bold text-[#f5f0e8] text-sm">{entity.name}</p>
                   <p className="font-inter text-[#c9a84c] text-xs">{entity.line}</p>
+                  <p className="font-inter text-[rgba(245,240,232,0.55)] text-xs mt-1">Responsável: <span className="text-[rgba(245,240,232,0.8)]">{entity.owner?.name || 'Não vinculado'}</span></p>
                   <p className="font-crimson text-[rgba(245,240,232,0.45)] text-sm line-clamp-2 mt-1">{entity.description}</p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -278,6 +280,16 @@ export const AdminEntidades: React.FC = () => {
                     {entityLines.map(line => <option key={line.id} value={line.id}>{line.name}</option>)}
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="form-label">Responsável pela entidade</label>
+                <select className="form-input" value={form.ownerId || ''} onChange={e => setForm({ ...form, ownerId: e.target.value })}>
+                  <option value="">Não vinculado</option>
+                  {users.filter(user => user.role !== 'consulente').map(user => (
+                    <option key={user.id} value={user.id}>{user.name} — {user.role.replace('_', ' ')}</option>
+                  ))}
+                </select>
+                <p className="font-inter text-[rgba(245,240,232,0.4)] text-[11px] mt-1">Somente usuários com cargos acima de consulente podem ser vinculados.</p>
               </div>
               <div>
                 <label className="form-label">Foto</label>
