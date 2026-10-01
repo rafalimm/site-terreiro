@@ -19,6 +19,8 @@ export interface User {
   active: boolean;
   cpfCnpj?: string | null;
   profilePhoto?: string | null;
+  degreeId?: string | null;
+  degree?: { id: string; name: string; description: string; sortOrder: number } | null;
 }
 
 export interface GiraEvent {
