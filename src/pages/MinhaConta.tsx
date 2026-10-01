@@ -218,6 +218,23 @@ export const MinhaConta: React.FC = () => {
               <div><p className="text-[10px] uppercase tracking-[0.18em] text-green-300/70 font-cinzel">Minha fila</p><h3 className="font-cinzel font-bold text-white text-lg mt-1">{activeAttendance.status === 'called' ? 'Você foi chamado' : activeAttendance.status === 'in_service' ? 'Atendimento em andamento' : 'Você está na fila'}</h3><p className="font-inter text-xs text-green-100/60 mt-1">{activeAttendance.event?.title || 'Gira em atendimento'}</p></div>
               <div className="text-center min-w-[86px]"><p className="text-[9px] uppercase tracking-wider text-green-300/60">Senha</p><p className="font-cinzel font-bold text-green-300 text-3xl">{String(activeAttendance.queueNumber).padStart(3, '0')}</p></div>
             </div>
+            {activeAttendance.status === 'arrived' && (
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2">
+                  <p className="text-[9px] uppercase tracking-wider text-green-300/60">Sua posição</p>
+                  <p className="font-cinzel font-bold text-green-300 text-lg mt-0.5">{activeAttendance.queuePosition ? activeAttendance.queuePosition + 'º' : '—'}</p>
+                </div>
+                <div className="rounded-lg border border-[rgba(201,168,76,0.18)] bg-[rgba(201,168,76,0.04)] px-3 py-2">
+                  <p className="text-[9px] uppercase tracking-wider text-[#c9a84c]/70">À frente</p>
+                  <p className="font-cinzel font-bold text-[#c9a84c] text-lg mt-0.5">{activeAttendance.peopleAhead ?? 0}</p>
+                </div>
+              </div>
+            )}
+            {activeAttendance.status === 'arrived' && activeAttendance.isNext && (
+              <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2 text-xs text-green-200/80">
+                Você é o próximo da fila. Aguarde a chamada.
+              </div>
+            )}
           </div>
         )}
 
