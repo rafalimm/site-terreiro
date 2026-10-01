@@ -127,7 +127,17 @@ export const MinhaConta: React.FC = () => {
                 <span className="px-2 py-0.5 bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.3)] text-green-400 text-xs font-inter rounded">
                   ✓ Conta Ativa
                 </span>
+                {currentUser.degree && (
+                  <span className="px-2 py-0.5 bg-[rgba(168,85,247,0.1)] border border-[rgba(168,85,247,0.3)] text-purple-300 text-xs font-inter rounded">
+                    {currentUser.degree.name}
+                  </span>
+                )}
               </div>
+              {currentUser.degree?.description && (
+                <p className="font-inter text-xs text-[rgba(245,240,232,0.42)] mt-2 max-w-xl">
+                  {currentUser.degree.description}
+                </p>
+              )}
             </div>
             {(currentUser.role !== 'consulente') && (
               <Link to="/admin" className="btn-gold text-xs">
@@ -155,6 +165,43 @@ export const MinhaConta: React.FC = () => {
             />
           </div>
         </div>
+
+        {upcomingEvents.length > 0 && (
+          <div className="card-spiritual p-6 mb-6 border border-[rgba(201,168,76,0.2)]">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="font-cinzel font-bold text-[#c9a84c] text-base flex items-center gap-2">
+                  <Calendar size={16} /> Próximas Giras
+                </h3>
+                <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">
+                  {canViewDevelopment ? 'Confira seus próximos compromissos no terreiro.' : 'Confira a próxima gira disponível.'}
+                </p>
+              </div>
+              <Link to="/agenda" className="text-xs font-cinzel text-[#c9a84c] hover:text-[#e8c97a]">
+                Ver agenda →
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {upcomingEvents.slice(0, 2).map(ev => (
+                <div key={ev.id} className="p-4 rounded-lg border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-cinzel font-bold text-[#f5f0e8] text-sm">{ev.title}</p>
+                      <p className="font-inter text-xs text-[rgba(245,240,232,0.48)] mt-1">
+                        {format(parseDateOnly(ev.date), "dd 'de' MMMM", { locale: ptBR })} às {ev.time}
+                      </p>
+                    </div>
+                    {ev.type === 'Gira de Desenvolvimento' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded border border-purple-400/30 text-purple-300 whitespace-nowrap">
+                        Desenvolvimento
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {canViewDevelopment && (
           <Link to="/area-do-filho" className="card-spiritual p-6 mb-6 block border border-[rgba(201,168,76,0.2)] hover:border-[rgba(201,168,76,0.45)] transition-all">
@@ -465,11 +512,16 @@ export const MinhaConta: React.FC = () => {
             <Star size={16} />
             Acesso Rápido
           </h3>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             <Link to="/agenda" className="btn-outline-gold text-xs justify-center">
               <Calendar size={14} />
               Agenda
             </Link>
+            {canViewDevelopment && (
+              <Link to="/area-do-filho" className="btn-outline-gold text-xs justify-center">
+                📚 Área do Filho
+              </Link>
+            )}
             <button
               onClick={() => window.open(`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent('Olá! Gostaria de agendar uma consulta.')}`, '_blank')}
               className="btn-wine text-xs"
