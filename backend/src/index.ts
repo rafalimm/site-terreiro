@@ -25,7 +25,7 @@ import purchasesRoutes from './routes/purchases.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import preRegistrationsRoutes from './routes/pre-registrations.routes';
 import filhoContentRoutes from './routes/filho-content.routes';
-import { uploadsRouter, imagesRouter } from './routes/uploads.routes';
+import { uploadsRouter, imagesRouter, contentFilesRouter, filesRouter } from './routes/uploads.routes';
 
 const app = express();
 
@@ -57,7 +57,7 @@ app.use(
 );
 
 // Limite maior no corpo da requisição pois imagens podem ser enviadas em base64.
-app.use(express.json({ limit: '8mb' }));
+app.use(express.json({ limit: '32mb' }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -83,7 +83,9 @@ app.use('/api/admin/pre-registrations', preRegistrationsRoutes);
 app.use('/api', attendanceRoutes);
 app.use('/api/filho-content', filhoContentRoutes);
 app.use('/api/admin/uploads', uploadsRouter);
+app.use('/api/admin/content-uploads', contentFilesRouter);
 app.use('/api/images', imagesRouter);
+app.use('/api/files', filesRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.path}` });
