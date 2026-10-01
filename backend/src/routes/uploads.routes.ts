@@ -14,7 +14,7 @@ function detectMime(buf: Buffer): string | null {
 
 // POST /api/admin/uploads — recebe { dataUrl } e devolve { url }
 export const uploadsRouter = Router();
-uploadsRouter.use(authenticate, authorize('gallery', 'entities', 'news'));
+uploadsRouter.use(authenticate, authorize('gallery', 'entities', 'news', 'filho_content'));
 
 uploadsRouter.post('/', async (req, res) => {
   const dataUrl = req.body?.dataUrl;
