@@ -80,6 +80,9 @@ export const MinhaConta: React.FC = () => {
     .sort((a, b) => dateOnlyTimestamp(a.date) - dateOnlyTimestamp(b.date) || a.time.localeCompare(b.time))
     .slice(0, currentUser.role === 'consulente' ? 1 : 5);
 
+  const activeAttendance = myAttendances.find(a =>
+    a.queueNumber && (a.status === 'arrived' || a.status === 'called' || a.status === 'in_service')
+  );
 
   const roleLabels: Record<string, string> = {
     super_admin: 'Super Administrador',
@@ -132,11 +135,11 @@ export const MinhaConta: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Próximas giras</p><p className="font-cinzel text-xl font-bold text-[#f5f0e8] mt-1">{upcomingEvents.length}</p></div>
           <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Minhas giras</p><p className="font-cinzel text-xl font-bold text-[#f5f0e8] mt-1">{myAttendances.length}</p></div>
-          <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Status</p><p className="font-cinzel text-sm font-bold text-green-400 mt-2">Conta ativa</p></div>
+          <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Minha fila</p>{activeAttendance ? <p className="font-cinzel text-xl font-bold text-green-400 mt-1">{String(activeAttendance.queueNumber).padStart(3, '0')}</p> : <p className="font-cinzel text-sm font-bold text-[rgba(245,240,232,0.45)] mt-2">Sem senha ativa</p>}</div>
           <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Acesso</p><p className="font-cinzel text-sm font-bold text-[#c9a84c] mt-2">{canViewDevelopment ? 'Membro' : 'Consulente'}</p></div>
         </div>
 
-        {upcomingEvents.length > 0 && (
+        {(
           <div className="card-spiritual p-6 mb-6 border border-[rgba(201,168,76,0.2)]">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
@@ -169,6 +172,15 @@ export const MinhaConta: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        )}
+
+        {activeAttendance && (
+          <div className="card-spiritual p-5 mb-6 border border-green-500/25 bg-green-500/[0.03]">
+            <div className="flex items-center justify-between gap-4">
+              <div><p className="text-[10px] uppercase tracking-[0.18em] text-green-300/70 font-cinzel">Minha fila</p><h3 className="font-cinzel font-bold text-white text-lg mt-1">{activeAttendance.status === 'called' ? 'Você foi chamado' : activeAttendance.status === 'in_service' ? 'Atendimento em andamento' : 'Você está na fila'}</h3><p className="font-inter text-xs text-green-100/60 mt-1">{activeAttendance.event?.title || 'Gira em atendimento'}</p></div>
+              <div className="text-center min-w-[86px]"><p className="text-[9px] uppercase tracking-wider text-green-300/60">Senha</p><p className="font-cinzel font-bold text-green-300 text-3xl">{String(activeAttendance.queueNumber).padStart(3, '0')}</p></div>
             </div>
           </div>
         )}
