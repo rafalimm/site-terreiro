@@ -15,7 +15,7 @@ function sanitize(user: any) {
 // Listar usuários: qualquer cargo com permissão 'consulentes' (admin, atendimento, super_admin)
 // consegue ver a lista — é o que alimenta as telas "Usuários & Permissões" e "Consulentes".
 router.get('/', authorize('consulentes'), async (_req, res) => {
-  const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
+  const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' }, include: { degree: true } });
   res.json(users.map(sanitize));
 });
 
@@ -43,6 +43,7 @@ router.post('/', requireSuperAdmin, async (req, res) => {
       degreeId: role === 'consulente' ? null : (degreeId || null),
       createdAt: new Date().toISOString(),
     },
+    include: { degree: true },
   });
   await createLog(req.user!.id, req.user!.name, 'Criou', 'Usuário', `Criou o usuário ${user.name}`);
   res.status(201).json(sanitize(user));
@@ -75,7 +76,7 @@ router.patch('/:id', requireSuperAdmin, async (req, res) => {
   }
 
   try {
-    const updated = await prisma.user.update({ where: { id }, data });
+    const updated = await prisma.user.update({ where: { id }, data, include: { degree: true } });
     const isRoleChange = typeof data.role === 'string';
     await createLog(
       req.user!.id,
