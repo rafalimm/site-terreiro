@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check } from 'lucide-react';
+import { Calendar, Phone, Star, CreditCard, CheckCircle2, Clock3, AlertCircle, Copy, Check, BarChart3 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { api } from '../lib/api';
 import { format } from 'date-fns';
@@ -11,6 +11,24 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ImageUploader } from '../components/ImageUploader';
 import { mediaUrl } from '../lib/api';
 import type { PixPaymentConfig } from '../utils/pix';
+
+type EntityHistoryResponse = {
+  entities: Array<{
+    entity: { id: string; name: string; line: string; active: boolean };
+    total: number;
+    firstVisits: number;
+    returningVisitors: number;
+    consulentes: Array<{
+      attendanceId: string;
+      userId: string;
+      name: string;
+      queueNumber?: number | null;
+      attendedAt?: string | null;
+      event: { id: string; title: string; date: string; time: string };
+    }>;
+  }>;
+  totals: { consultations: number; entities: number; uniqueConsulentes: number; firstVisits: number; returningVisitors: number };
+};
 
 export const MinhaConta: React.FC = () => {
   const { currentUser, events, siteConfig, authReady, myAttendances, loadMyAttendances } = useApp();
@@ -30,6 +48,8 @@ export const MinhaConta: React.FC = () => {
   const [asaasCpf,setAsaasCpf]=React.useState((currentUser as {cpfCnpj?:string|null})?.cpfCnpj||'');
   const [asaasError,setAsaasError]=React.useState('');
   const [profilePhoto, setProfilePhoto] = React.useState('');
+  const [entityHistory, setEntityHistory] = React.useState<EntityHistoryResponse | null>(null);
+  const [entityHistoryLoading, setEntityHistoryLoading] = React.useState(false);
 
   const canUseMembership = currentUser && currentUser.role !== 'consulente';
 
@@ -51,6 +71,19 @@ export const MinhaConta: React.FC = () => {
 
     return () => window.clearInterval(interval);
   }, [currentUser, myAttendances, loadMyAttendances]);
+
+  React.useEffect(() => {
+    if (!currentUser || currentUser.role === 'consulente') {
+      setEntityHistory(null);
+      return;
+    }
+
+    setEntityHistoryLoading(true);
+    api.get<EntityHistoryResponse>('/api/attendance/my-entity-history')
+      .then(setEntityHistory)
+      .catch(() => setEntityHistory(null))
+      .finally(() => setEntityHistoryLoading(false));
+  }, [currentUser?.id, currentUser?.role]);
 
   React.useEffect(() => {
     if (!canUseMembership) return;
@@ -322,6 +355,87 @@ export const MinhaConta: React.FC = () => {
                 );
               })}
             </div>
+          </div>
+        )}
+
+
+        {entityHistory && entityHistory.entities.length > 0 && (
+          <div className="card-spiritual p-6 mt-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h3 className="font-cinzel font-bold text-[#c9a84c] text-base flex items-center gap-2">
+                  <BarChart3 size={17} /> Histórico das minhas entidades
+                </h3>
+                <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">
+                  Acompanhe os consulentes atendidos pelas entidades vinculadas ao seu cadastro.
+                </p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full border border-[rgba(201,168,76,0.25)] text-[#c9a84c] text-[10px]">
+                {entityHistory.totals.entities} entidade(s) vinculada(s)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+              <div className="p-3 rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Total de consultas</p>
+                <p className="font-cinzel text-xl font-bold text-[#f5f0e8] mt-1">{entityHistory.totals.consultations}</p>
+              </div>
+              <div className="p-3 rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Consulentes únicos</p>
+                <p className="font-cinzel text-xl font-bold text-[#f5f0e8] mt-1">{entityHistory.totals.uniqueConsulentes}</p>
+              </div>
+              <div className="p-3 rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Primeira vez</p>
+                <p className="font-cinzel text-xl font-bold text-emerald-300 mt-1">{entityHistory.totals.firstVisits}</p>
+              </div>
+              <div className="p-3 rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
+                <p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Retornos</p>
+                <p className="font-cinzel text-xl font-bold text-[#c9a84c] mt-1">{entityHistory.totals.returningVisitors}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {entityHistory.entities.map(item => (
+                <details key={item.entity.id} className="rounded border border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.015)] overflow-hidden">
+                  <summary className="cursor-pointer list-none p-4 flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-cinzel text-[#f5f0e8] text-sm">{item.entity.name}</p>
+                      <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">
+                        {item.entity.line || 'Sem linha'} · {item.total} consulta(s)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs shrink-0">
+                      <span className="px-2 py-1 rounded border border-emerald-500/20 text-emerald-300">{item.firstVisits} 1ª vez</span>
+                      <span className="px-2 py-1 rounded border border-[rgba(201,168,76,0.2)] text-[#c9a84c]">{item.returningVisitors} retorno(s)</span>
+                    </div>
+                  </summary>
+                  <div className="border-t border-[rgba(201,168,76,0.08)] divide-y divide-[rgba(201,168,76,0.06)]">
+                    {item.consulentes.length ? item.consulentes.map(record => (
+                      <div key={record.attendanceId} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm text-[#f5f0e8] font-semibold">{record.name}</p>
+                          <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">
+                            {record.event.title} · {record.event.date} {record.event.time}
+                            {record.queueNumber ? ` · Senha ${String(record.queueNumber).padStart(3, '0')}` : ''}
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-[rgba(245,240,232,0.4)] uppercase">
+                          {record.attendedAt ? format(new Date(record.attendedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'Data não registrada'}
+                        </span>
+                      </div>
+                    )) : (
+                      <p className="p-4 text-xs text-[rgba(245,240,232,0.35)]">Nenhum atendimento concluído para esta entidade.</p>
+                    )}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {entityHistoryLoading && currentUser.role !== 'consulente' && (
+          <div className="card-spiritual p-4 mt-6 text-xs text-[rgba(245,240,232,0.4)]">
+            Carregando histórico das entidades vinculadas...
           </div>
         )}
 
