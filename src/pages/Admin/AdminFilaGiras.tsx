@@ -517,6 +517,38 @@ export const AdminFilaGiras: React.FC<AdminFilaGirasProps> = ({ onOpenPreCadastr
           {queue.entities.length > 0 && (
             <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
               <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
+                <h3 className="font-cinzel text-[#c9a84c]">Status das entidades</h3>
+                <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">Veja rapidamente quais entidades estão livres e quais estão em atendimento.</p>
+              </div>
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 p-4">
+                {queue.entities.map(entity => {
+                  const activeAttendance = queue.attendances.find(a => a.entity?.id === entity.id && ['called', 'in_service'].includes(a.status));
+                  const isFree = !activeAttendance;
+                  return (
+                    <div key={entity.id} className={`rounded border p-4 ${isFree ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-orange-500/20 bg-orange-500/5'}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-cinzel text-[#f5f0e8] text-sm truncate">{entity.name}</p>
+                          <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">{entity.line || 'Sem linha'}</p>
+                        </div>
+                        <span className={`shrink-0 px-2 py-1 rounded border text-[10px] font-semibold ${isFree ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-orange-300 border-orange-500/30 bg-orange-500/10'}`}>
+                          {isFree ? 'LIVRE' : 'EM ATENDIMENTO'}
+                        </span>
+                      </div>
+                      {entity.owner?.name && (
+                        <p className="text-xs text-[rgba(245,240,232,0.55)] mt-3">Incorporante: <span className="text-[#c9a84c]">{entity.owner.name}</span></p>
+                      )}
+                      {activeAttendance && (
+                        <p className="text-xs text-[rgba(245,240,232,0.55)] mt-1">Consulente: <span className="text-[#f5f0e8]">{activeAttendance.user?.name}</span> · senha {activeAttendance.queueNumber ? String(activeAttendance.queueNumber).padStart(3, '0') : '—'}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded overflow-hidden">
+              <div className="p-4 border-b border-[rgba(201,168,76,0.08)]">
                 <h3 className="font-cinzel text-[#c9a84c]">Entidades desta gira</h3>
                 <p className="text-xs text-[rgba(245,240,232,0.4)] mt-1">Histórico dos consulentes já atendidos por cada entidade.</p>
               </div>
