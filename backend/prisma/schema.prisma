@@ -63,6 +63,8 @@ model GiraEvent {
   createdAt          String
   entityIds          Json     @default("[]")
   firstVisitEntityIds Json    @default("[]")
+  completed          Boolean  @default(false)
+  completedAt        String?
   confirmations      EventConfirmation[]
   attendances        GiraAttendance[]
 
