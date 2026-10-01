@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { createLog } from '../utils/log';
+import { deleteFromSupabaseStorage } from '../storage/supabaseStorage';
 
 const router = Router();
 
@@ -36,9 +37,20 @@ async function cleanupUploadedFiles(ids: string[]) {
       },
       select: { id: true },
     });
-    if (!used) {
-      await prisma.uploadedFile.deleteMany({ where: { id } });
+    if (used) continue;
+
+    const file = await prisma.uploadedFile.findUnique({
+      where: { id },
+      select: { storagePath: true },
+    });
+    if (file?.storagePath) {
+      try {
+        await deleteFromSupabaseStorage(file.storagePath);
+      } catch (error) {
+        console.error('Erro ao excluir arquivo do Storage:', error);
+      }
     }
+    await prisma.uploadedFile.deleteMany({ where: { id } });
   }
 }
 
