@@ -182,6 +182,8 @@ async function serveStoredFile(req: any, res: any) {
         'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'cross-origin',
+        'Access-Control-Allow-Origin': '*',
+        'Accept-Ranges': 'bytes',
       };
       const contentLength = storageResponse.headers.get('content-length');
       const contentRange = storageResponse.headers.get('content-range');
@@ -201,6 +203,7 @@ async function serveStoredFile(req: any, res: any) {
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
+      'Access-Control-Allow-Origin': '*',
       'Accept-Ranges': 'bytes',
     });
     if (file.data) {
