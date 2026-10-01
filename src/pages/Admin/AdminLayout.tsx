@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Newspaper, HelpCircle, Image,
   Users, Settings, LogOut, Menu, X, Star, MessageSquare,
-  Activity, Layers, CreditCard, Shield, CalendarCheck, ShoppingCart, ListOrdered, UserPlus
+  Activity, Layers, CreditCard, Shield, CalendarCheck, ShoppingCart, ListOrdered, UserPlus, BookOpen
 } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 
 export type AdminSection =
   | 'dashboard' | 'agenda' | 'agendamentos' | 'noticias' | 'faq' | 'galeria'
   | 'usuarios' | 'configuracoes' | 'mensagens' | 'servicos'
-  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades' | 'compras' | 'fila' | 'pre-cadastro';
+  | 'entidades' | 'logs' | 'consulentes' | 'mensalidades' | 'compras' | 'fila' | 'pre-cadastro' | 'filho-conteudos';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -31,6 +31,7 @@ const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[
   { key: 'entidades', label: 'Entidades', icon: Star, perm: 'entities' },
   { key: 'mensagens', label: 'Mensagens', icon: MessageSquare, perm: 'messages' },
   { key: 'consulentes', label: 'Consulentes', icon: Users, perm: 'consulentes' },
+  { key: 'filho-conteudos', label: 'Conteúdos dos Filhos', icon: BookOpen, perm: 'filho_content' },
   { key: 'mensalidades', label: 'Mensalidades', icon: CreditCard, perm: 'membership' },
   { key: 'compras', label: 'Compras', icon: ShoppingCart, perm: 'compras' },
   { key: 'usuarios', label: 'Usuários', icon: Shield },
