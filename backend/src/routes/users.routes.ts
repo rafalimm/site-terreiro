@@ -22,7 +22,7 @@ router.get('/', authorize('consulentes'), async (_req, res) => {
 // Criar, editar cargo/dados e excluir usuários é exclusivo do Super Administrador,
 // exatamente como já era controlado no front-end.
 router.post('/', requireSuperAdmin, async (req, res) => {
-  const { name, email, password, role, whatsapp, active } = req.body ?? {};
+  const { name, email, password, role, whatsapp, active, degreeId } = req.body ?? {};
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios.' });
   }
@@ -40,6 +40,7 @@ router.post('/', requireSuperAdmin, async (req, res) => {
       whatsapp: whatsapp || null,
       cpfCnpj: req.body?.cpfCnpj ? String(req.body.cpfCnpj).replace(/\D/g, '') : null,
       active: active ?? true,
+      degreeId: role === 'consulente' ? null : (degreeId || null),
       createdAt: new Date().toISOString(),
     },
   });
@@ -66,6 +67,7 @@ router.patch('/:id', requireSuperAdmin, async (req, res) => {
   }
 
   if (data.role !== undefined) {
+    if (data.role === 'consulente') data.degreeId = null;
     const allowedRoles = ['super_admin', 'admin', 'agenda', 'content', 'atendimento', 'filho', 'consulente', 'compras', 'responsavel_fila'];
     if (typeof data.role !== 'string' || !allowedRoles.includes(data.role)) {
       return res.status(400).json({ error: 'Cargo inválido.' });
