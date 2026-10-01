@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Calendar, CalendarClock, X, Check, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, CalendarClock, X, Check, Users, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useApp, GiraEvent } from '../../store/AppContext';
 import { format } from 'date-fns';
 import { dateOnlyTimestamp, parseDateOnly } from '../../utils/date';
@@ -38,11 +38,12 @@ export const AdminAgenda: React.FC = () => {
   const [confirmationCounts, setConfirmationCounts] = useState<Record<string, { count: number; users: Array<{ id: string; name: string; role: string }> }>>({});
   const [history, setHistory] = useState<Array<{
     id: string; title: string; date: string; time: string; type: string;
-    totalAttendances: number; totalAttended: number;
+    totalAttendances: number; totalAttended: number; firstVisits: number; returningVisitors: number; completed: boolean; completedAt?: string | null;
     entityStats: Array<{ entityId: string; name: string; line: string; attendedCount: number }>;
   }>>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyDeleteConfirm, setHistoryDeleteConfirm] = useState<string | null>(null);
+  const [completionLoading, setCompletionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -119,9 +120,22 @@ export const AdminAgenda: React.FC = () => {
     if (saved) setShowModal(false);
   };
 
+  const setGiraCompletion = async (id: string, completed: boolean) => {
+    setCompletionLoading(id);
+    try {
+      await api.post(`/api/admin/events/${id}/${completed ? 'complete' : 'reopen'}`, {});
+      await loadHistory();
+      window.location.reload();
+    } catch (err) {
+      console.error('Não foi possível atualizar o status da gira:', err);
+    } finally {
+      setCompletionLoading(null);
+    }
+  };
+
   const todayTimestamp = dateOnlyTimestamp(new Date().toISOString().slice(0, 10));
   const upcomingEvents = [...events]
-    .filter(event => dateOnlyTimestamp(event.date) >= todayTimestamp)
+    .filter(event => !event.completed && dateOnlyTimestamp(event.date) >= todayTimestamp)
     .sort((a, b) => dateOnlyTimestamp(a.date) - dateOnlyTimestamp(b.date));
 
   return (
@@ -159,6 +173,11 @@ export const AdminAgenda: React.FC = () => {
                         Agendamento
                       </span>
                     )}
+                    {ev.completed && (
+                      <span className="text-xs px-2 py-0.5 rounded border border-green-500/30 text-green-400 bg-green-500/10">
+                        Concluída
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-sm font-inter text-[rgba(245,240,232,0.45)]">
                     <span>📅 {format(parseDateOnly(ev.date), "dd/MM/yyyy")}</span>
@@ -176,6 +195,14 @@ export const AdminAgenda: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setGiraCompletion(ev.id, true)}
+                    disabled={completionLoading === ev.id}
+                    className="p-2 text-[rgba(245,240,232,0.4)] hover:text-green-400 border border-[rgba(201,168,76,0.1)] hover:border-green-500/30 rounded transition-all"
+                    title="Marcar gira como concluída"
+                  >
+                    <CheckCircle2 size={14} />
+                  </button>
                   <button onClick={() => openEdit(ev)} className="p-2 text-[rgba(245,240,232,0.4)] hover:text-[#c9a84c] border border-[rgba(201,168,76,0.1)] hover:border-[rgba(201,168,76,0.4)] rounded transition-all">
                     <Edit2 size={14} />
                   </button>
@@ -224,7 +251,7 @@ export const AdminAgenda: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-cinzel font-bold text-[#f5f0e8]">{item.title}</h4>
-                      <span className="text-xs px-2 py-0.5 rounded border border-[rgba(201,168,76,0.18)] text-[#c9a84c]">Histórico</span>
+                      <span className="text-xs px-2 py-0.5 rounded border border-green-500/30 text-green-400 bg-green-500/5">Concluída</span>
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[rgba(245,240,232,0.45)] mt-1">
                       <span>📅 {format(parseDateOnly(item.date), "dd/MM/yyyy")}</span><span>🕐 {item.time}</span><span className="text-[#c9a84c]/70">{item.type}</span>
@@ -232,6 +259,8 @@ export const AdminAgenda: React.FC = () => {
                     <div className="flex flex-wrap gap-2 mt-3">
                       <span className="px-2.5 py-1 rounded border border-[rgba(201,168,76,0.15)] text-xs text-[#c9a84c]">{item.totalAttendances} registro(s) na fila</span>
                       <span className="px-2.5 py-1 rounded border border-green-500/20 bg-green-500/5 text-xs text-green-300">{item.totalAttended} atendido(s)</span>
+                      <span className="px-2.5 py-1 rounded border border-[rgba(201,168,76,0.15)] text-xs text-[#c9a84c]">{item.firstVisits} primeira(s) vez(es)</span>
+                      <span className="px-2.5 py-1 rounded border border-[rgba(201,168,76,0.15)] text-xs text-[#c9a84c]">{item.returningVisitors} retornante(s)</span>
                     </div>
                     <div className="mt-4">
                       <p className="text-xs font-cinzel uppercase tracking-wider text-[rgba(245,240,232,0.55)] mb-2">Atendimentos por entidade</p>
