@@ -90,11 +90,20 @@ function detectFileMime(buf: Buffer): string | null {
   if (buf.length >= 4 && buf.subarray(0, 4).toString() === 'OggS') return 'audio/ogg';
   if (buf.length >= 12 && buf.subarray(0, 4).toString() === 'RIFF' && buf.subarray(8, 12).toString() === 'WAVE') return 'audio/wav';
   if (buf.length >= 3 && buf.subarray(0, 3).toString() === 'ID3') return 'audio/mpeg';
+  // MP3 também pode ser válido sem tag ID3: procura um frame MPEG válido no início do arquivo.
+  if (buf.length >= 2 && buf[0] === 0xff && (buf[1] & 0xe0) === 0xe0) return 'audio/mpeg';
   return null;
 }
 
 export const contentFilesRouter = Router();
 contentFilesRouter.use(authenticate, authorize('filho_content'));
+contentFilesRouter.use((req, res, next) => {
+  const role = req.user?.role;
+  if (!['super_admin', 'admin', 'content'].includes(role || '')) {
+    return res.status(403).json({ error: 'Somente administradores de conteúdo podem enviar arquivos.' });
+  }
+  next();
+});
 
 contentFilesRouter.post('/', async (req, res) => {
   const dataUrl = req.body?.dataUrl;
@@ -143,7 +152,7 @@ filesRouter.get('/:id', async (req, res) => {
     if (!file) return res.status(404).json({ error: 'Arquivo não encontrado.' });
     res.set({
       'Content-Type': file.mimeType,
-      'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\]/g, '')}"`,
+      'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\r\n]/g, '')}"`,
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
