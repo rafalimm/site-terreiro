@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, MessageSquare, Users, Newspaper, Activity, Clock } from 'lucide-react';
+import { Calendar, MessageSquare, Users, Newspaper, Activity, Clock, ArrowRight, UserPlus, ListOrdered, BookOpen } from 'lucide-react';
 import { useApp } from '../../store/AppContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -16,6 +16,14 @@ export const Dashboard: React.FC = () => {
   const activeNews = newsItems.filter(n => n.active).length;
   const totalUsers = users.length;
   const nextGira = upcomingEvents[0];
+  const recentUsers = [...users].slice(-5).reverse();
+  const unreadQueueUsers = users.filter((u: any) => u.role === 'consulente').length;
+  const quickActions = [
+    { label: 'Gerenciar giras', description: 'Agenda e desenvolvimento', icon: Calendar, section: 'agenda' },
+    { label: 'Ver fila', description: 'Atendimento do dia', icon: ListOrdered, section: 'fila' },
+    { label: 'Usuários', description: 'Contas e permissões', icon: Users, section: 'usuarios' },
+    { label: 'Conteúdos dos filhos', description: 'Materiais e módulos', icon: BookOpen, section: 'filho-conteudos' },
+  ];
 
   const stats = [
     { label: 'Próximas Giras', value: upcomingEvents.length, icon: Calendar, color: 'text-[#c9a84c]', bg: 'bg-[rgba(201,168,76,0.1)]' },
@@ -46,6 +54,43 @@ export const Dashboard: React.FC = () => {
             <p className={`font-cinzel font-bold text-2xl ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Quick overview */}
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-cinzel font-bold text-[#f5f0e8] text-sm">Acesso rápido</h3>
+              <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-1">Principais áreas administrativas</p>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {quickActions.map(action => (
+              <button key={action.section} onClick={() => window.dispatchEvent(new CustomEvent('admin:navigate', { detail: action.section }))} className="group flex items-center gap-3 p-3 rounded border border-[rgba(201,168,76,0.08)] hover:border-[rgba(201,168,76,0.25)] hover:bg-[rgba(201,168,76,0.04)] text-left transition-all">
+                <div className="w-9 h-9 rounded bg-[rgba(201,168,76,0.08)] flex items-center justify-center flex-shrink-0">
+                  <action.icon size={15} className="text-[#c9a84c]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-inter text-[#f5f0e8] text-sm">{action.label}</p>
+                  <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs">{action.description}</p>
+                </div>
+                <ArrowRight size={14} className="text-[rgba(201,168,76,0.35)] group-hover:text-[#c9a84c]" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <UserPlus size={16} className="text-[#c9a84c]" />
+            <h3 className="font-cinzel font-bold text-[#f5f0e8] text-sm">Visão dos usuários</h3>
+          </div>
+          <p className="font-cinzel font-bold text-2xl text-[#c9a84c]">{totalUsers}</p>
+          <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-1">contas cadastradas</p>
+          <div className="mt-4 pt-3 border-t border-[rgba(201,168,76,0.08)]">
+            <p className="font-inter text-[rgba(245,240,232,0.55)] text-xs">{unreadQueueUsers} consulentes no cadastro</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -122,6 +167,32 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Recent Users */}
+      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.1)] rounded p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Users size={16} className="text-[#c9a84c]" />
+          <h3 className="font-cinzel font-bold text-[#f5f0e8] text-sm">Cadastros recentes</h3>
+        </div>
+        {recentUsers.length === 0 ? (
+          <p className="font-crimson text-[rgba(245,240,232,0.4)] text-base italic">Nenhum usuário cadastrado.</p>
+        ) : (
+          <div className="space-y-2">
+            {recentUsers.map(user => (
+              <div key={user.id} className="flex items-center gap-3 py-2 border-b border-[rgba(201,168,76,0.06)]">
+                <div className="w-8 h-8 rounded-full bg-[rgba(201,168,76,0.08)] border border-[rgba(201,168,76,0.15)] flex items-center justify-center">
+                  <Users size={13} className="text-[#c9a84c]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-inter text-[rgba(245,240,232,0.75)] text-sm truncate">{user.name}</p>
+                  <p className="font-inter text-[rgba(245,240,232,0.3)] text-xs truncate">{user.email}</p>
+                </div>
+                <span className="font-inter text-[rgba(245,240,232,0.35)] text-xs capitalize">{user.role.replace('_', ' ')}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Activity Log */}
