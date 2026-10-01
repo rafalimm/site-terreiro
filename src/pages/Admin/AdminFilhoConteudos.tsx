@@ -1,6 +1,6 @@
 import React from 'react';
-import { Plus, Edit2, Trash2, BookOpen, FolderOpen, FileText, Video, Headphones, Image, FileDown, Link2, X, Check, Search, Eye, EyeOff, ChevronDown, ChevronUp, Layers, BarChart3 } from 'lucide-react';
-import { api, mediaUrl } from '../../lib/api';
+import { Plus, Edit2, Trash2, BookOpen, FolderOpen, FileText, Video, Headphones, Image, FileDown, Link2, X, Check, Search, Eye, EyeOff, ChevronDown, ChevronUp, Layers, BarChart3, UploadCloud, Loader2, FileArchive } from 'lucide-react';
+import { api, mediaUrl, uploadContentFile } from '../../lib/api';
 
 type Content = { id:string; degreeId:string; moduleId:string|null; title:string; description:string; type:string; body:string; mediaUrl?:string|null; coverUrl?:string|null; sortOrder:number; published:boolean };
 type Module = { id:string; degreeId:string; name:string; description:string; sortOrder:number; active:boolean; contents:Content[] };
@@ -113,9 +113,30 @@ export const AdminFilhoConteudos: React.FC = () => {
 
 const ContentModal:React.FC<{form:{title:string;description:string;type:string;body:string;mediaUrl:string;coverUrl:string;sortOrder:number;published:boolean};setForm:React.Dispatch<React.SetStateAction<{title:string;description:string;type:string;body:string;mediaUrl:string;coverUrl:string;sortOrder:number;published:boolean}>>;editing:boolean;close:()=>void;save:()=>void}>=({form,setForm,editing,close,save})=>{
   const [tab,setTab]=React.useState<'details'|'material'|'preview'>('details');
+  const [uploading,setUploading]=React.useState<'media'|'cover'|'gallery'|null>(null);
   const set=(patch:Partial<typeof form>)=>setForm(v=>({...v,...patch}));
   const url=form.mediaUrl?mediaUrl(form.mediaUrl):'';
   const gallery=form.type==='gallery'?form.mediaUrl.split(/\\n|,/).map(v=>v.trim()).filter(Boolean):[];
+  const acceptedByType: Record<string,string> = { image:'image/jpeg,image/png,image/webp', video:'video/mp4,video/webm', audio:'audio/mpeg,audio/wav,audio/ogg', pdf:'application/pdf', gallery:'image/jpeg,image/png,image/webp' };
+  const upload=async(kind:'media'|'cover'|'gallery',files:FileList|null)=>{
+    if(!files?.length)return;
+    const selected=Array.from(files);
+    if(kind!=='gallery') selected.splice(1);
+    setUploading(kind);
+    try{
+      const uploaded=[] as string[];
+      for(const file of selected){
+        if(file.size>20*1024*1024) throw new Error('O arquivo excede o limite de 20 MB.');
+        const result=await uploadContentFile(file);
+        uploaded.push(result.url);
+      }
+      if(kind==='media') set({mediaUrl:uploaded[0]||''});
+      else if(kind==='cover') set({coverUrl:uploaded[0]||''});
+      else set({mediaUrl:[...gallery,...uploaded].join('\\n')});
+    }catch(error){
+      window.alert(error instanceof Error?error.message:'Não foi possível enviar o arquivo.');
+    }finally{setUploading(null);}
+  };
   return <Modal title={editing?'Editar conteúdo':'Novo conteúdo'} close={close}>
     <div className="flex gap-1 border-b border-white/10 mb-5">
       {([['details','Detalhes'],['material','Material'],['preview','Pré-visualizar']] as const).map(([v,l])=><button key={v} onClick={()=>setTab(v)} className={tab===v?'px-3 py-2 text-xs text-[#e8c97a] border-b-2 border-[#c9a84c]':'px-3 py-2 text-xs text-white/35'}>{l}</button>)}
@@ -126,10 +147,20 @@ const ContentModal:React.FC<{form:{title:string;description:string;type:string;b
       <div className="grid grid-cols-2 gap-3"><Field label="Ordem" value={String(form.sortOrder)} set={v=>set({sortOrder:Number(v)||0})} type="number"/><label className="flex items-center gap-2 text-sm text-white/65 pt-7"><input type="checkbox" checked={form.published} onChange={e=>set({published:e.target.checked})}/> Publicado</label></div>
     </div>}
     {tab==='material'&&<div className="space-y-4">
-      {form.type==='text'?<div><label className="form-label">Texto da aula</label><textarea className="form-input min-h-56 leading-6" value={form.body} onChange={e=>set({body:e.target.value})} placeholder="Escreva aqui o conteúdo completo da aula..."/></div>:<div><label className="form-label">{form.type==='gallery'?'URLs das imagens':'URL do material'}</label><textarea className="form-input min-h-28" value={form.mediaUrl} onChange={e=>set({mediaUrl:e.target.value})} placeholder={form.type==='gallery'?'Uma URL por linha...':'https://...'} /><p className="text-[11px] text-white/30 mt-1">Por enquanto, use uma URL pública ou um arquivo já hospedado no sistema.</p></div>}
-      {form.type!=='text'&&<Field label="URL da capa (opcional)" value={form.coverUrl} set={v=>set({coverUrl:v})} placeholder="https://..."/>}
-      {form.type!=='text'&&form.type!=='gallery'&&<div className="rounded-lg border border-[#c9a84c]/15 bg-[#c9a84c]/5 p-3 text-xs text-white/50 flex gap-2"><BarChart3 size={15} className="text-[#c9a84c] shrink-0"/><span>O endereço será usado diretamente pelo aluno. Verifique se o arquivo pode ser acessado sem login externo.</span></div>}
-    </div>}
+      {form.type==='text'?<div><label className="form-label">Texto da aula</label><textarea className="form-input min-h-56 leading-6" value={form.body} onChange={e=>set({body:e.target.value})} placeholder="Escreva aqui o conteúdo completo da aula..."/></div>:<>
+        <div className="rounded-lg border border-[#c9a84c]/15 bg-[#c9a84c]/5 p-4">
+          <div className="flex items-center justify-between gap-3 mb-3"><div><p className="text-sm text-white/75 font-medium">{form.type==='gallery'?'Imagens da galeria':'Arquivo principal'}</p><p className="text-[11px] text-white/35 mt-1">Envie diretamente pelo computador. Limite de 20 MB por arquivo.</p></div><label className="btn-gold text-xs cursor-pointer shrink-0"><UploadCloud size={14}/>{uploading===form.type||uploading==='gallery'?<><Loader2 size={14} className="animate-spin"/> Enviando...</>:form.type==='gallery'?'Adicionar imagens':'Selecionar arquivo'}<input type="file" className="hidden" accept={acceptedByType[form.type]} multiple={form.type==='gallery'} disabled={!!uploading} onChange={e=>void upload(form.type==='gallery'?'gallery':'media',e.target.files)}/></label></div>
+          {form.mediaUrl&&<div className="flex items-center gap-2 rounded border border-white/10 bg-black/15 p-2"><FileArchive size={15} className="text-[#c9a84c]"/><span className="text-xs text-white/55 truncate flex-1">{form.type==='gallery'?gallery.length+' imagem(ns) adicionada(s)':form.mediaUrl}</span><button type="button" onClick={()=>set({mediaUrl:''})} className="text-xs text-red-300/70 hover:text-red-300">Remover</button></div>}
+          <textarea className="form-input min-h-20 mt-3" value={form.mediaUrl} onChange={e=>set({mediaUrl:e.target.value})} placeholder={form.type==='gallery'?'Uma URL por linha (ou use o botão acima)...':'URL pública opcional, caso prefira não enviar o arquivo...'}/>
+        </div>
+        {form.type!=='gallery'&&<div className="rounded-lg border border-white/10 p-4">
+          <div className="flex items-center justify-between gap-3"><div><p className="text-sm text-white/65">Capa (opcional)</p><p className="text-[11px] text-white/30 mt-1">JPG, PNG ou WebP, até 20 MB.</p></div><label className="btn-outline-gold text-xs cursor-pointer"><UploadCloud size={14}/>{uploading==='cover'?<><Loader2 size={14} className="animate-spin"/> Enviando...</>:'Enviar capa'}<input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" disabled={!!uploading} onChange={e=>void upload('cover',e.target.files)}/></label></div>
+          <Field label="URL da capa (alternativa)" value={form.coverUrl} set={v=>set({coverUrl:v})} placeholder="https://..."/>
+          {form.coverUrl&&<img src={mediaUrl(form.coverUrl)} alt="" className="mt-3 h-24 w-40 object-cover rounded border border-white/10"/>}
+        </div>}
+        <div className="rounded-lg border border-[#c9a84c]/15 bg-[#c9a84c]/5 p-3 text-xs text-white/50 flex gap-2"><BarChart3 size={15} className="text-[#c9a84c] shrink-0"/><span>O arquivo enviado fica armazenado no servidor e recebe um endereço próprio. URLs externas continuam disponíveis como alternativa.</span></div>
+      </>}
+    </div>
     {tab==='preview'&&<div className="rounded-lg border border-white/10 bg-black/15 p-4">
       <div className="flex items-center gap-2 text-[#c9a84c] text-xs uppercase tracking-wider">{typeIcons[form.type]} {typeLabels[form.type]}</div><h4 className="font-cinzel text-white font-bold text-lg mt-2">{form.title||'Sem título'}</h4>{form.description&&<p className="text-xs text-white/40 mt-1">{form.description}</p>}
       {form.type==='text'&&<p className="mt-4 text-sm text-white/65 whitespace-pre-wrap leading-6">{form.body||'Nenhum texto informado.'}</p>}
