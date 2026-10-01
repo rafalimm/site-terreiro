@@ -60,7 +60,7 @@ export interface GiraAttendance {
   entityId?: string | null;
   isFirstVisit?: boolean;
   event?: Pick<GiraEvent, 'id' | 'title' | 'date' | 'time' | 'type'>;
-  entity?: { id: string; name: string; line?: string; active?: boolean };
+  entity?: { id: string; name: string; line?: string; active?: boolean; owner?: { id: string; name: string; role: UserRole; active: boolean } | null };
   user?: { id: string; name: string; email?: string; whatsapp?: string; role: UserRole };
 }
 
