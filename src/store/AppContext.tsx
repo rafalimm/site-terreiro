@@ -70,6 +70,8 @@ export interface FAQItem {
   answer: string;
   order: number;
   active: boolean;
+  ownerId?: string | null;
+  owner?: { id: string; name: string; role: UserRole; active: boolean } | null;
 }
 
 export interface NewsItem {
