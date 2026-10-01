@@ -178,7 +178,7 @@ async function serveStoredFile(req: any, res: any) {
 
       const responseHeaders: Record<string, string> = {
         'Content-Type': file.mimeType,
-        'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\\r\\n]/g, '')}"`,
+        'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\r\n]/g, '')}"`,
         'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'cross-origin',
@@ -197,7 +197,7 @@ async function serveStoredFile(req: any, res: any) {
 
     res.set({
       'Content-Type': file.mimeType,
-      'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\\r\\n]/g, '')}"`,
+      'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\r\n]/g, '')}"`,
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
@@ -214,6 +214,5 @@ async function serveStoredFile(req: any, res: any) {
   }
 }
 
-export const filesRouter = Router();
 filesRouter.get('/:id', serveStoredFile);
 filesRouter.head('/:id', serveStoredFile);
