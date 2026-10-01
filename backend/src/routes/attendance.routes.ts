@@ -21,7 +21,7 @@ router.get('/attendance/mine', async (req, res) => {
         event: {
           select: { id: true, title: true, date: true, time: true, type: true },
         },
-        entity: { select: { id: true, name: true, line: true, active: true } },
+        entity: { select: { id: true, name: true, line: true, active: true, owner: { select: { id: true, name: true, role: true, active: true } } } },
       },
     });
     res.json(attendances);
@@ -73,7 +73,7 @@ router.get('/admin/events/:eventId/attendance', authorize('agenda', 'events', 'f
     orderBy: [{ queueNumber: 'asc' }, { confirmedAt: 'asc' }],
     include: {
       user: { select: { id: true, name: true, email: true, whatsapp: true, role: true } },
-      entity: { select: { id: true, name: true, line: true, active: true } },
+      entity: { select: { id: true, name: true, line: true, active: true, owner: { select: { id: true, name: true, role: true, active: true } } } },
     },
   });
 
@@ -221,7 +221,7 @@ router.post('/admin/events/:eventId/attendance/:attendanceId/call', authorize('a
       },
       include: {
         user: { select: { id: true, name: true, role: true } },
-        entity: { select: { id: true, name: true, line: true, active: true } },
+        entity: { select: { id: true, name: true, line: true, active: true, owner: { select: { id: true, name: true, role: true, active: true } } } },
       },
     });
     res.json(updated);
