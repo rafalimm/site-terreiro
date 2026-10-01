@@ -5,6 +5,69 @@ import { createLog } from '../utils/log';
 
 const router = Router();
 router.use(authenticate);
+router.get('/history', authorize('events', 'agenda'), async (_req, res) => {
+  try {
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+    }).format(new Date());
+
+    const events = await prisma.giraEvent.findMany({
+      where: { date: { lt: today } },
+      orderBy: { date: 'desc' },
+      include: {
+        attendances: {
+          select: {
+            status: true,
+            entityId: true,
+            entity: { select: { id: true, name: true, line: true } },
+          },
+        },
+      },
+    });
+
+    const history = events.map(event => {
+      const attended = event.attendances.filter(item => item.status === 'attended');
+      const entityMap = new Map<string, {
+        entityId: string;
+        name: string;
+        line: string;
+        attendedCount: number;
+      }>();
+
+      for (const attendance of attended) {
+        if (!attendance.entityId || !attendance.entity) continue;
+        const current = entityMap.get(attendance.entityId);
+        if (current) {
+          current.attendedCount += 1;
+        } else {
+          entityMap.set(attendance.entityId, {
+            entityId: attendance.entity.id,
+            name: attendance.entity.name,
+            line: attendance.entity.line,
+            attendedCount: 1,
+          });
+        }
+      }
+
+      return {
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        time: event.time,
+        type: event.type,
+        totalAttendances: event.attendances.length,
+        totalAttended: attended.length,
+        entityStats: Array.from(entityMap.values()).sort((a, b) => b.attendedCount - a.attendedCount),
+      };
+    });
+
+    res.json(history);
+  } catch (error) {
+    console.error('Erro ao carregar histórico de giras:', error);
+    res.status(500).json({ error: 'Não foi possível carregar o histórico de giras.' });
+  }
+});
+
 router.get('/', authorize('events', 'agenda', 'fila'), async (_req, res) => {
   const events = await prisma.giraEvent.findMany({ orderBy: { date: 'asc' } });
   res.json(events);
