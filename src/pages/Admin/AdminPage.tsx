@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useApp } from '../../store/AppContext';
 import { AdminLayout, AdminSection } from './AdminLayout';
@@ -26,6 +26,15 @@ const ADMIN_ROLES = ['super_admin', 'admin', 'agenda', 'content', 'atendimento',
 export const AdminPage: React.FC = () => {
   const { currentUser, authReady } = useApp();
   const [section, setSection] = useState<AdminSection>('dashboard');
+
+  useEffect(() => {
+    const handleAdminNavigate = (event: Event) => {
+      const detail = (event as CustomEvent<AdminSection>).detail;
+      if (detail) setSection(detail);
+    };
+    window.addEventListener('admin:navigate', handleAdminNavigate);
+    return () => window.removeEventListener('admin:navigate', handleAdminNavigate);
+  }, []);
 
   // Enquanto a sessão salva (token) ainda está sendo verificada com o servidor,
   // evita redirecionar para o login prematuramente.
