@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Readable } from 'stream';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { uploadToSupabaseStorage } from '../storage/supabaseStorage';
@@ -148,32 +149,71 @@ contentFilesRouter.post('/', async (req, res) => {
 
 export const filesRouter = Router();
 
-filesRouter.get('/:id', async (req, res) => {
+async function serveStoredFile(req: any, res: any) {
   try {
     const file = await prisma.uploadedFile.findUnique({ where: { id: req.params.id } });
     if (!file) return res.status(404).json({ error: 'Arquivo não encontrado.' });
 
     if (file.storagePath) {
-      const rawBase = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-      const base = /^https?:\/\//i.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : '';
+      const rawBase = (process.env.SUPABASE_URL || '').trim().replace(/\\/+$/, '');
+      const base = /^https?:\\/\\//i.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : '';
       const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'filho-content';
-      if (!base) return res.status(500).json({ error: 'Armazenamento não configurado.' });
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+      if (!base || !serviceKey) return res.status(500).json({ error: 'Armazenamento não configurado.' });
 
-      // O arquivo fica no Supabase Storage. Esta rota é o endereço estável
-      // usado pelo site para abrir/streamar o arquivo sem gravá-lo no Vercel/GitHub.
-      const storageUrl = `${base}/storage/v1/object/public/${bucket}/${file.storagePath.split('/').map(encodeURIComponent).join('/')}`;
-      return res.redirect(302, storageUrl);
+      const storageUrl = `${base}/storage/v1/object/${encodeURIComponent(bucket)}/${file.storagePath.split('/').map(encodeURIComponent).join('/')}`;
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+      };
+      const range = req.headers.range;
+      if (typeof range === 'string' && range) headers.Range = range;
+
+      const storageResponse = await fetch(storageUrl, { headers });
+      if (!storageResponse.ok && storageResponse.status !== 206) {
+        const detail = await storageResponse.text();
+        console.error('Erro ao ler arquivo do Supabase Storage:', storageResponse.status, detail.slice(0, 300));
+        return res.status(storageResponse.status === 404 ? 404 : 502).json({ error: 'Não foi possível carregar o arquivo.' });
+      }
+
+      const responseHeaders: Record<string, string> = {
+        'Content-Type': file.mimeType,
+        'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\\r\\n]/g, '')}"`,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
+      };
+      const contentLength = storageResponse.headers.get('content-length');
+      const contentRange = storageResponse.headers.get('content-range');
+      if (contentLength) responseHeaders['Content-Length'] = contentLength;
+      if (contentRange) responseHeaders['Content-Range'] = contentRange;
+      res.set(responseHeaders);
+      res.status(storageResponse.status);
+
+      if (req.method === 'HEAD') return res.end();
+      if (!storageResponse.body) return res.end();
+      return Readable.fromWeb(storageResponse.body as any).pipe(res);
     }
+
     res.set({
       'Content-Type': file.mimeType,
-      'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\r\n]/g, '')}"`,
+      'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\\\\r\\n]/g, '')}"`,
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
+      'Accept-Ranges': 'bytes',
     });
-    return file.data ? res.send(Buffer.from(file.data)) : res.status(404).json({ error: 'Arquivo não encontrado.' });
+    if (file.data) {
+      res.set('Content-Length', String(file.data.length));
+      return req.method === 'HEAD' ? res.end() : res.send(Buffer.from(file.data));
+    }
+    return res.status(404).json({ error: 'Arquivo não encontrado.' });
   } catch (error) {
     console.error('Erro ao ler arquivo:', error);
     return res.status(500).json({ error: 'Erro ao carregar o arquivo.' });
   }
-});
+}
+
+export const filesRouter = Router();
+filesRouter.get('/:id', serveStoredFile);
+filesRouter.head('/:id', serveStoredFile);
