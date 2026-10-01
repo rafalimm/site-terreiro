@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle, Layers } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Star, Eye, EyeOff, AlertCircle, Layers, Search, Users, Link2, Unlink2 } from 'lucide-react';
 import { useApp, Entity } from '../../store/AppContext';
 import { ImageUploader } from '../../components/ImageUploader';
 
@@ -32,6 +32,31 @@ export const AdminEntidades: React.FC = () => {
   const [lineSaving, setLineSaving] = useState(false);
   const [lineError, setLineError] = useState('');
   const [lineModalMode, setLineModalMode] = useState<'create' | 'edit' | 'members'>('create');
+  const [search, setSearch] = useState('');
+  const [lineFilter, setLineFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [linkFilter, setLinkFilter] = useState<'all' | 'linked' | 'unlinked'>('all');
+
+  const filteredEntities = entities
+    .filter(entity => {
+      const term = search.trim().toLowerCase();
+      const matchesSearch = !term
+        || entity.name.toLowerCase().includes(term)
+        || entity.line.toLowerCase().includes(term)
+        || (entity.owner?.name || '').toLowerCase().includes(term);
+      const matchesLine = lineFilter === 'all' || entity.lineId === lineFilter || entity.line === entityLines.find(line => line.id === lineFilter)?.name;
+      const matchesOwner = ownerFilter === 'all' || (ownerFilter === 'unlinked' ? !entity.ownerId : entity.ownerId === ownerFilter);
+      const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? entity.active : !entity.active);
+      const matchesLink = linkFilter === 'all'
+        || (linkFilter === 'linked' ? Boolean(entity.ownerId) : !entity.ownerId);
+      return matchesSearch && matchesLine && matchesOwner && matchesStatus && matchesLink;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+  const activeEntities = entities.filter(entity => entity.active).length;
+  const linkedEntities = entities.filter(entity => Boolean(entity.ownerId)).length;
+  const unlinkedEntities = entities.length - linkedEntities;
 
   const openCreate = () => { setEditing(null); setForm(emptyEntity); setError(''); setShowModal(true); };
   const openEdit = (e: Entity) => { setEditing(e); setForm({ name: e.name, line: e.line, lineId: e.lineId || entityLines.find(line => line.name === e.line)?.id || '', description: e.description, image: e.image || '', history: e.history, characteristics: e.characteristics, additionalInfo: e.additionalInfo, active: e.active, ownerId: e.ownerId || '' }); setError(''); setShowModal(true); };
@@ -110,12 +135,81 @@ export const AdminEntidades: React.FC = () => {
             <Star size={18} />
             Linhas & Entidades
           </h2>
-          <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm">{entities.length} entidade(s)</p>
+          <p className="font-inter text-[rgba(245,240,232,0.4)] text-sm">{entities.length} entidade(s) cadastrada(s)</p>
         </div>
         <button onClick={openCreate} className="btn-gold text-xs py-2 px-4">
           <Plus size={14} />
           Nova Entidade
         </button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <p className="font-inter text-[rgba(245,240,232,0.45)] text-[11px] uppercase tracking-wider">Total</p>
+          <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{entities.length}</p>
+          <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-1">Entidades cadastradas</p>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <p className="font-inter text-[rgba(245,240,232,0.45)] text-[11px] uppercase tracking-wider">Ativas</p>
+          <p className="font-cinzel text-[#c9a84c] text-2xl font-bold mt-1">{activeEntities}</p>
+          <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-1">Visíveis no site</p>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <p className="font-inter text-[rgba(245,240,232,0.45)] text-[11px] uppercase tracking-wider">Vinculadas</p>
+          <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{linkedEntities}</p>
+          <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-1">A um responsável</p>
+        </div>
+        <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+          <p className="font-inter text-[rgba(245,240,232,0.45)] text-[11px] uppercase tracking-wider">Sem vínculo</p>
+          <p className="font-cinzel text-[#f5f0e8] text-2xl font-bold mt-1">{unlinkedEntities}</p>
+          <p className="font-inter text-[rgba(245,240,232,0.35)] text-xs mt-1">Precisam de responsável</p>
+        </div>
+      </div>
+
+      <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Search size={15} className="text-[#c9a84c]" />
+          <h3 className="font-cinzel text-[#c9a84c] text-sm">Pesquisar e filtrar entidades</h3>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="lg:col-span-2">
+            <input
+              className="form-input"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Nome, linha ou responsável..."
+            />
+          </div>
+          <select className="form-input" value={lineFilter} onChange={e => setLineFilter(e.target.value)}>
+            <option value="all">Todas as linhas</option>
+            {entityLines.map(line => <option key={line.id} value={line.id}>{line.name}</option>)}
+          </select>
+          <select className="form-input" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)}>
+            <option value="all">Todos os responsáveis</option>
+            <option value="unlinked">Sem responsável</option>
+            {users.filter(user => user.role !== 'consulente').map(user => (
+              <option key={user.id} value={user.id}>{user.name}</option>
+            ))}
+          </select>
+          <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}>
+            <option value="all">Todos os status</option>
+            <option value="active">Somente ativas</option>
+            <option value="inactive">Somente inativas</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          <button onClick={() => setLinkFilter('all')} className={`text-xs px-3 py-1.5 rounded border ${linkFilter === 'all' ? 'border-[#c9a84c] text-[#c9a84c]' : 'border-[rgba(201,168,76,0.12)] text-[rgba(245,240,232,0.5)]'}`}>Todas</button>
+          <button onClick={() => setLinkFilter('linked')} className={`text-xs px-3 py-1.5 rounded border flex items-center gap-1 ${linkFilter === 'linked' ? 'border-[#c9a84c] text-[#c9a84c]' : 'border-[rgba(201,168,76,0.12)] text-[rgba(245,240,232,0.5)]'}`}><Link2 size={12} /> Vinculadas</button>
+          <button onClick={() => setLinkFilter('unlinked')} className={`text-xs px-3 py-1.5 rounded border flex items-center gap-1 ${linkFilter === 'unlinked' ? 'border-[#c9a84c] text-[#c9a84c]' : 'border-[rgba(201,168,76,0.12)] text-[rgba(245,240,232,0.5)]'}`}><Unlink2 size={12} /> Sem vínculo</button>
+          {(search || lineFilter !== 'all' || ownerFilter !== 'all' || statusFilter !== 'all' || linkFilter !== 'all') && (
+            <button onClick={() => { setSearch(''); setLineFilter('all'); setOwnerFilter('all'); setStatusFilter('all'); setLinkFilter('all'); }} className="text-xs px-3 py-1.5 rounded text-[rgba(245,240,232,0.5)] hover:text-[#c9a84c]">
+              Limpar filtros
+            </button>
+          )}
+        </div>
+        <p className="font-inter text-[rgba(245,240,232,0.35)] text-[11px] mt-3">
+          Exibindo {filteredEntities.length} de {entities.length} entidade(s).
+        </p>
       </div>
 
       <div className="bg-[#1a0a0a] border border-[rgba(201,168,76,0.12)] rounded p-4">
@@ -161,7 +255,7 @@ export const AdminEntidades: React.FC = () => {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
-          {entities.map(entity => (
+          {filteredEntities.map(entity => (
             <div key={entity.id} className={`bg-[#1a0a0a] border rounded p-4 transition-all ${entity.active ? 'border-[rgba(201,168,76,0.15)] hover:border-[rgba(201,168,76,0.35)]' : 'border-[rgba(255,255,255,0.05)] opacity-60'}`}>
               <div className="flex items-start gap-3">
                 {entity.image && (
@@ -170,7 +264,7 @@ export const AdminEntidades: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-cinzel font-bold text-[#f5f0e8] text-sm">{entity.name}</p>
                   <p className="font-inter text-[#c9a84c] text-xs">{entity.line}</p>
-                  <p className="font-inter text-[rgba(245,240,232,0.55)] text-xs mt-1">Responsável: <span className="text-[rgba(245,240,232,0.8)]">{entity.owner?.name || 'Não vinculado'}</span></p>
+                  <p className="font-inter text-[rgba(245,240,232,0.55)] text-xs mt-1 flex items-center gap-1"><Users size={11} /> Responsável: <span className="text-[rgba(245,240,232,0.8)]">{entity.owner?.name || 'Não vinculado'}</span></p>
                   <p className="font-crimson text-[rgba(245,240,232,0.45)] text-sm line-clamp-2 mt-1">{entity.description}</p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
