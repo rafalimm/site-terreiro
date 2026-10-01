@@ -59,7 +59,7 @@ router.get('/history', authorize('events', 'agenda'), async (_req, res) => {
         completedAt: event.completedAt,
         totalAttendances: event.attendances.length,
         totalAttended: attended.length,
-        firstVisits: attended.filter(item => item.status === 'attended' && item.entityId).length ? event.attendances.filter(item => item.status === 'attended' && item.isFirstVisit).length : 0,
+        firstVisits: event.attendances.filter(item => item.status === 'attended' && item.isFirstVisit).length,
         returningVisitors: event.attendances.filter(item => item.status === 'attended' && !item.isFirstVisit).length,
         entityStats: Array.from(entityMap.values()).sort((a, b) => b.attendedCount - a.attendedCount),
       };
