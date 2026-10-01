@@ -90,3 +90,14 @@ export async function uploadContentFile(file: File): Promise<{ url: string; name
     originalName: file.name,
   });
 }
+
+
+export async function uploadImageFile(file: File): Promise<{ url: string }> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+    reader.readAsDataURL(file);
+  });
+  return api.post('/api/admin/uploads', { dataUrl });
+}
