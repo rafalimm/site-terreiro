@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Calendar, CalendarClock, X, Check, Users, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, CalendarClock, X, Check, Users, CheckCircle2 } from 'lucide-react';
 import { useApp, GiraEvent } from '../../store/AppContext';
 import { format } from 'date-fns';
 import { dateOnlyTimestamp, parseDateOnly } from '../../utils/date';
