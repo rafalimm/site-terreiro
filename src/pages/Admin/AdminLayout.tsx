@@ -18,25 +18,48 @@ interface AdminLayoutProps {
   setSection: (s: AdminSection) => void;
 }
 
-const menuItems: { key: AdminSection; label: string; icon: any; perm?: string }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'agenda', label: 'Agenda / Giras', icon: Calendar, perm: 'agenda' },
-  { key: 'fila', label: 'Fila de Atendimento', icon: ListOrdered, perm: 'fila' },
-  { key: 'pre-cadastro', label: 'Pré-cadastro', icon: UserPlus, perm: 'pre_cadastro' },
-  { key: 'agendamentos', label: 'Agendamentos', icon: CalendarCheck, perm: 'agenda' },
-  { key: 'noticias', label: 'Notícias', icon: Newspaper, perm: 'news' },
-  { key: 'faq', label: 'FAQ', icon: HelpCircle, perm: 'faq' },
-  { key: 'galeria', label: 'Galeria', icon: Image, perm: 'gallery' },
-  { key: 'servicos', label: 'Cartas & Búzios', icon: CreditCard, perm: 'services' },
-  { key: 'entidades', label: 'Entidades', icon: Star, perm: 'entities' },
-  { key: 'mensagens', label: 'Mensagens', icon: MessageSquare, perm: 'messages' },
-  { key: 'consulentes', label: 'Consulentes', icon: Users, perm: 'consulentes' },
-  { key: 'filho-conteudos', label: 'Conteúdos dos Filhos', icon: BookOpen, perm: 'filho_content' },
-  { key: 'mensalidades', label: 'Mensalidades', icon: CreditCard, perm: 'membership' },
-  { key: 'compras', label: 'Compras', icon: ShoppingCart, perm: 'compras' },
-  { key: 'usuarios', label: 'Usuários', icon: Shield },
-  { key: 'logs', label: 'Logs', icon: Activity },
-  { key: 'configuracoes', label: 'Configurações', icon: Settings },
+type AdminMenuItem = { key: AdminSection; label: string; icon: any; perm?: string };
+type AdminMenuGroup = { label: string; items: AdminMenuItem[] };
+
+const menuGroups: AdminMenuGroup[] = [
+  {
+    label: 'Visão geral',
+    items: [
+      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Atendimento',
+    items: [
+      { key: 'fila', label: 'Fila de Atendimento', icon: ListOrdered, perm: 'fila' },
+      { key: 'pre-cadastro', label: 'Pré-cadastro', icon: UserPlus, perm: 'pre_cadastro' },
+      { key: 'agendamentos', label: 'Agendamentos', icon: CalendarCheck, perm: 'agenda' },
+      { key: 'consulentes', label: 'Consulentes', icon: Users, perm: 'consulentes' },
+      { key: 'mensagens', label: 'Mensagens', icon: MessageSquare, perm: 'messages' },
+    ],
+  },
+  {
+    label: 'Giras e conteúdo',
+    items: [
+      { key: 'agenda', label: 'Agenda / Giras', icon: Calendar, perm: 'agenda' },
+      { key: 'filho-conteudos', label: 'Conteúdos dos Filhos', icon: BookOpen, perm: 'filho_content' },
+      { key: 'noticias', label: 'Notícias', icon: Newspaper, perm: 'news' },
+      { key: 'faq', label: 'FAQ', icon: HelpCircle, perm: 'faq' },
+      { key: 'galeria', label: 'Galeria', icon: Image, perm: 'gallery' },
+      { key: 'entidades', label: 'Entidades', icon: Star, perm: 'entities' },
+      { key: 'servicos', label: 'Cartas & Búzios', icon: CreditCard, perm: 'services' },
+    ],
+  },
+  {
+    label: 'Gestão',
+    items: [
+      { key: 'mensalidades', label: 'Mensalidades', icon: CreditCard, perm: 'membership' },
+      { key: 'compras', label: 'Compras', icon: ShoppingCart, perm: 'compras' },
+      { key: 'usuarios', label: 'Usuários', icon: Shield, perm: '*' },
+      { key: 'logs', label: 'Logs', icon: Activity, perm: '*' },
+      { key: 'configuracoes', label: 'Configurações', icon: Settings, perm: '*' },
+    ],
+  },
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, section, setSection }) => {
@@ -49,7 +72,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, section, set
     navigate('/');
   };
 
-  const canAccess = (item: typeof menuItems[0]) => {
+  const canAccess = (item: AdminMenuItem) => {
     if (!item.perm) return true;
     return hasPermission(item.perm) || hasPermission('*');
   };
@@ -93,16 +116,29 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, section, set
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {menuItems.filter(canAccess).map(item => (
-            <button
-              key={item.key}
-              onClick={() => { setSection(item.key); setSidebarOpen(false); }}
-              className={`admin-sidebar-link ${section === item.key ? 'active' : ''}`}
-            >
-              <item.icon size={16} />
-              {item.label}
-            </button>
-          ))}
+          {menuGroups.map(group => {
+            const visibleItems = group.items.filter(canAccess);
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={group.label} className="mb-4 last:mb-0">
+                <p className="px-2 pb-2 font-inter text-[9px] font-semibold uppercase tracking-[0.18em] text-[rgba(201,168,76,0.45)]">
+                  {group.label}
+                </p>
+                <div className="space-y-1">
+                  {visibleItems.map(item => (
+                    <button
+                      key={item.key}
+                      onClick={() => { setSection(item.key); setSidebarOpen(false); }}
+                      className={`admin-sidebar-link ${section === item.key ? 'active' : ''}`}
+                    >
+                      <item.icon size={16} />
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         {/* Bottom */}
