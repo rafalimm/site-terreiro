@@ -139,21 +139,27 @@ export const MinhaConta: React.FC = () => {
           <div className="card-spiritual p-4 border border-[rgba(201,168,76,0.12)]"><p className="text-[10px] uppercase tracking-wider text-[rgba(245,240,232,0.35)]">Acesso</p><p className="font-cinzel text-sm font-bold text-[#c9a84c] mt-2">{canViewDevelopment ? 'Membro' : 'Consulente'}</p></div>
         </div>
 
-        {(
-          <div className="card-spiritual p-6 mb-6 border border-[rgba(201,168,76,0.2)]">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 className="font-cinzel font-bold text-[#c9a84c] text-base flex items-center gap-2">
-                  <Calendar size={16} /> Próximas Giras
-                </h3>
-                <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">
-                  {canViewDevelopment ? 'Confira seus próximos compromissos no terreiro.' : 'Confira a próxima gira disponível.'}
-                </p>
-              </div>
-              <Link to="/agenda" className="text-xs font-cinzel text-[#c9a84c] hover:text-[#e8c97a]">
-                Ver agenda →
-              </Link>
+        <div className="card-spiritual p-6 mb-6 border border-[rgba(201,168,76,0.2)]">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-cinzel font-bold text-[#c9a84c] text-base flex items-center gap-2">
+                <Calendar size={16} /> Próximas Giras
+              </h3>
+              <p className="font-inter text-xs text-[rgba(245,240,232,0.4)] mt-1">
+                {canViewDevelopment ? 'Confira seus próximos compromissos no terreiro.' : 'Confira a próxima gira disponível.'}
+              </p>
             </div>
+            <Link to="/agenda" className="text-xs font-cinzel text-[#c9a84c] hover:text-[#e8c97a]">
+              Ver agenda →
+            </Link>
+          </div>
+          {upcomingEvents.length === 0 ? (
+            <div className="rounded-lg border border-[rgba(201,168,76,0.1)] bg-[rgba(201,168,76,0.02)] px-4 py-6 text-center">
+              <Calendar size={22} className="mx-auto text-[rgba(201,168,76,0.45)]" />
+              <p className="font-cinzel text-sm text-[rgba(245,240,232,0.7)] mt-2">Nenhuma gira próxima disponível</p>
+              <p className="font-inter text-xs text-[rgba(245,240,232,0.38)] mt-1">Consulte a agenda para acompanhar as próximas datas.</p>
+            </div>
+          ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {upcomingEvents.slice(0, 2).map(ev => (
                 <div key={ev.id} className="p-4 rounded-lg border border-[rgba(201,168,76,0.12)] bg-[rgba(201,168,76,0.03)]">
@@ -174,7 +180,7 @@ export const MinhaConta: React.FC = () => {
               ))}
             </div>
           )}
-        )}
+        </div>
 
         {activeAttendance && (
           <div className="card-spiritual p-5 mb-6 border border-green-500/25 bg-green-500/[0.03]">
