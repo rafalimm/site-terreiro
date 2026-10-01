@@ -425,7 +425,8 @@ model UploadedFile {
   mimeType     String
   originalName String
   size         Int
-  data         Bytes
+  data         Bytes?
+  storagePath  String?
   createdAt    DateTime @default(now())
 
   @@index([createdAt])
