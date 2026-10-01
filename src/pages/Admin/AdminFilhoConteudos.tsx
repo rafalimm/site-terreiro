@@ -147,7 +147,7 @@ const ContentModal: React.FC<{
       }
       if (kind === 'media') set({ mediaUrl: uploaded[0] || '' });
       else if (kind === 'cover') set({ coverUrl: uploaded[0] || '' });
-      else set({ mediaUrl: [...gallery, ...uploaded].join('\\n') });
+      else set({ mediaUrl: [...gallery, ...uploaded].join('\n') });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Não foi possível enviar o arquivo.');
     } finally {
