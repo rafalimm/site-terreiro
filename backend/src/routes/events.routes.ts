@@ -12,7 +12,7 @@ router.get('/history', authorize('events', 'agenda'), async (_req, res) => {
     }).format(new Date());
 
     const events = await prisma.giraEvent.findMany({
-      where: { date: { lt: today } },
+      where: { OR: [{ completed: true }, { date: { lt: today } }] },
       orderBy: { date: 'desc' },
       include: {
         attendances: {
@@ -55,6 +55,8 @@ router.get('/history', authorize('events', 'agenda'), async (_req, res) => {
         date: event.date,
         time: event.time,
         type: event.type,
+        completed: event.completed,
+        completedAt: event.completedAt,
         totalAttendances: event.attendances.length,
         totalAttended: attended.length,
         entityStats: Array.from(entityMap.values()).sort((a, b) => b.attendedCount - a.attendedCount),
@@ -123,6 +125,32 @@ router.patch('/:id', authorize('events', 'agenda'), async (req, res) => {
     delete data.createdAt;
     const event = await prisma.giraEvent.update({ where: { id: req.params.id }, data });
     await createLog(req.user!.id, req.user!.name, 'Editou', 'Gira/Evento', `Editou o evento "${event.title}"`);
+    res.json(event);
+  } catch {
+    res.status(404).json({ error: 'Evento não encontrado.' });
+  }
+});
+
+router.post('/:id/complete', authorize('events', 'agenda'), async (req, res) => {
+  try {
+    const event = await prisma.giraEvent.update({
+      where: { id: req.params.id },
+      data: { completed: true, completedAt: new Date().toISOString() },
+    });
+    await createLog(req.user!.id, req.user!.name, 'Concluiu', 'Gira/Evento', `Concluiu a gira "${event.title}"`);
+    res.json(event);
+  } catch {
+    res.status(404).json({ error: 'Evento não encontrado.' });
+  }
+});
+
+router.post('/:id/reopen', authorize('events', 'agenda'), async (req, res) => {
+  try {
+    const event = await prisma.giraEvent.update({
+      where: { id: req.params.id },
+      data: { completed: false, completedAt: null },
+    });
+    await createLog(req.user!.id, req.user!.name, 'Reabriu', 'Gira/Evento', `Reabriu a gira "${event.title}"`);
     res.json(event);
   } catch {
     res.status(404).json({ error: 'Evento não encontrado.' });
