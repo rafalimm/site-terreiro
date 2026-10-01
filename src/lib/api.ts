@@ -2,7 +2,20 @@
 // A URL da API vem de uma variável de ambiente (VITE_API_URL), então trocar de
 // hospedagem/domínio no futuro é só mudar essa variável — nada de código muda.
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://site-terreiro-production.up.railway.app';
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const isProductionBrowser =
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1';
+const isLocalConfiguredApi =
+  !configuredApiUrl ||
+  /^(https?:\/\/)?localhost(?::\d+)?$/i.test(configuredApiUrl.replace(/^https?:\/\//, '')) ||
+  configuredApiUrl.includes('127.0.0.1');
+
+export const API_URL =
+  isProductionBrowser && isLocalConfiguredApi
+    ? 'https://site-terreiro-production.up.railway.app'
+    : configuredApiUrl || 'http://localhost:3333';
 
 // Imagens enviadas pelo painel ficam guardadas como "/api/images/ID". Aqui completamos
 // com o endereço da API, então trocar de domínio no futuro não quebra nenhuma foto.
@@ -10,12 +23,7 @@ export function mediaUrl(url?: string | null): string {
   if (!url) return '';
   if (/^(data:|blob:|https?:\/\/)/i.test(url)) return url;
   if (!url.startsWith('/api/images/') && !url.startsWith('/api/files/')) return url;
-  const configuredApi = API_URL.replace(/\/+$/, '');
-  const runningInBrowser = typeof window !== 'undefined';
-  const isLocalApi = /^(https?:\/\/)?localhost(?::\d+)?$/i.test(configuredApi.replace(/^https?:\/\//, '')) || configuredApi.includes('127.0.0.1');
-  const base = runningInBrowser && isLocalApi && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-    ? window.location.origin
-    : configuredApi;
+  const base = API_URL.replace(/\/+$/, '');
   return `${base}${url}`;
 }
 const TOKEN_KEY = 'zedolaco_token';
