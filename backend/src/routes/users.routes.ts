@@ -59,7 +59,7 @@ router.patch('/:id', requireSuperAdmin, async (req, res) => {
   if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 120);
   if (typeof body.email === 'string') data.email = body.email.trim().toLowerCase().slice(0, 254);
   if (typeof body.whatsapp === 'string' || body.whatsapp === null) data.whatsapp = body.whatsapp === null ? null : String(body.whatsapp).trim().slice(0, 30);
-  if (typeof body.cpfCnpj === 'string' || body.cpfCnpj === null) data.cpfCnpj = body.cpfCnpj === null ? null : String(body.cpfCnpj).replace(/\\D/g, '').slice(0, 14);
+  if (typeof body.cpfCnpj === 'string' || body.cpfCnpj === null) data.cpfCnpj = body.cpfCnpj === null ? null : String(body.cpfCnpj).replace(/\D/g, '').slice(0, 14);
   if (typeof body.role === 'string') data.role = body.role;
   if (typeof body.active === 'boolean') data.active = body.active;
   if (typeof body.degreeId === 'string' || body.degreeId === null) data.degreeId = body.degreeId;
