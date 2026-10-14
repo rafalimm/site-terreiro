@@ -85,7 +85,7 @@ router.get('/pre-registration/:cpf', preLookupLimiter, async (req, res) => {
     orderBy: { confirmedAt: 'desc' },
     select: {
       queueNumber: true,
-      qrToken: true,
+      // O token QR é uma credencial de fila e não deve ser exposto por consulta pública de CPF.
       status: true,
       event: { select: { id: true, title: true, date: true, time: true } },
     },
