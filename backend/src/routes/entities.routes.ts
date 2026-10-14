@@ -127,8 +127,24 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const data: Record<string, any> = { ...(req.body ?? {}) };
-    delete data.id;
+    const body = req.body ?? {};
+    const data: Record<string, any> = {};
+
+    // Atualiza somente os campos que a tela de entidades realmente gerencia.
+    if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 160);
+    if (typeof body.line === 'string') data.line = body.line.trim().slice(0, 120);
+    if (typeof body.description === 'string') data.description = body.description.slice(0, 5000);
+    if (typeof body.history === 'string') data.history = body.history.slice(0, 10000);
+    if (typeof body.characteristics === 'string') data.characteristics = body.characteristics.slice(0, 5000);
+    if (typeof body.additionalInfo === 'string') data.additionalInfo = body.additionalInfo.slice(0, 5000);
+    if (typeof body.active === 'boolean') data.active = body.active;
+    if (typeof body.ownerId === 'string' || body.ownerId === null) data.ownerId = body.ownerId;
+    if (typeof body.lineId === 'string') data.lineId = body.lineId;
+    if (typeof body.image === 'string' || body.image === null) data.image = body.image;
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
+    }
 
     if ('ownerId' in data) {
       if (data.ownerId) {
