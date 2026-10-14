@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const body = req.body ?? {};
-    const data: Record<string, unknown> = {};
+    const data: any = {};
     if (typeof body.url === 'string') {
       const url = toRelativeImageUrl(body.url);
       if (!url) return res.status(400).json({ error: 'Informe uma imagem válida.' });
