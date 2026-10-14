@@ -170,17 +170,19 @@ router.get('/admin/payment-config', authorize('membership'), async (_req, res) =
 
 router.put('/admin/payment-config', authorize('membership'), async (req, res) => {
   const body = req.body ?? {};
-  const method = String(body.method || 'pix');
-  const receiverName = String(body.receiverName || '').trim();
-  const city = String(body.city || '').trim();
-  const pixKey = body.pixKey ? String(body.pixKey).trim() : null;
-  const pixKeyType = body.pixKeyType ? String(body.pixKeyType) : null;
-  const bankName = body.bankName ? String(body.bankName).trim() : null;
-  const accountHolder = body.accountHolder ? String(body.accountHolder).trim() : null;
-  const bankDetails = body.bankDetails ? String(body.bankDetails).trim() : null;
-  const instructions = body.instructions ? String(body.instructions).trim() : null;
+  const method = typeof body.method === 'string' ? body.method : 'pix';
+  const receiverName = typeof body.receiverName === 'string' ? body.receiverName.trim() : '';
+  const city = typeof body.city === 'string' ? body.city.trim() : '';
+  const pixKey = typeof body.pixKey === 'string' && body.pixKey.trim() ? body.pixKey.trim().slice(0, 200) : null;
+  const pixKeyType = typeof body.pixKeyType === 'string' ? body.pixKeyType : null;
+  const bankName = typeof body.bankName === 'string' ? body.bankName.trim().slice(0, 120) : null;
+  const accountHolder = typeof body.accountHolder === 'string' ? body.accountHolder.trim().slice(0, 160) : null;
+  const bankDetails = typeof body.bankDetails === 'string' ? body.bankDetails.trim().slice(0, 2000) : null;
+  const instructions = typeof body.instructions === 'string' ? body.instructions.trim().slice(0, 3000) : null;
   const enabled = body.enabled === true;
 
+  if (!['pix', 'bank_transfer', 'manual'].includes(method)) return res.status(400).json({ error: 'Método de pagamento inválido.' });
+  if (pixKeyType !== null && !['cpf', 'cnpj', 'email', 'phone', 'random'].includes(pixKeyType)) return res.status(400).json({ error: 'Tipo de chave PIX inválido.' });
   if (!receiverName) return res.status(400).json({ error: 'Informe o nome do recebedor.' });
   if (!city) return res.status(400).json({ error: 'Informe a cidade do recebedor.' });
   if (method === 'pix' && !pixKey) return res.status(400).json({ error: 'Informe a chave PIX.' });
@@ -298,28 +300,38 @@ router.post('/admin/memberships/:id/payments', authorize('membership'), async (r
   if (!membership) return res.status(404).json({ error: 'Mensalidade não encontrada.' });
 
   const referenceMonth = String(req.body.referenceMonth || monthKey());
-  if (!/^\d{4}-\d{2}$/.test(referenceMonth)) return res.status(400).json({ error: 'Mês de referência inválido.' });
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(referenceMonth)) return res.status(400).json({ error: 'Mês de referência inválido.' });
+  const rawAmount = req.body.amountCents;
+  const amountCents = rawAmount === undefined || rawAmount === null || rawAmount === '' ? membership.monthlyAmountCents : Number(rawAmount);
+  const method = typeof req.body.method === 'string' ? req.body.method.trim().slice(0, 40) : 'manual';
+  const notes = typeof req.body.notes === 'string' ? req.body.notes.trim().slice(0, 1000) : null;
+  if (!Number.isSafeInteger(amountCents) || amountCents <= 0 || amountCents > 100_000_000) {
+    return res.status(400).json({ error: 'Valor do pagamento inválido.' });
+  }
+  if (!['manual', 'pix', 'bank_transfer', 'asaas_pix', 'cash'].includes(method)) {
+    return res.status(400).json({ error: 'Método de pagamento inválido.' });
+  }
 
   const payment = await prisma.membershipPayment.upsert({
     where: { membershipId_referenceMonth: { membershipId: membership.id, referenceMonth } },
     create: {
       membershipId: membership.id,
       referenceMonth,
-      amountCents: Number(req.body.amountCents || membership.monthlyAmountCents),
+      amountCents,
       dueDate: dueDateForMonth(referenceMonth, membership.dueDay),
       paidAt: new Date().toISOString(),
-      method: String(req.body.method || 'manual'),
+      method,
       status: 'paid',
-      notes: req.body.notes ? String(req.body.notes) : null,
+      notes,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
     update: {
-      amountCents: Number(req.body.amountCents || membership.monthlyAmountCents),
+      amountCents,
       paidAt: new Date().toISOString(),
-      method: String(req.body.method || 'manual'),
+      method,
       status: 'paid',
-      notes: req.body.notes ? String(req.body.notes) : null,
+      notes,
       updatedAt: new Date().toISOString(),
     },
   });
