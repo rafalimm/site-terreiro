@@ -100,7 +100,11 @@ router.get('/', async (_req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { lineId, ownerId, ...rest } = req.body ?? {};
+    const body = req.body ?? {};
+    const { lineId, ownerId } = body;
+    const name = typeof body.name === 'string' ? body.name.trim().slice(0, 160) : '';
+    if (!name) return res.status(400).json({ error: 'Informe o nome da entidade.' });
+
     const lineCategory = await prisma.entityLine.findFirst({ where: { id: lineId, active: true } });
     if (!lineCategory) return res.status(400).json({ error: 'Selecione uma linha válida.' });
     if (ownerId) {
@@ -109,11 +113,16 @@ router.post('/', async (req, res) => {
     }
     const entity = await prisma.entity.create({
       data: {
-        ...rest,
+        name,
         ownerId: ownerId || null,
         line: lineCategory.name,
         lineId: lineCategory.id,
-        image: toRelativeImageUrl(req.body.image) || null,
+        description: typeof body.description === 'string' ? body.description.slice(0, 5000) : '',
+        image: toRelativeImageUrl(body.image) || null,
+        history: typeof body.history === 'string' ? body.history.slice(0, 10000) : '',
+        characteristics: typeof body.characteristics === 'string' ? body.characteristics.slice(0, 5000) : '',
+        additionalInfo: typeof body.additionalInfo === 'string' ? body.additionalInfo.slice(0, 5000) : '',
+        active: typeof body.active === 'boolean' ? body.active : true,
       },
       include: { lineCategory: true, owner: { select: { id: true, name: true, role: true, active: true } } },
     });
