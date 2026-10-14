@@ -125,13 +125,14 @@ contentFilesRouter.post('/', async (req, res) => {
 
   const detectedMime = detectFileMime(buffer);
   const declaredMime = header.split(';')[0].toLowerCase();
-  const mimeType = detectedMime || declaredMime;
 
-  if (!ALLOWED_FILE_TYPES[mimeType]) {
+  // Não aceitar um arquivo apenas porque o cliente declarou um MIME permitido.
+  if (!detectedMime || !ALLOWED_FILE_TYPES[detectedMime]) {
     return res.status(400).json({ error: 'Formato não suportado. Use PDF, MP4, WebM, MP3, WAV, OGG, JPG, PNG ou WebP.' });
   }
 
-  const mimeType = detectedMime;\n\n  if (detectedMime !== declaredMime) {
+  const mimeType = detectedMime;
+  if (detectedMime !== declaredMime) {
     return res.status(400).json({ error: 'O conteúdo do arquivo não corresponde ao tipo informado.' });
   }
 
@@ -160,7 +161,8 @@ async function canReadContentFile(userId: string, role: string, fileId: string):
     where: { id: userId },
     select: { degree: { select: { sortOrder: true, active: true } } },
   });
-  // Sem grau ativo, não concedemos acesso a nenhum material restrito.\n  if (!user?.degree?.active) return false;\n  const maxOrder = user.degree.sortOrder;
+  // Sem grau ativo, não concedemos acesso a nenhum material restrito.
+  if (!user?.degree?.active) return false;\n  const maxOrder = user.degree.sortOrder;
   const linkedContents = await prisma.filhoContent.findMany({
     where: {
       published: true,
@@ -207,7 +209,8 @@ async function serveStoredFile(req: any, res: any) {
       const responseHeaders: Record<string, string> = {
         'Content-Type': file.mimeType,
         'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\r\n]/g, '')}"`,
-        // Resposta protegida por sessão: não permitir que caches compartilhados retenham conteúdo restrito.\n        'Cache-Control': 'private, no-store',
+        // Resposta protegida por sessão: não permitir que caches compartilhados retenham conteúdo restrito.
+        'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'cross-origin',
         'Accept-Ranges': 'bytes',
