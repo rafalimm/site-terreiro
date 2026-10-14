@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { createLog } from '../utils/log';
@@ -119,7 +120,7 @@ router.post('/', authorize('events', 'agenda'), async (req, res) => {
 
 router.patch('/:id', authorize('events', 'agenda'), async (req, res) => {
   const body = req.body ?? {};
-  const data: Record<string, unknown> = {};
+  const data: Prisma.GiraEventUpdateInput = {};
 
   if (typeof body.title === 'string') data.title = body.title.trim().slice(0, 160);
   if (typeof body.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(body.date)) data.date = body.date.slice(0, 10);
