@@ -9,6 +9,14 @@ router.use(authenticate);
 
 const MEMBERSHIP_ROLES = ['filho', 'atendimento', 'content', 'agenda', 'admin', 'super_admin'];
 
+// Endpoints administrativos de cobrança/configuração não podem ser usados por qualquer filho.
+router.use('/admin', (req, res, next) => {
+  if (!['super_admin', 'admin'].includes(req.user!.role)) {
+    return res.status(403).json({ error: 'Apenas administradores podem gerenciar configurações e mensalidades.' });
+  }
+  next();
+});
+
 function canUseMembership(role: string) {
   return MEMBERSHIP_ROLES.includes(role);
 }
