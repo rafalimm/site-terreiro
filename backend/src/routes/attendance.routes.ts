@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
+import { hasPermission } from '../utils/permissions';
 
 const router = Router();
 
@@ -173,9 +174,20 @@ router.get('/attendance/my-entity-history', async (req, res) => {
   }
 });
 
-router.get('/attendance/queue-events', async (_req, res) => {
+router.get('/attendance/queue-events', async (req, res) => {
   try {
-    const events = await prisma.giraEvent.findMany({ orderBy: { date: 'asc' } });
+    // Usuários comuns não devem descobrir giras privadas de desenvolvimento.
+    // A equipe autorizada da agenda/fila e membros com acesso a conteúdo de filho podem vê-las.
+    const canViewPrivateEvents =
+      hasPermission(req.user!.role, 'filho_content') ||
+      hasPermission(req.user!.role, 'events') ||
+      hasPermission(req.user!.role, 'agenda') ||
+      hasPermission(req.user!.role, 'fila');
+
+    const events = await prisma.giraEvent.findMany({
+      where: canViewPrivateEvents ? {} : { isPublic: true },
+      orderBy: { date: 'asc' },
+    });
     res.json(events);
   } catch (error) {
     console.error('Erro ao carregar giras da fila:', error);
