@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const body = req.body ?? {};
-    const data: Record<string, unknown> = {};
+    const data: any = {};
     if (typeof body.title === 'string') data.title = body.title.trim().slice(0, 200);
     if (typeof body.content === 'string') data.content = body.content.slice(0, 20000);
     if (typeof body.image === 'string' || body.image === null) data.image = body.image === null ? null : body.image.slice(0, 5000);
