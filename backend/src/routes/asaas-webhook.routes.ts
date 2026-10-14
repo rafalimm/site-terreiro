@@ -25,14 +25,20 @@ router.post('/webhooks/asaas', async (req, res) => {
   const paymentId = typeof body.payment?.id === 'string' ? body.payment.id.slice(0, 200) : '';
   if (!eventId) return res.status(400).json({ error: 'Evento sem identificador.' });
 
+  let alreadyProcessed = false;
   try {
     await prisma.asaasWebhookEvent.create({
       data: { id: eventId, event, receivedAt: new Date().toISOString() },
     });
   } catch {
-    // Eventos já registrados não devem reaplicar alterações financeiras.
-    return res.status(200).json({ received: true, duplicate: true });
+    const previous = await prisma.asaasWebhookEvent.findUnique({
+      where: { id: eventId },
+      select: { processedAt: true },
+    });
+    if (!previous) return res.status(500).json({ error: 'Não foi possível registrar o evento.' });
+    alreadyProcessed = Boolean(previous.processedAt);
   }
+  if (alreadyProcessed) return res.status(200).json({ received: true, duplicate: true });
 
   try {
     if (paymentId) {
