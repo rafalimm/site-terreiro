@@ -52,7 +52,18 @@ router.post('/', requireSuperAdmin, async (req, res) => {
 // PATCH /:id — usado tanto para edição completa quanto para a troca rápida de cargo
 router.patch('/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
-  const data: Record<string, unknown> = { ...req.body };
+  const body = req.body ?? {};
+  const data: Record<string, unknown> = {};
+
+  // Allow only profile/role fields that this endpoint is intended to edit.
+  if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 120);
+  if (typeof body.email === 'string') data.email = body.email.trim().toLowerCase().slice(0, 254);
+  if (typeof body.whatsapp === 'string' || body.whatsapp === null) data.whatsapp = body.whatsapp === null ? null : String(body.whatsapp).trim().slice(0, 30);
+  if (typeof body.cpfCnpj === 'string' || body.cpfCnpj === null) data.cpfCnpj = body.cpfCnpj === null ? null : String(body.cpfCnpj).replace(/\\D/g, '').slice(0, 14);
+  if (typeof body.role === 'string') data.role = body.role;
+  if (typeof body.active === 'boolean') data.active = body.active;
+  if (typeof body.degreeId === 'string' || body.degreeId === null) data.degreeId = body.degreeId;
+  if (typeof body.profilePhoto === 'string' || body.profilePhoto === null) data.profilePhoto = body.profilePhoto;
 
   if (data.email) data.email = String(data.email).toLowerCase();
   if (data.password) {
