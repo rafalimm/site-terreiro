@@ -162,7 +162,8 @@ async function canReadContentFile(userId: string, role: string, fileId: string):
     select: { degree: { select: { sortOrder: true, active: true } } },
   });
   // Sem grau ativo, não concedemos acesso a nenhum material restrito.
-  if (!user?.degree?.active) return false;\n  const maxOrder = user.degree.sortOrder;
+  if (!user?.degree?.active) return false;
+  const maxOrder = user.degree.sortOrder;
   const linkedContents = await prisma.filhoContent.findMany({
     where: {
       published: true,
