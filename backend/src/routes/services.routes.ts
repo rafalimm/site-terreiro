@@ -13,7 +13,7 @@ router.get('/', async (_req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const body = req.body ?? {};
-    const data: Record<string, unknown> = {};
+    const data: any = {};
     if (typeof body.title === 'string') data.title = body.title.trim().slice(0, 200);
     if (typeof body.description === 'string') data.description = body.description.slice(0, 10000);
     if (typeof body.howItWorks === 'string') data.howItWorks = body.howItWorks.slice(0, 10000);
