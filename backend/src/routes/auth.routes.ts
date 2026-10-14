@@ -156,13 +156,20 @@ router.post('/profile-photo', authenticate, async (req, res) => {
   }
 
   const header = dataUrl.slice(0, comma).toLowerCase();
-  const mimeType = header.includes('image/jpeg') ? 'image/jpeg'
-    : header.includes('image/png') ? 'image/png'
-    : header.includes('image/webp') ? 'image/webp'
+  const mimeType = /^data:image\/(jpeg|png|webp);base64$/.test(header)
+    ? (header.includes('image/jpeg') ? 'image/jpeg' : header.includes('image/png') ? 'image/png' : 'image/webp')
     : null;
 
   if (!mimeType) {
     return res.status(400).json({ error: 'Use uma imagem JPG, PNG ou WebP.' });
+  }
+
+  // Não confia só no MIME informado pelo navegador: confere a assinatura binária.
+  const isJpeg = buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isPng = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  const isWebp = buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
+  if ((mimeType === 'image/jpeg' && !isJpeg) || (mimeType === 'image/png' && !isPng) || (mimeType === 'image/webp' && !isWebp)) {
+    return res.status(400).json({ error: 'O conteúdo do arquivo não corresponde ao formato da imagem.' });
   }
 
   try {
