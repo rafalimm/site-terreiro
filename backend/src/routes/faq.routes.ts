@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const body = req.body ?? {};
-    const data: Record<string, unknown> = {};
+    const data: any = {};
     if (typeof body.question === 'string') data.question = body.question.trim().slice(0, 500);
     if (typeof body.answer === 'string') data.answer = body.answer.slice(0, 10000);
     if (Number.isInteger(body.order) && body.order >= 0 && body.order <= 10000) data.order = body.order;
