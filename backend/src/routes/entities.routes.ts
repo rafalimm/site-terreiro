@@ -100,7 +100,11 @@ router.get('/', async (_req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { lineId, ownerId, ...rest } = req.body ?? {};
+    const body = req.body ?? {};
+    const { lineId, ownerId } = body;
+    const name = typeof body.name === 'string' ? body.name.trim().slice(0, 160) : '';
+    if (!name) return res.status(400).json({ error: 'Informe o nome da entidade.' });
+
     const lineCategory = await prisma.entityLine.findFirst({ where: { id: lineId, active: true } });
     if (!lineCategory) return res.status(400).json({ error: 'Selecione uma linha válida.' });
     if (ownerId) {
@@ -109,11 +113,16 @@ router.post('/', async (req, res) => {
     }
     const entity = await prisma.entity.create({
       data: {
-        ...rest,
+        name,
         ownerId: ownerId || null,
         line: lineCategory.name,
         lineId: lineCategory.id,
-        image: toRelativeImageUrl(req.body.image) || null,
+        description: typeof body.description === 'string' ? body.description.slice(0, 5000) : '',
+        image: toRelativeImageUrl(body.image) || null,
+        history: typeof body.history === 'string' ? body.history.slice(0, 10000) : '',
+        characteristics: typeof body.characteristics === 'string' ? body.characteristics.slice(0, 5000) : '',
+        additionalInfo: typeof body.additionalInfo === 'string' ? body.additionalInfo.slice(0, 5000) : '',
+        active: typeof body.active === 'boolean' ? body.active : true,
       },
       include: { lineCategory: true, owner: { select: { id: true, name: true, role: true, active: true } } },
     });
@@ -127,8 +136,24 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const data: Record<string, any> = { ...(req.body ?? {}) };
-    delete data.id;
+    const body = req.body ?? {};
+    const data: Record<string, any> = {};
+
+    // Atualiza somente os campos que a tela de entidades realmente gerencia.
+    if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 160);
+    if (typeof body.line === 'string') data.line = body.line.trim().slice(0, 120);
+    if (typeof body.description === 'string') data.description = body.description.slice(0, 5000);
+    if (typeof body.history === 'string') data.history = body.history.slice(0, 10000);
+    if (typeof body.characteristics === 'string') data.characteristics = body.characteristics.slice(0, 5000);
+    if (typeof body.additionalInfo === 'string') data.additionalInfo = body.additionalInfo.slice(0, 5000);
+    if (typeof body.active === 'boolean') data.active = body.active;
+    if (typeof body.ownerId === 'string' || body.ownerId === null) data.ownerId = body.ownerId;
+    if (typeof body.lineId === 'string') data.lineId = body.lineId;
+    if (typeof body.image === 'string' || body.image === null) data.image = body.image;
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
+    }
 
     if ('ownerId' in data) {
       if (data.ownerId) {

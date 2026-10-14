@@ -22,25 +22,39 @@ router.get('/', authorize('consulentes'), async (_req, res) => {
 // Criar, editar cargo/dados e excluir usuários é exclusivo do Super Administrador,
 // exatamente como já era controlado no front-end.
 router.post('/', requireSuperAdmin, async (req, res) => {
-  const { name, email, password, role, whatsapp, active, degreeId } = req.body ?? {};
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios.' });
+  const body = req.body ?? {};
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const password = typeof body.password === 'string' ? body.password : '';
+  const role = typeof body.role === 'string' && body.role ? body.role : 'consulente';
+  const whatsapp = typeof body.whatsapp === 'string' ? body.whatsapp.trim().slice(0, 30) : null;
+  const degreeId = typeof body.degreeId === 'string' && body.degreeId ? body.degreeId : null;
+  const cpfCnpj = typeof body.cpfCnpj === 'string' ? body.cpfCnpj.replace(/\D/g, '').slice(0, 14) : null;
+  const allowedRoles = ['super_admin', 'admin', 'agenda', 'content', 'atendimento', 'filho', 'consulente', 'compras', 'responsavel_fila'];
+
+  if (!name || name.length > 120 || !email || email.length > 254 || !email.includes('@') || password.length < 8 || password.length > 128) {
+    return res.status(400).json({ error: 'Informe nome e e-mail válidos e uma senha entre 8 e 128 caracteres.' });
   }
-  const normalizedEmail = String(email).toLowerCase();
-  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!allowedRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' });
+  if (body.active !== undefined && typeof body.active !== 'boolean') return res.status(400).json({ error: 'Estado ativo inválido.' });
+  if (body.cpfCnpj !== undefined && body.cpfCnpj !== null && ![11, 14].includes(cpfCnpj?.length ?? 0)) {
+    return res.status(400).json({ error: 'CPF/CNPJ inválido.' });
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return res.status(409).json({ error: 'Já existe um usuário com esse e-mail.' });
 
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
       name,
-      email: normalizedEmail,
+      email,
       password: hashed,
-      role: role || 'consulente',
-      whatsapp: whatsapp || null,
-      cpfCnpj: req.body?.cpfCnpj ? String(req.body.cpfCnpj).replace(/\D/g, '') : null,
-      active: active ?? true,
-      degreeId: role === 'consulente' ? null : (degreeId || null),
+      role,
+      whatsapp,
+      cpfCnpj,
+      active: body.active ?? true,
+      degreeId: role === 'consulente' ? null : degreeId,
       createdAt: new Date().toISOString(),
     },
     include: { degree: true },
@@ -52,7 +66,18 @@ router.post('/', requireSuperAdmin, async (req, res) => {
 // PATCH /:id — usado tanto para edição completa quanto para a troca rápida de cargo
 router.patch('/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
-  const data: Record<string, unknown> = { ...req.body };
+  const body = req.body ?? {};
+  const data: Record<string, unknown> = {};
+
+  // Allow only profile/role fields that this endpoint is intended to edit.
+  if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 120);
+  if (typeof body.email === 'string') data.email = body.email.trim().toLowerCase().slice(0, 254);
+  if (typeof body.whatsapp === 'string' || body.whatsapp === null) data.whatsapp = body.whatsapp === null ? null : String(body.whatsapp).trim().slice(0, 30);
+  if (typeof body.cpfCnpj === 'string' || body.cpfCnpj === null) data.cpfCnpj = body.cpfCnpj === null ? null : String(body.cpfCnpj).replace(/\D/g, '').slice(0, 14);
+  if (typeof body.role === 'string') data.role = body.role;
+  if (typeof body.active === 'boolean') data.active = body.active;
+  if (typeof body.degreeId === 'string' || body.degreeId === null) data.degreeId = body.degreeId;
+  if (typeof body.profilePhoto === 'string' || body.profilePhoto === null) data.profilePhoto = body.profilePhoto;
 
   if (data.email) data.email = String(data.email).toLowerCase();
   if (data.password) {

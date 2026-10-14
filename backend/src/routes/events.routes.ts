@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { authenticate, authorize } from '../middleware/auth';
 import { createLog } from '../utils/log';
@@ -118,19 +119,36 @@ router.post('/', authorize('events', 'agenda'), async (req, res) => {
 });
 
 router.patch('/:id', authorize('events', 'agenda'), async (req, res) => {
+  const body = req.body ?? {};
+  const data: Prisma.GiraEventUpdateInput = {};
+
+  if (typeof body.title === 'string') data.title = body.title.trim().slice(0, 160);
+  if (typeof body.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(body.date)) data.date = body.date.slice(0, 10);
+  if (typeof body.time === 'string') data.time = body.time.trim().slice(0, 40);
+  if (typeof body.type === 'string') data.type = body.type.trim().slice(0, 120);
+  if (typeof body.description === 'string') data.description = body.description.slice(0, 5000);
+  if (typeof body.orientation === 'string') data.orientation = body.orientation.slice(0, 5000);
+  if (typeof body.isPublic === 'boolean') data.isPublic = body.isPublic;
+  if (typeof body.requiresScheduling === 'boolean') data.requiresScheduling = body.requiresScheduling;
+  if (typeof body.observations === 'string') data.observations = body.observations.slice(0, 5000);
+  if (Array.isArray(body.entityIds) && body.entityIds.every((id: unknown) => typeof id === 'string')) {
+    data.entityIds = [...new Set(body.entityIds as string[])].slice(0, 200);
+  }
+  if (Array.isArray(body.firstVisitEntityIds) && body.firstVisitEntityIds.every((id: unknown) => typeof id === 'string')) {
+    data.firstVisitEntityIds = [...new Set(body.firstVisitEntityIds as string[])].slice(0, 200);
+  }
+
+  if (Object.keys(data).length === 0) {
+    return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
+  }
+  if (data.type === 'Gira de Desenvolvimento') data.isPublic = false;
+
   try {
-    const data = { ...req.body };
-    if (typeof data.date === 'string') data.date = data.date.slice(0, 10);
-    if (Array.isArray(data.entityIds)) data.entityIds = data.entityIds.filter((id: unknown): id is string => typeof id === 'string');
-    if (Array.isArray(data.firstVisitEntityIds)) data.firstVisitEntityIds = data.firstVisitEntityIds.filter((id: unknown): id is string => typeof id === 'string');
-    if (data.type === 'Gira de Desenvolvimento') data.isPublic = false;
-    delete data.id;
-    delete data.createdAt;
     const event = await prisma.giraEvent.update({ where: { id: req.params.id }, data });
     await createLog(req.user!.id, req.user!.name, 'Editou', 'Gira/Evento', `Editou o evento "${event.title}"`);
-    res.json(event);
+    return res.json(event);
   } catch {
-    res.status(404).json({ error: 'Evento não encontrado.' });
+    return res.status(404).json({ error: 'Evento não encontrado.' });
   }
 });
 

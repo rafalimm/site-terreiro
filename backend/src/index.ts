@@ -62,8 +62,12 @@ app.use(
   })
 );
 
-// Limite maior no corpo da requisição pois imagens podem ser enviadas em base64.
-app.use(express.json({ limit: '70mb' }));
+// Limites específicos para endpoints que recebem imagens/arquivos em base64.
+// O restante da API aceita apenas corpos pequenos para reduzir risco de esgotamento de memória.
+app.use('/api/auth/profile-photo', express.json({ limit: '7mb' }));
+app.use('/api/admin/uploads', express.json({ limit: '7mb' }));
+app.use('/api/admin/content-uploads', express.json({ limit: '70mb' }));
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -94,7 +98,7 @@ app.use('/api/images', imagesRouter);
 app.use('/api/files', filesRouter);
 
 app.use((req, res) => {
-  res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.path}` });
+  res.status(404).json({ error: 'Rota não encontrada.' });
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
