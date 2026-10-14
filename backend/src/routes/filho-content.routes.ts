@@ -119,8 +119,13 @@ router.post('/admin/degrees', authorize('filho_content'), async (req, res) => {
 
 router.patch('/admin/degrees/:id', authorize('filho_content'), async (req, res) => {
   if (!isManager(req.user!.role)) return res.status(403).json({ error: 'Sem permissão.' });
-  const data: any = { ...req.body, updatedAt: new Date().toISOString() };
-  delete data.id; delete data.createdAt;
+  const body = req.body ?? {};
+  const data: any = { updatedAt: new Date().toISOString() };
+  if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 120);
+  if (typeof body.description === 'string') data.description = body.description.slice(0, 5000);
+  if (Number.isInteger(body.sortOrder) && body.sortOrder >= 0 && body.sortOrder <= 10000) data.sortOrder = body.sortOrder;
+  if (typeof body.active === 'boolean') data.active = body.active;
+  if (Object.keys(data).length === 1) return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
   const item = await prisma.degree.update({ where: { id: req.params.id }, data });
   res.json(item);
 });
@@ -140,7 +145,14 @@ router.post('/admin/modules', authorize('filho_content'), async (req, res) => {
 
 router.patch('/admin/modules/:id', authorize('filho_content'), async (req, res) => {
   if (!isManager(req.user!.role)) return res.status(403).json({ error: 'Sem permissão.' });
-  const data: any = { ...req.body, updatedAt: new Date().toISOString() }; delete data.id; delete data.createdAt;
+  const body = req.body ?? {};
+  const data: any = { updatedAt: new Date().toISOString() };
+  if (typeof body.degreeId === 'string' && body.degreeId.length <= 128) data.degreeId = body.degreeId;
+  if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 160);
+  if (typeof body.description === 'string') data.description = body.description.slice(0, 5000);
+  if (Number.isInteger(body.sortOrder) && body.sortOrder >= 0 && body.sortOrder <= 10000) data.sortOrder = body.sortOrder;
+  if (typeof body.active === 'boolean') data.active = body.active;
+  if (Object.keys(data).length === 1) return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
   const item = await prisma.contentModule.update({ where: { id: req.params.id }, data }); res.json(item);
 });
 
@@ -160,7 +172,20 @@ router.patch('/admin/contents/:id', authorize('filho_content'), async (req, res)
   if (!isManager(req.user!.role)) return res.status(403).json({ error: 'Sem permissão.' });
   const current = await prisma.filhoContent.findUnique({ where: { id: req.params.id }, select: { mediaUrl: true, coverUrl: true } });
   if (!current) return res.status(404).json({ error: 'Conteúdo não encontrado.' });
-  const data: any = { ...req.body, updatedAt: new Date().toISOString() }; delete data.id; delete data.createdAt;
+  const body = req.body ?? {};
+  const data: any = { updatedAt: new Date().toISOString() };
+  if (typeof body.degreeId === 'string' && body.degreeId.length <= 128) data.degreeId = body.degreeId;
+  if (typeof body.moduleId === 'string' && body.moduleId.length <= 128) data.moduleId = body.moduleId;
+  if (body.moduleId === null) data.moduleId = null;
+  if (typeof body.title === 'string') data.title = body.title.trim().slice(0, 200);
+  if (typeof body.description === 'string') data.description = body.description.slice(0, 5000);
+  if (typeof body.type === 'string' && ['text', 'pdf', 'video', 'audio', 'image', 'link'].includes(body.type)) data.type = body.type;
+  if (typeof body.body === 'string') data.body = body.body.slice(0, 500000);
+  if (typeof body.mediaUrl === 'string' || body.mediaUrl === null) data.mediaUrl = body.mediaUrl;
+  if (typeof body.coverUrl === 'string' || body.coverUrl === null) data.coverUrl = body.coverUrl;
+  if (Number.isInteger(body.sortOrder) && body.sortOrder >= 0 && body.sortOrder <= 10000) data.sortOrder = body.sortOrder;
+  if (typeof body.published === 'boolean') data.published = body.published;
+  if (Object.keys(data).length === 1) return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
   const item = await prisma.filhoContent.update({ where: { id: req.params.id }, data });
   const oldFiles = [...extractUploadedFileIds(current.mediaUrl), ...extractUploadedFileIds(current.coverUrl)];
   const newFiles = new Set([...extractUploadedFileIds(item.mediaUrl), ...extractUploadedFileIds(item.coverUrl)]);
