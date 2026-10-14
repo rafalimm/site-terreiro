@@ -33,7 +33,7 @@ router.patch('/', async (req, res) => {
   }
 
   // Lista permitida: não aceitar id ou campos internos/inesperados vindos do cliente.
-  const data: Record<string, string> = {};
+  const data: Partial<Record<keyof typeof CONFIG_FIELD_LIMITS, string>> = {};
   for (const [field, maxLength] of Object.entries(CONFIG_FIELD_LIMITS)) {
     if (body[field] === undefined) continue;
     if (typeof body[field] !== 'string') {
