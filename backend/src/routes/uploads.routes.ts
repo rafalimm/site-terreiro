@@ -56,7 +56,7 @@ imagesRouter.get('/:id', async (req, res) => {
     res.set({
       'Content-Type': image.mimeType,
       // O id nunca se repete: a imagem pode ficar em cache "para sempre" no navegador.
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
     });
@@ -148,11 +148,39 @@ contentFilesRouter.post('/', async (req, res) => {
 });
 
 export const filesRouter = Router();
+filesRouter.use(authenticate, authorize('filho_content'));
+
+const FILE_CONTENT_MANAGER_ROLES = new Set(['super_admin', 'admin', 'content']);
+
+async function canReadContentFile(userId: string, role: string, fileId: string): Promise<boolean> {
+  // Gestores de conteúdo podem conferir arquivos durante a edição, inclusive antes de vinculá-los.
+  if (FILE_CONTENT_MANAGER_ROLES.has(role)) return true;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { degree: { select: { sortOrder: true } } },
+  });
+  const maxOrder = user?.degree?.sortOrder ?? 0;
+  const linkedContents = await prisma.filhoContent.findMany({
+    where: {
+      published: true,
+      OR: [
+        { mediaUrl: { contains: `/api/files/${fileId}` } },
+        { coverUrl: { contains: `/api/files/${fileId}` } },
+      ],
+    },
+    select: { degree: { select: { sortOrder: true, active: true } } },
+  });
+  return linkedContents.some(item => item.degree.active && item.degree.sortOrder <= maxOrder);
+}
 
 async function serveStoredFile(req: any, res: any) {
   try {
     const file = await prisma.uploadedFile.findUnique({ where: { id: req.params.id } });
     if (!file) return res.status(404).json({ error: 'Arquivo não encontrado.' });
+    if (!req.user || !await canReadContentFile(req.user.id, req.user.role, file.id)) {
+      return res.status(403).json({ error: 'Você não tem permissão para acessar este conteúdo.' });
+    }
 
     if (file.storagePath) {
       const rawBase = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
@@ -182,7 +210,6 @@ async function serveStoredFile(req: any, res: any) {
         'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'cross-origin',
-        'Access-Control-Allow-Origin': '*',
         'Accept-Ranges': 'bytes',
       };
       const contentLength = storageResponse.headers.get('content-length');
@@ -203,7 +230,6 @@ async function serveStoredFile(req: any, res: any) {
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
-      'Access-Control-Allow-Origin': '*',
       'Accept-Ranges': 'bytes',
     });
     if (file.data) {
