@@ -131,7 +131,7 @@ contentFilesRouter.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Formato não suportado. Use PDF, MP4, WebM, MP3, WAV, OGG, JPG, PNG ou WebP.' });
   }
 
-  if (detectedMime && detectedMime !== declaredMime) {
+  const mimeType = detectedMime;\n\n  if (detectedMime !== declaredMime) {
     return res.status(400).json({ error: 'O conteúdo do arquivo não corresponde ao tipo informado.' });
   }
 
@@ -158,9 +158,9 @@ async function canReadContentFile(userId: string, role: string, fileId: string):
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { degree: { select: { sortOrder: true } } },
+    select: { degree: { select: { sortOrder: true, active: true } } },
   });
-  const maxOrder = user?.degree?.sortOrder ?? 0;
+  // Sem grau ativo, não concedemos acesso a nenhum material restrito.\n  if (!user?.degree?.active) return false;\n  const maxOrder = user.degree.sortOrder;
   const linkedContents = await prisma.filhoContent.findMany({
     where: {
       published: true,
@@ -207,7 +207,7 @@ async function serveStoredFile(req: any, res: any) {
       const responseHeaders: Record<string, string> = {
         'Content-Type': file.mimeType,
         'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\r\n]/g, '')}"`,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        // Resposta protegida por sessão: não permitir que caches compartilhados retenham conteúdo restrito.\n        'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Cross-Origin-Resource-Policy': 'cross-origin',
         'Accept-Ranges': 'bytes',
@@ -227,7 +227,7 @@ async function serveStoredFile(req: any, res: any) {
     res.set({
       'Content-Type': file.mimeType,
       'Content-Disposition': `inline; filename="${file.originalName.replace(/["\\\r\n]/g, '')}"`,
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
       'Cross-Origin-Resource-Policy': 'cross-origin',
       'Accept-Ranges': 'bytes',
